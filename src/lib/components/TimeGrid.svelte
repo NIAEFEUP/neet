@@ -52,6 +52,7 @@
 
 	let selectedCells = new SvelteSet<string>();
 	let isDragging = $state(false);
+	let paintMode = $state(true);
 	let dragStartCell = $state<{ dayIndex: number; hour: number } | null>(null);
 	let dragEndCell = $state<{ dayIndex: number; hour: number } | null>(null);
 	let paintedCells = new SvelteSet<string>();
@@ -114,6 +115,7 @@
 		if (!cell) return;
 
 		isDragging = true;
+		paintMode = !selectedCells.has(cellKey(cell.dayIndex, cell.hour));
 		dragStartCell = cell;
 		dragEndCell = cell;
 	}
@@ -130,10 +132,10 @@
 
 		if (selectionRect) {
 			for (const key of selectionRect) {
-				if (selectedCells.has(key)) {
-					selectedCells.delete(key);
-				} else {
+				if (paintMode) {
 					selectedCells.add(key);
+				} else {
+					selectedCells.delete(key);
 				}
 			}
 		}
@@ -151,8 +153,13 @@
 		if (!cell) return;
 
 		isDragging = true;
+		paintMode = !selectedCells.has(cellKey(cell.dayIndex, cell.hour));
 		paintedCells.clear();
-		toggleCell(cell.dayIndex, cell.hour);
+		if (paintMode) {
+			selectedCells.add(cellKey(cell.dayIndex, cell.hour));
+		} else {
+			selectedCells.delete(cellKey(cell.dayIndex, cell.hour));
+		}
 		paintedCells.add(cellKey(cell.dayIndex, cell.hour));
 	}
 
@@ -168,7 +175,11 @@
 
 		const key = cellKey(cell.dayIndex, cell.hour);
 		if (!paintedCells.has(key)) {
-			toggleCell(cell.dayIndex, cell.hour);
+			if (paintMode) {
+				selectedCells.add(key);
+			} else {
+				selectedCells.delete(key);
+			}
 			paintedCells.add(key);
 		}
 	}
