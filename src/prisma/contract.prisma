@@ -1,2 +1,14 @@
 // use prisma-8
-// Contract inferred from the live database schema. Edit as needed, then run `prisma contract emit`.
+
+model Event {
+  id          String             @id @default(uuid())
+  slug        String             @unique
+  title       String
+  description String?
+  startDate   DateString
+  endDate     DateString
+  timezone    String
+  createdAt   TimestampString(3) @default(now())
+
+  @@map("events")
+}
