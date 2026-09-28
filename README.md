@@ -1,42 +1,70 @@
-# sv
+# neet
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+Internal availability scheduling tool for [NIAEFEUP](https://niaefeup.pt), inspired by [Lettuce Meet](https://lettucemeet.com). People submit their availabilities and the system cross-references them so the creator can easily find a time that works for everyone and schedule it.
 
-## Creating a project
+## Tech Stack
 
-If you're seeing this, you've probably already done this step. Congrats!
+- [SvelteKit](https://svelte.dev/docs/kit) — full-stack framework
+- [Svelte 5](https://svelte.dev) (runes mode) — UI
+- [TypeScript](https://www.typescriptlang.org/) — type safety
+- [Tailwind CSS 4](https://tailwindcss.com/) — styling
+- [Vite](https://vite.dev/) — build tool
+- [pnpm](https://pnpm.io/) — package manager
 
-```sh
-# create a new project
-npx sv create my-app
-```
+## Getting Started
 
-To recreate this project with the same configuration:
+### Prerequisites
 
-```sh
-# recreate this project
-pnpm dlx sv@0.17.1 create --template minimal --types ts --add tailwindcss="plugins:typography,forms" ai-tools="ide:claude-code,cursor,gemini,opencode,vscode,other+delivery:plugin+tools:mcp,svelte-code-writer,svelte-core-bestpractices,svelte-file-editor+mcpSetup:remote" --install pnpm neet
-```
+- [Node.js](https://nodejs.org/) (LTS recommended)
+- [pnpm](https://pnpm.io/installation)
 
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+### Setup
 
 ```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+pnpm install
 ```
 
-## Building
-
-To create a production version of your app:
+### Development
 
 ```sh
-npm run build
+pnpm dev
 ```
 
-You can preview the production build with `npm run preview`.
+The app will be available at `http://localhost:5173`.
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+### Build
+
+```sh
+pnpm build
+```
+
+Preview the production build:
+
+```sh
+pnpm preview
+```
+
+### Type checking
+
+```sh
+pnpm check
+```
+
+## Project Structure
+
+```
+src/
+├── lib/          # Shared utilities and components ($lib alias)
+├── routes/       # SvelteKit routes (pages)
+├── app.html      # HTML template
+└── app.d.ts      # Type declarations
+static/           # Static assets
+```
+
+## Deployment
+
+This project uses `@sveltejs/adapter-auto`. To deploy, install the appropriate adapter for your target environment and run `pnpm build`. See the [SvelteKit adapters docs](https://svelte.dev/docs/kit/adapters) for more info.
+
+## License
+
+Private — internal use by NIAEFEUP.
