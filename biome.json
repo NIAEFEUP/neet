@@ -6,7 +6,17 @@
 		"useIgnoreFile": true
 	},
 	"files": {
-		"ignoreUnknown": false
+		"ignoreUnknown": false,
+		"includes": [
+			"**",
+			"!.agents",
+			"!.claude",
+			"!.cursor",
+			"!.devin",
+			"!migrations",
+			"!src/prisma/contract.json",
+			"!src/prisma/contract.d.ts"
+		]
 	},
 	"css": {
 		"parser": {
