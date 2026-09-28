@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { enhance } from '$app/forms';
+// biome-ignore lint/correctness/noUnusedImports: used in markup
+import { enhance } from "$app/forms";
 </script>
 
 <div class="max-w-2xl mx-auto p-6 bg-white shadow rounded-xl mt-10">

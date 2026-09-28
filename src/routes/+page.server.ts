@@ -1,15 +1,15 @@
-import { fail, redirect } from '@sveltejs/kit';
-import { db } from '../prisma/db';
-import type { Actions } from './$types';
+import { fail, redirect } from "@sveltejs/kit";
+import { db } from "../prisma/db";
+import type { Actions } from "./$types";
 
 export const actions = {
 	default: async ({ request }) => {
 		const data = await request.formData();
-		const title = data.get('title');
-		const startDate = data.get('startDate');
-		const endDate = data.get('endDate');
-		const timezone = data.get('timezone');
-		const description = data.get('description');
+		const title = data.get("title");
+		const startDate = data.get("startDate");
+		const endDate = data.get("endDate");
+		const timezone = data.get("timezone");
+		const description = data.get("description");
 
 		if (!title || !startDate || !endDate || !timezone) {
 			return fail(400, { missing: true });
@@ -28,5 +28,5 @@ export const actions = {
 		});
 
 		redirect(303, `/e/${slug}`);
-	}
+	},
 } satisfies Actions;

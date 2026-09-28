@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { page } from '$app/stores';
+// biome-ignore lint/correctness/noUnusedImports: used in markup
+import { page } from "$app/stores";
 </script>
 
 <div class="max-w-2xl mx-auto p-6 bg-white shadow rounded-xl mt-10 text-center">
