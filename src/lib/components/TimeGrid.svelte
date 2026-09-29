@@ -21,6 +21,7 @@
 
 	const state = new TimeGridState({
 		initialSelected: selected,
+		getDays: () => days,
 		onSelectionChange: (newSelected) => {
 			selected = newSelected;
 			onchange?.(newSelected);
@@ -93,11 +94,12 @@
 					{formatHour(currentHour)}
 				</div>
 
-				{#each days as _, dayIndex (dayIndex)}
+				{#each days as day, dayIndex (dayIndex)}
 					<TimeGridCell
 						{dayIndex}
+						date={day}
 						hour={currentHour}
-						visualState={state.getCellVisualState(dayIndex, currentHour)}
+						visualState={state.getCellVisualState(day, currentHour)}
 						onmousedown={() => state.startMouseDrag({ dayIndex, hour: currentHour })}
 						ontouchstart={() => state.startTouchDrag({ dayIndex, hour: currentHour })}
 					/>

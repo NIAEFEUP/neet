@@ -1,28 +1,65 @@
+import { formatDateISO } from './date-utils';
 import type { CellCoord, CellVisualState } from './types';
 
 /**
  * Serializes a cell's coordinates to a unique string key.
+ * Can accept a Date object, an ISO date string ('YYYY-MM-DD'), or dayIndex number for fallback.
  */
-export function cellKey(dayIndex: number, hour: number): string {
-	return `${dayIndex}-${hour}`;
+export function cellKey(dateOrDay: Date | string | number, hour: number): string {
+	if (typeof dateOrDay === 'number') {
+		return `${dateOrDay}-${hour}`;
+	}
+	const dateStr = typeof dateOrDay === 'string' ? dateOrDay : formatDateISO(dateOrDay);
+	const hourStr = String(hour).padStart(2, '0');
+	return `${dateStr}T${hourStr}:00`;
 }
 
 /**
- * Parses a serialized cell key back into coordinates.
+ * Parses a serialized cell key back into date string and hour number, or dayIndex.
  */
-export function parseCellKey(key: string): CellCoord | null {
-	const parts = key.split('-');
-	if (parts.length !== 2) return null;
-	const dayIndex = Number(parts[0]);
-	const hour = Number(parts[1]);
-	if (Number.isNaN(dayIndex) || Number.isNaN(hour)) return null;
-	return { dayIndex, hour };
+export function parseCellKey(
+	key: string
+): { date: string; hour: number } | { dayIndex: number; hour: number } | null {
+	const isoMatch = /^(\d{4}-\d{2}-\d{2})T(\d{2}):00$/.exec(key);
+	if (isoMatch) {
+		return {
+			date: isoMatch[1],
+			hour: parseInt(isoMatch[2], 10)
+		};
+	}
+
+	const indexMatch = /^(\d+)-(\d+)$/.exec(key);
+	if (indexMatch) {
+		return {
+			dayIndex: parseInt(indexMatch[1], 10),
+			hour: parseInt(indexMatch[2], 10)
+		};
+	}
+
+	return null;
+}
+
+/**
+ * Converts a cell key directly to a JavaScript Date object in local time.
+ */
+export function cellKeyToDate(key: string): Date | null {
+	const parsed = parseCellKey(key);
+	if (!parsed || !('date' in parsed)) return null;
+	const [year, month, day] = parsed.date.split('-').map(Number);
+	return new Date(year, month - 1, day, parsed.hour, 0, 0, 0);
+}
+
+/**
+ * Converts a JavaScript Date object directly to a cell key.
+ */
+export function dateToCellKey(date: Date): string {
+	return cellKey(date, date.getHours());
 }
 
 /**
  * Computes all cell keys included in the 2D bounding rectangle between two cells.
  */
-export function getCellsInRect(start: CellCoord, end: CellCoord): string[] {
+export function getCellsInRect(start: CellCoord, end: CellCoord, days?: Date[]): string[] {
 	const minDay = Math.min(start.dayIndex, end.dayIndex);
 	const maxDay = Math.max(start.dayIndex, end.dayIndex);
 	const minHour = Math.min(start.hour, end.hour);
@@ -30,8 +67,9 @@ export function getCellsInRect(start: CellCoord, end: CellCoord): string[] {
 
 	const cells: string[] = [];
 	for (let d = minDay; d <= maxDay; d++) {
+		const dayRef = days?.[d] ?? d;
 		for (let h = minHour; h <= maxHour; h++) {
-			cells.push(cellKey(d, h));
+			cells.push(cellKey(dayRef, h));
 		}
 	}
 	return cells;

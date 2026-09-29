@@ -69,3 +69,14 @@ export function formatDayNumber(date: Date): string {
 export function formatHour(hour: number): string {
 	return `${hour.toString().padStart(2, '0')}:00`;
 }
+
+/**
+ * Formats a Date to ISO date string (YYYY-MM-DD) in local time.
+ */
+export function formatDateISO(date: Date): string {
+	const year = date.getFullYear();
+	const month = String(date.getMonth() + 1).padStart(2, '0');
+	const day = String(date.getDate()).padStart(2, '0');
+	return `${year}-${month}-${day}`;
+}
+

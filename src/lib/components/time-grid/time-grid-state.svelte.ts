@@ -1,9 +1,10 @@
-import { cellKey, getCellsInRect } from './grid-utils';
+import { cellKey, cellKeyToDate, getCellsInRect } from './grid-utils';
 import type { CellCoord, CellVisualState, SelectedCells } from './types';
 
 export interface TimeGridStateOptions {
 	initialSelected?: SelectedCells;
 	onSelectionChange?: (selected: SelectedCells) => void;
+	getDays?: () => Date[];
 }
 
 export class TimeGridState {
@@ -16,12 +17,18 @@ export class TimeGridState {
 
 	private touchPaintedCells = new Set<string>();
 	private onSelectionChange?: (selected: SelectedCells) => void;
+	private getDays?: () => Date[];
+
+	get days(): Date[] {
+		return this.getDays?.() ?? [];
+	}
 
 	constructor(options?: TimeGridStateOptions) {
 		if (options?.initialSelected) {
 			this.selectedCells = { ...options.initialSelected };
 		}
 		this.onSelectionChange = options?.onSelectionChange;
+		this.getDays = options?.getDays;
 	}
 
 	setSelectedCells(cells: SelectedCells): void {
@@ -32,25 +39,33 @@ export class TimeGridState {
 		this.onSelectionChange?.(this.selectedCells);
 	}
 
+	resolveKey(dateOrDayIndex: Date | string | number, hour: number): string {
+		if (typeof dateOrDayIndex === 'number') {
+			const day = this.days[dateOrDayIndex];
+			if (day) return cellKey(day, hour);
+		}
+		return cellKey(dateOrDayIndex, hour);
+	}
+
 	selectionRect = $derived.by(() => {
 		if (!this.dragStartCell || !this.dragEndCell) return null;
-		return getCellsInRect(this.dragStartCell, this.dragEndCell);
+		return getCellsInRect(this.dragStartCell, this.dragEndCell, this.days);
 	});
 
 	selectedCount = $derived(Object.keys(this.selectedCells).length);
 
-	isSelected(dayIndex: number, hour: number): boolean {
-		return !!this.selectedCells[cellKey(dayIndex, hour)];
+	isSelected(dateOrDayIndex: Date | string | number, hour: number): boolean {
+		return !!this.selectedCells[this.resolveKey(dateOrDayIndex, hour)];
 	}
 
-	isInDragSelection(dayIndex: number, hour: number): boolean {
-		return this.selectionRect?.includes(cellKey(dayIndex, hour)) ?? false;
+	isInDragSelection(dateOrDayIndex: Date | string | number, hour: number): boolean {
+		return this.selectionRect?.includes(this.resolveKey(dateOrDayIndex, hour)) ?? false;
 	}
 
-	getCellVisualState(dayIndex: number, hour: number): CellVisualState {
-		const key = cellKey(dayIndex, hour);
+	getCellVisualState(dateOrDayIndex: Date | string | number, hour: number): CellVisualState {
+		const key = this.resolveKey(dateOrDayIndex, hour);
 
-		if (this.isInDragSelection(dayIndex, hour)) {
+		if (this.isInDragSelection(dateOrDayIndex, hour)) {
 			return this.paintMode ? 'actively-painting' : 'actively-unpainting';
 		}
 
@@ -66,7 +81,7 @@ export class TimeGridState {
 	}
 
 	startMouseDrag(coord: CellCoord): void {
-		const key = cellKey(coord.dayIndex, coord.hour);
+		const key = this.resolveKey(coord.dayIndex, coord.hour);
 		this.isDragging = true;
 		this.paintMode = !this.selectedCells[key];
 		this.dragStartCell = coord;
@@ -100,7 +115,7 @@ export class TimeGridState {
 	}
 
 	startTouchDrag(coord: CellCoord): void {
-		const key = cellKey(coord.dayIndex, coord.hour);
+		const key = this.resolveKey(coord.dayIndex, coord.hour);
 		this.isDragging = true;
 		this.paintMode = !this.selectedCells[key];
 		this.touchPaintedCells.clear();
@@ -121,7 +136,7 @@ export class TimeGridState {
 	updateTouchDrag(coord: CellCoord): void {
 		if (!this.isDragging) return;
 
-		const key = cellKey(coord.dayIndex, coord.hour);
+		const key = this.resolveKey(coord.dayIndex, coord.hour);
 		if (!this.touchPaintedCells.has(key)) {
 			if (this.paintMode) {
 				this.selectedCells = { ...this.selectedCells, [key]: true };
@@ -149,5 +164,15 @@ export class TimeGridState {
 		this.dragEndCell = null;
 		this.isDragging = false;
 		this.notifyChange();
+	}
+
+	getSelectedISOStrings(): string[] {
+		return Object.keys(this.selectedCells).filter((key) => this.selectedCells[key]);
+	}
+
+	getSelectedDates(): Date[] {
+		return this.getSelectedISOStrings()
+			.map(cellKeyToDate)
+			.filter((d): d is Date => d !== null);
 	}
 }
