@@ -5,15 +5,33 @@
 	import TimeGridCell from './time-grid/TimeGridCell.svelte';
 	import TimeGridDaysHeader from './time-grid/TimeGridDaysHeader.svelte';
 	import TimeGridHeader from './time-grid/TimeGridHeader.svelte';
-	import type { CalendarEvent } from './time-grid/types';
+	import type { CalendarEvent, SelectedCells } from './time-grid/types';
 
 	interface Props {
 		events?: CalendarEvent[];
+		selected?: SelectedCells;
+		onchange?: (selected: SelectedCells) => void;
 	}
 
-	let { events = [] }: Props = $props();
+	let {
+		events = [],
+		selected = $bindable({}),
+		onchange
+	}: Props = $props();
 
-	const state = new TimeGridState();
+	const state = new TimeGridState({
+		initialSelected: selected,
+		onSelectionChange: (newSelected) => {
+			selected = newSelected;
+			onchange?.(newSelected);
+		}
+	});
+
+	$effect(() => {
+		if (selected !== state.selectedCells) {
+			state.setSelectedCells(selected);
+		}
+	});
 
 	let days = $derived(computeDays(events));
 	let hours = $derived(computeHours(events));

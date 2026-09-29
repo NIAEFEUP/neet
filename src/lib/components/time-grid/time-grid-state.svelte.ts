@@ -1,8 +1,13 @@
 import { cellKey, getCellsInRect } from './grid-utils';
-import type { CellCoord, CellVisualState } from './types';
+import type { CellCoord, CellVisualState, SelectedCells } from './types';
+
+export interface TimeGridStateOptions {
+	initialSelected?: SelectedCells;
+	onSelectionChange?: (selected: SelectedCells) => void;
+}
 
 export class TimeGridState {
-	selectedCells = $state<Record<string, boolean>>({});
+	selectedCells = $state<SelectedCells>({});
 	isDragging = $state(false);
 	paintMode = $state(true);
 	dragStartCell = $state<CellCoord | null>(null);
@@ -10,6 +15,22 @@ export class TimeGridState {
 	unpaintingCells = $state<string[]>([]);
 
 	private touchPaintedCells = new Set<string>();
+	private onSelectionChange?: (selected: SelectedCells) => void;
+
+	constructor(options?: TimeGridStateOptions) {
+		if (options?.initialSelected) {
+			this.selectedCells = { ...options.initialSelected };
+		}
+		this.onSelectionChange = options?.onSelectionChange;
+	}
+
+	setSelectedCells(cells: SelectedCells): void {
+		this.selectedCells = { ...cells };
+	}
+
+	private notifyChange(): void {
+		this.onSelectionChange?.(this.selectedCells);
+	}
 
 	selectionRect = $derived.by(() => {
 		if (!this.dragStartCell || !this.dragEndCell) return null;
@@ -70,6 +91,7 @@ export class TimeGridState {
 				}
 			}
 			this.selectedCells = next;
+			this.notifyChange();
 		}
 
 		this.isDragging = false;
@@ -93,6 +115,7 @@ export class TimeGridState {
 			this.unpaintingCells = [key];
 		}
 		this.touchPaintedCells.add(key);
+		this.notifyChange();
 	}
 
 	updateTouchDrag(coord: CellCoord): void {
@@ -109,6 +132,7 @@ export class TimeGridState {
 				this.unpaintingCells = [...this.unpaintingCells, key];
 			}
 			this.touchPaintedCells.add(key);
+			this.notifyChange();
 		}
 	}
 
@@ -124,5 +148,6 @@ export class TimeGridState {
 		this.dragStartCell = null;
 		this.dragEndCell = null;
 		this.isDragging = false;
+		this.notifyChange();
 	}
 }

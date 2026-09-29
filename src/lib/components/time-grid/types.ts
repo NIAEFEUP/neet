@@ -17,3 +17,5 @@ export type CellVisualState =
 	| 'actively-painting'
 	| 'painted'
 	| 'actively-unpainting';
+
+export type SelectedCells = Record<CellKey, boolean>;
