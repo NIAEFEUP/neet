@@ -50,7 +50,9 @@
 
 	function handleTouchMove(e: TouchEvent) {
 		if (!state.isDragging) return;
-		e.preventDefault();
+		if (e.cancelable) {
+			e.preventDefault();
+		}
 
 		const touch = e.touches[0];
 		if (!touch) return;
@@ -70,6 +72,11 @@
 	onmouseup={handleMouseUp}
 	ontouchmove={handleTouchMove}
 	ontouchend={handleTouchEnd}
+	ontouchcancel={handleTouchEnd}
+	onblur={() => {
+		state.endMouseDrag();
+		state.endTouchDrag();
+	}}
 />
 
 <div class="p-4">
@@ -78,9 +85,9 @@
 		onClear={() => state.clearSelection()}
 	/>
 
-	<div class="overflow-auto border border-gray-200 rounded-lg max-h-[70vh]">
+	<div class="overflow-auto border border-gray-200 rounded-lg max-h-[70vh] overscroll-contain">
 		<div
-			class="grid select-none min-w-150 cursor-crosshair"
+			class="grid select-none min-w-150 cursor-crosshair touch-none"
 			role="grid"
 			style="grid-template-columns: 60px repeat({days.length}, 1fr); grid-auto-rows: 40px;"
 		>

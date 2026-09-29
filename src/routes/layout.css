@@ -1,3 +1,7 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/forms";
 @plugin "@tailwindcss/typography";
+
+html {
+	-webkit-tap-highlight-color: transparent;
+}
