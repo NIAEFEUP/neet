@@ -5,21 +5,31 @@ import type { Actions } from "./$types";
 export const actions = {
 	default: async ({ request }) => {
 		const data = await request.formData();
-		const title = data.get("title");
-		const startDate = data.get("startDate");
-		const endDate = data.get("endDate");
-		const timezone = data.get("timezone");
-		const description = data.get("description");
+		const titleStr = data.get("title")?.toString().trim() ?? "";
+		const startDateStr = data.get("startDate")?.toString().trim() ?? "";
+		const endDateStr = data.get("endDate")?.toString().trim() ?? "";
+		const timezoneStr = data.get("timezone")?.toString().trim() ?? "";
+		const descriptionStr = data.get("description")?.toString().trim() ?? "";
 
-		if (!title || !startDate || !endDate || !timezone) {
+		const formData = {
+			title: titleStr,
+			description: descriptionStr,
+			startDate: startDateStr,
+			endDate: endDateStr,
+			timezone: timezoneStr,
+		};
+
+		if (!titleStr || !startDateStr || !endDateStr || !timezoneStr) {
 			return fail(400, {
+				...formData,
 				success: false,
 				message: "All required fields must be filled out.",
 			});
 		}
 
-		if (new Date(startDate.toString()) > new Date(endDate.toString())) {
+		if (new Date(startDateStr) > new Date(endDateStr)) {
 			return fail(400, {
+				...formData,
 				success: false,
 				message: "Start date cannot be after end date.",
 			});
@@ -31,15 +41,16 @@ export const actions = {
 			slug = crypto.randomUUID().slice(0, 8);
 
 			await db.orm.public.Event.create({
-				title: title.toString(),
-				description: description ? description.toString() : null,
-				startDate: startDate.toString(),
-				endDate: endDate.toString(),
-				timezone: timezone.toString(),
+				title: titleStr,
+				description: descriptionStr ? descriptionStr : null,
+				startDate: startDateStr,
+				endDate: endDateStr,
+				timezone: timezoneStr,
 				slug,
 			});
 		} catch {
 			return fail(500, {
+				...formData,
 				success: false,
 				message: "Failed to create event. Please try again.",
 			});

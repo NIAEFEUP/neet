@@ -41,22 +41,22 @@ const handleEnhance = () => {
   <form method="POST" use:enhance={handleEnhance} class="space-y-4">
     <div>
       <label class="block text-sm font-medium text-gray-700" for="title">Event Title</label>
-      <input type="text" name="title" id="title" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500" placeholder="e.g. Project Kickoff">
+      <input type="text" name="title" id="title" required value={form?.title ?? ""} class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500" placeholder="e.g. Project Kickoff">
     </div>
 
     <div>
       <label class="block text-sm font-medium text-gray-700" for="description">Description (optional)</label>
-      <textarea name="description" id="description" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"></textarea>
+      <textarea name="description" id="description" rows="3" value={form?.description ?? ""} class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"></textarea>
     </div>
 
     <div class="grid grid-cols-2 gap-4">
       <div>
         <label class="block text-sm font-medium text-gray-700" for="startDate">Start Date</label>
-        <input type="date" name="startDate" id="startDate" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
+        <input type="date" name="startDate" id="startDate" required value={form?.startDate ?? ""} class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700" for="endDate">End Date</label>
-        <input type="date" name="endDate" id="endDate" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
+        <input type="date" name="endDate" id="endDate" required value={form?.endDate ?? ""} class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
       </div>
     </div>
 
