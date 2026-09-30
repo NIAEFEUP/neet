@@ -1,10 +1,21 @@
 <script lang="ts">
 // biome-ignore lint/correctness/noUnusedImports: used in markup
 import { enhance } from "$app/forms";
+import type { ActionData } from "./$types";
+
+// biome-ignore lint/correctness/noUnusedVariables: used in markup
+let { form } = $props<{ form: ActionData }>();
 </script>
 
 <div class="max-w-2xl mx-auto p-6 bg-white shadow rounded-xl mt-10">
   <h1 class="text-3xl font-bold mb-6 text-green-700">Create an Event</h1>
+
+  {#if form?.message}
+    <div class="mb-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-700">
+      <p>{form.message}</p>
+    </div>
+  {/if}
+
   <form method="POST" use:enhance class="space-y-4">
     <div>
       <label class="block text-sm font-medium text-gray-700" for="title">Event Title</label>

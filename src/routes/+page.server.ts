@@ -12,20 +12,38 @@ export const actions = {
 		const description = data.get("description");
 
 		if (!title || !startDate || !endDate || !timezone) {
-			return fail(400, { missing: true });
+			return fail(400, {
+				success: false,
+				message: "All required fields must be filled out.",
+			});
 		}
 
-		// Generate a simple 8-character hex string for the URL
-		const slug = crypto.randomUUID().slice(0, 8);
+		if (new Date(startDate.toString()) > new Date(endDate.toString())) {
+			return fail(400, {
+				success: false,
+				message: "Start date cannot be after end date.",
+			});
+		}
 
-		await db.orm.public.Event.create({
-			title: title.toString(),
-			description: description ? description.toString() : null,
-			startDate: startDate.toString(),
-			endDate: endDate.toString(),
-			timezone: timezone.toString(),
-			slug,
-		});
+		let slug: string;
+		try {
+			// Generate a simple 8-character hex string for the URL
+			slug = crypto.randomUUID().slice(0, 8);
+
+			await db.orm.public.Event.create({
+				title: title.toString(),
+				description: description ? description.toString() : null,
+				startDate: startDate.toString(),
+				endDate: endDate.toString(),
+				timezone: timezone.toString(),
+				slug,
+			});
+		} catch {
+			return fail(500, {
+				success: false,
+				message: "Failed to create event. Please try again.",
+			});
+		}
 
 		redirect(303, `/e/${slug}`);
 	},
