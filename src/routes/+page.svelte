@@ -1,4 +1,5 @@
 <script lang="ts">
+import type { SubmitFunction } from "@sveltejs/kit";
 // biome-ignore lint/correctness/noUnusedImports: used in markup
 import { enhance } from "$app/forms";
 import type { ActionData } from "./$types";
@@ -8,7 +9,6 @@ let { form } = $props<{ form: ActionData }>();
 
 // biome-ignore lint/correctness/noUnusedVariables: used in markup
 const timezones = Intl.supportedValuesOf("timeZone");
-// biome-ignore lint/correctness/noUnusedVariables: used in markup
 // biome-ignore lint/correctness/noUnusedVariables: used in markup
 let selectedTimezone = $state("Europe/Lisbon");
 
@@ -20,7 +20,7 @@ $effect(() => {
 });
 
 // biome-ignore lint/correctness/noUnusedVariables: used in markup
-const handleEnhance = () => {
+const handleEnhance: SubmitFunction = () => {
 	isSubmitting = true;
 	return async ({ update }) => {
 		await update();

@@ -58,7 +58,8 @@ export const actions = {
 			});
 		}
 
-		const daysDifference = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+		const daysDifference =
+			(end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
 		if (daysDifference > 30) {
 			return fail(400, {
 				...formData,
@@ -71,7 +72,8 @@ export const actions = {
 			return fail(400, {
 				...formData,
 				success: false,
-				message: "Both start time and end time must be provided if limiting daily hours.",
+				message:
+					"Both start time and end time must be provided if limiting daily hours.",
 			});
 		}
 
@@ -102,9 +104,14 @@ export const actions = {
 						slug,
 					});
 					success = true;
-				} catch (e: any) {
+				} catch (e) {
 					// Check for Prisma unique constraint violation (P2002)
-					if (e.code === 'P2002' || e.message?.includes('Unique constraint failed')) {
+					// biome-ignore lint/suspicious/noExplicitAny: catching unknown error
+					if (
+						(e as any).code === "P2002" ||
+						// biome-ignore lint/suspicious/noExplicitAny: catching unknown error
+						(e as any).message?.includes("Unique constraint failed")
+					) {
 						attempts++;
 					} else {
 						throw e; // throw other errors to be caught by outer catch
@@ -113,7 +120,7 @@ export const actions = {
 			}
 
 			if (!success) {
-				throw new Error('Failed to generate a unique slug.');
+				throw new Error("Failed to generate a unique slug.");
 			}
 		} catch {
 			return fail(500, {
