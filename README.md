@@ -21,23 +21,27 @@ Internal availability scheduling tool for [NIAEFEUP](https://niaefeup.pt), inspi
 ### Setup
 
 1. **Install dependencies:**
+
    ```sh
    pnpm install
    ```
 
 2. **Set up environment variables:**
+
    ```sh
    cp .env.example .env
    ```
 
 3. **Start the database:**
    Make sure you have Docker installed and running, then start the local PostgreSQL database:
+
    ```sh
    docker compose up -d
    ```
 
 4. **Initialize Prisma:**
    Initialize the database with your Prisma contract (this creates the tables):
+
    ```sh
    pnpm prisma db init
    ```
@@ -93,4 +97,4 @@ This project uses `@sveltejs/adapter-auto`. To deploy, install the appropriate a
 
 ## License
 
-Private — internal use by NIAEFEUP.
+This project is licensed under the [GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0).
