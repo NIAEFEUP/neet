@@ -77,6 +77,17 @@ export const actions = {
 			});
 		}
 
+		if (
+			(startTimeStr && !startTimeStr.endsWith(":00")) ||
+			(endTimeStr && !endTimeStr.endsWith(":00"))
+		) {
+			return fail(400, {
+				...formData,
+				success: false,
+				message: "Start and end times must be on the full hour (e.g. 09:00).",
+			});
+		}
+
 		if (startTimeStr && endTimeStr && startTimeStr >= endTimeStr) {
 			return fail(400, {
 				...formData,
