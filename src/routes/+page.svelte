@@ -5,6 +5,15 @@ import type { ActionData } from "./$types";
 
 // biome-ignore lint/correctness/noUnusedVariables: used in markup
 let { form } = $props<{ form: ActionData }>();
+
+// biome-ignore lint/correctness/noUnusedVariables: used in markup
+const timezones = Intl.supportedValuesOf("timeZone");
+// biome-ignore lint/correctness/noUnusedVariables: used in markup
+let selectedTimezone = $state("Europe/Lisbon");
+
+$effect(() => {
+	selectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+});
 </script>
 
 <div class="max-w-2xl mx-auto p-6 bg-white shadow rounded-xl mt-10">
@@ -40,14 +49,10 @@ let { form } = $props<{ form: ActionData }>();
 
     <div>
       <label class="block text-sm font-medium text-gray-700" for="timezone">Timezone</label>
-      <select name="timezone" id="timezone" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
-        <option value="America/New_York">Eastern Time (ET)</option>
-        <option value="America/Chicago">Central Time (CT)</option>
-        <option value="America/Denver">Mountain Time (MT)</option>
-        <option value="America/Los_Angeles">Pacific Time (PT)</option>
-        <option value="Europe/London">London (GMT)</option>
-        <option value="Europe/Lisbon">Lisbon (WET)</option>
-        <option value="Europe/Paris">Paris (CET)</option>
+      <select name="timezone" id="timezone" required bind:value={selectedTimezone} class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
+        {#each timezones as tz}
+          <option value={tz}>{tz}</option>
+        {/each}
       </select>
     </div>
 
