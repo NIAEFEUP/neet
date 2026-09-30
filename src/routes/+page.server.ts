@@ -10,16 +10,36 @@ export const actions = {
 		const endDateStr = data.get("endDate")?.toString().trim() ?? "";
 		const timezoneStr = data.get("timezone")?.toString().trim() ?? "";
 		const descriptionStr = data.get("description")?.toString().trim() ?? "";
-		const startTimeStr = data.get("startTime")?.toString().trim() || null;
-		const endTimeStr = data.get("endTime")?.toString().trim() || null;
+		const startHourStr = data.get("startHour")?.toString().trim() || null;
+		const startPeriodStr = data.get("startPeriod")?.toString().trim() || "AM";
+		const endHourStr = data.get("endHour")?.toString().trim() || null;
+		const endPeriodStr = data.get("endPeriod")?.toString().trim() || "AM";
+
+		let startTimeStr: string | null = null;
+		if (startHourStr) {
+			let h = Number.parseInt(startHourStr, 10);
+			if (startPeriodStr === "PM" && h < 12) h += 12;
+			if (startPeriodStr === "AM" && h === 12) h = 0;
+			startTimeStr = `${h.toString().padStart(2, "0")}:00`;
+		}
+
+		let endTimeStr: string | null = null;
+		if (endHourStr) {
+			let h = Number.parseInt(endHourStr, 10);
+			if (endPeriodStr === "PM" && h < 12) h += 12;
+			if (endPeriodStr === "AM" && h === 12) h = 0;
+			endTimeStr = `${h.toString().padStart(2, "0")}:00`;
+		}
 
 		const formData = {
 			title: titleStr,
 			description: descriptionStr,
 			startDate: startDateStr,
 			endDate: endDateStr,
-			startTime: startTimeStr,
-			endTime: endTimeStr,
+			startHour: startHourStr,
+			startPeriod: startPeriodStr,
+			endHour: endHourStr,
+			endPeriod: endPeriodStr,
 			timezone: timezoneStr,
 		};
 

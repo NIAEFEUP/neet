@@ -62,24 +62,34 @@ const handleEnhance: SubmitFunction = () => {
 
     <div class="grid grid-cols-2 gap-4">
       <div>
-        <label class="block text-sm font-medium text-gray-700" for="startTime">Daily Start Time (Optional)</label>
-        <select name="startTime" id="startTime" value={form?.startTime ?? ""} class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
-          <option value="">Any time</option>
-          {#each Array.from({ length: 24 }) as _, i}
-            {@const hour = i.toString().padStart(2, '0') + ':00'}
-            <option value={hour}>{hour}</option>
-          {/each}
-        </select>
+        <label class="block text-sm font-medium text-gray-700" for="startHour">Daily Start Time (Optional)</label>
+        <div class="mt-1 flex gap-2">
+          <select name="startHour" id="startHour" value={form?.startHour ?? ""} class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
+            <option value="">Any time</option>
+            {#each Array.from({ length: 12 }) as _, i}
+              <option value={i + 1}>{i + 1}:00</option>
+            {/each}
+          </select>
+          <select name="startPeriod" value={form?.startPeriod ?? "AM"} class="block rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
+            <option value="AM">AM</option>
+            <option value="PM">PM</option>
+          </select>
+        </div>
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700" for="endTime">Daily End Time (Optional)</label>
-        <select name="endTime" id="endTime" value={form?.endTime ?? ""} class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
-          <option value="">Any time</option>
-          {#each Array.from({ length: 24 }) as _, i}
-            {@const hour = i.toString().padStart(2, '0') + ':00'}
-            <option value={hour}>{hour}</option>
-          {/each}
-        </select>
+        <label class="block text-sm font-medium text-gray-700" for="endHour">Daily End Time (Optional)</label>
+        <div class="mt-1 flex gap-2">
+          <select name="endHour" id="endHour" value={form?.endHour ?? ""} class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
+            <option value="">Any time</option>
+            {#each Array.from({ length: 12 }) as _, i}
+              <option value={i + 1}>{i + 1}:00</option>
+            {/each}
+          </select>
+          <select name="endPeriod" value={form?.endPeriod ?? "AM"} class="block rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
+            <option value="AM">AM</option>
+            <option value="PM">PM</option>
+          </select>
+        </div>
       </div>
     </div>
 
