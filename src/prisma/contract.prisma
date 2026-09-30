@@ -7,6 +7,8 @@ model Event {
   description String?
   startDate   DateString
   endDate     DateString
+  startTime   String?
+  endTime     String?
   timezone    String
   createdAt   TimestampString(3) @default(now())
 

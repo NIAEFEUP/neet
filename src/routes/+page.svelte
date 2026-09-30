@@ -60,6 +60,17 @@ const handleEnhance = () => {
       </div>
     </div>
 
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700" for="startTime">Daily Start Time (Optional)</label>
+        <input type="time" name="startTime" id="startTime" value={form?.startTime ?? ""} class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700" for="endTime">Daily End Time (Optional)</label>
+        <input type="time" name="endTime" id="endTime" value={form?.endTime ?? ""} class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
+      </div>
+    </div>
+
     <div>
       <label class="block text-sm font-medium text-gray-700" for="timezone">Timezone</label>
       <select name="timezone" id="timezone" required bind:value={selectedTimezone} class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">

@@ -13,9 +13,21 @@ let { data } = $props<{ data: PageData }>();
 		<p class="text-gray-600 mb-6">{data.event.description}</p>
 	{/if}
 	
-	<div class="mb-6 inline-flex items-center space-x-2 text-sm text-gray-500 bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
-		<span>📅</span>
-		<span>{data.event.startDate} to {data.event.endDate} ({data.event.timezone})</span>
+	<div class="mb-6 inline-flex flex-col items-center space-y-1 text-sm text-gray-500 bg-gray-50 px-4 py-2 rounded-lg border border-gray-100">
+		<div class="flex items-center space-x-2">
+			<span>📅</span>
+			<span>{data.event.startDate} to {data.event.endDate}</span>
+		</div>
+		<div class="flex items-center space-x-2 text-xs">
+			<span>⏰</span>
+			<span>
+				{#if data.event.startTime && data.event.endTime}
+					{data.event.startTime} - {data.event.endTime} ({data.event.timezone})
+				{:else}
+					All Day ({data.event.timezone})
+				{/if}
+			</span>
+		</div>
 	</div>
 
 	<p class="text-gray-600 mb-6">Share this URL with your guests to invite them.</p>

@@ -10,12 +10,16 @@ export const actions = {
 		const endDateStr = data.get("endDate")?.toString().trim() ?? "";
 		const timezoneStr = data.get("timezone")?.toString().trim() ?? "";
 		const descriptionStr = data.get("description")?.toString().trim() ?? "";
+		const startTimeStr = data.get("startTime")?.toString().trim() || null;
+		const endTimeStr = data.get("endTime")?.toString().trim() || null;
 
 		const formData = {
 			title: titleStr,
 			description: descriptionStr,
 			startDate: startDateStr,
 			endDate: endDateStr,
+			startTime: startTimeStr,
+			endTime: endTimeStr,
 			timezone: timezoneStr,
 		};
 
@@ -27,7 +31,26 @@ export const actions = {
 			});
 		}
 
-		if (new Date(startDateStr) > new Date(endDateStr)) {
+		if (!Intl.supportedValuesOf("timeZone").includes(timezoneStr)) {
+			return fail(400, {
+				...formData,
+				success: false,
+				message: "Invalid timezone selected.",
+			});
+		}
+
+		const start = new Date(startDateStr);
+		const end = new Date(endDateStr);
+
+		if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+			return fail(400, {
+				...formData,
+				success: false,
+				message: "Invalid date format.",
+			});
+		}
+
+		if (start > end) {
 			return fail(400, {
 				...formData,
 				success: false,
@@ -35,19 +58,63 @@ export const actions = {
 			});
 		}
 
-		let slug: string;
-		try {
-			// Generate a simple 8-character hex string for the URL
-			slug = crypto.randomUUID().slice(0, 8);
-
-			await db.orm.public.Event.create({
-				title: titleStr,
-				description: descriptionStr ? descriptionStr : null,
-				startDate: startDateStr,
-				endDate: endDateStr,
-				timezone: timezoneStr,
-				slug,
+		const daysDifference = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+		if (daysDifference > 30) {
+			return fail(400, {
+				...formData,
+				success: false,
+				message: "Events cannot be longer than 30 days.",
 			});
+		}
+
+		if ((startTimeStr && !endTimeStr) || (!startTimeStr && endTimeStr)) {
+			return fail(400, {
+				...formData,
+				success: false,
+				message: "Both start time and end time must be provided if limiting daily hours.",
+			});
+		}
+
+		if (startTimeStr && endTimeStr && startTimeStr >= endTimeStr) {
+			return fail(400, {
+				...formData,
+				success: false,
+				message: "Daily start time must be before end time.",
+			});
+		}
+
+		let slug = "";
+		let success = false;
+		let attempts = 0;
+
+		try {
+			while (!success && attempts < 5) {
+				slug = crypto.randomUUID().slice(0, 8);
+				try {
+					await db.orm.public.Event.create({
+						title: titleStr,
+						description: descriptionStr ? descriptionStr : null,
+						startDate: startDateStr,
+						endDate: endDateStr,
+						startTime: startTimeStr,
+						endTime: endTimeStr,
+						timezone: timezoneStr,
+						slug,
+					});
+					success = true;
+				} catch (e: any) {
+					// Check for Prisma unique constraint violation (P2002)
+					if (e.code === 'P2002' || e.message?.includes('Unique constraint failed')) {
+						attempts++;
+					} else {
+						throw e; // throw other errors to be caught by outer catch
+					}
+				}
+			}
+
+			if (!success) {
+				throw new Error('Failed to generate a unique slug.');
+			}
 		} catch {
 			return fail(500, {
 				...formData,
