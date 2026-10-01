@@ -78,6 +78,12 @@ pnpm preview
 pnpm check
 ```
 
+### Git hooks
+
+`pnpm install` sets up a [husky](https://typicode.github.io/husky/) `pre-commit` hook that runs [lint-staged](https://github.com/lint-staged/lint-staged) with Biome on staged files, applying safe fixes before each commit.
+
+Skip it for a single commit with `git commit --no-verify`, or disable hooks entirely with `HUSKY=0`.
+
 ## Project Structure
 
 ```
