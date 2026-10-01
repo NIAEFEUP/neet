@@ -163,7 +163,8 @@ export const actions = {
 			if (!success) {
 				throw new Error("Failed to generate a unique event ID.");
 			}
-		} catch {
+		} catch (e) {
+			console.error("CREATE EVENT ERROR:", e);
 			return fail(500, {
 				...formData,
 				success: false,

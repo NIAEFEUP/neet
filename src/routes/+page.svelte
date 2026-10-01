@@ -67,7 +67,7 @@ const handleEnhance: SubmitFunction = () => {
           <select name="startHour" id="startHour" value={form?.startHour ?? ""} class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
             <option value="">Any time</option>
             {#each Array.from({ length: 12 }) as _, i}
-              <option value={i + 1}>{i + 1}:00</option>
+              <option value={(i + 1).toString()}>{i + 1}:00</option>
             {/each}
           </select>
           <select name="startPeriod" value={form?.startPeriod ?? "AM"} class="block rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
@@ -82,7 +82,7 @@ const handleEnhance: SubmitFunction = () => {
           <select name="endHour" id="endHour" value={form?.endHour ?? ""} class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
             <option value="">Any time</option>
             {#each Array.from({ length: 12 }) as _, i}
-              <option value={i + 1}>{i + 1}:00</option>
+              <option value={(i + 1).toString()}>{i + 1}:00</option>
             {/each}
           </select>
           <select name="endPeriod" value={form?.endPeriod ?? "AM"} class="block rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500">
