@@ -8,11 +8,12 @@
 		"dev": "vite dev",
 		"build": "vite build",
 		"preview": "vite preview",
-		"prepare": "svelte-kit sync || echo ''",
+		"prepare": "(svelte-kit sync || echo '') && husky",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"contract:emit": "prisma contract emit",
-		"studio": "node -e \"require('dotenv').config(); require('child_process').execSync('cd .. && npx --yes prisma@prev studio --url ' + process.env.DATABASE_URL, {stdio: 'inherit'})\""
+		"studio": "node -e \"require('dotenv').config(); require('child_process').execSync('cd .. && npx --yes prisma@prev studio --url ' + process.env.DATABASE_URL, {stdio: 'inherit'})\"",
+		"seed": "tsx src/prisma/seed.ts"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.5.14",
@@ -24,6 +25,8 @@
 		"@tailwindcss/typography": "^0.5.19",
 		"@tailwindcss/vite": "^4.3.0",
 		"@types/node": "^26.6.3",
+		"husky": "^9.1.7",
+		"lint-staged": "^17.6.0",
 		"prisma": "8.0.0-rc.17",
 		"svelte": "^5.56.1",
 		"svelte-check": "^4.6.0",
@@ -34,6 +37,7 @@
 	},
 	"dependencies": {
 		"@prisma/orm-postgres": "8.0.0-rc.12",
-		"dotenv": "^18.0.4"
+		"dotenv": "^18.0.4",
+		"temporal-polyfill": "^1.0.5"
 	}
 }

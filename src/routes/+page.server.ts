@@ -116,27 +116,34 @@ export const actions = {
 			});
 		}
 
-		let slug = "";
+		// Calculate array of proposed dates
+		const proposedDates: Date[] = [];
+		const currentDate = new Date(start);
+		while (currentDate <= end) {
+			proposedDates.push(new Date(currentDate));
+			currentDate.setDate(currentDate.getDate() + 1);
+		}
+
+		let id = "";
 		let success = false;
 		let attempts = 0;
 
 		try {
 			while (!success && attempts < 5) {
-				slug = crypto.randomUUID().slice(0, 8);
+				// We still use a small retry loop in case UUIDv7 generation collides on the same millisecond (extremely rare but good practice)
 				try {
-					await db.orm.public.Event.create({
+					const event = await db.orm.public.Event.create({
 						title: titleStr,
 						description: descriptionStr ? descriptionStr : null,
-						startDate: startDateStr,
-						endDate: endDateStr,
+						timezone: timezoneStr,
+						proposedDates,
 						startTime: startTimeStr,
 						endTime: endTimeStr,
-						timezone: timezoneStr,
-						slug,
 					});
+					id = event.id;
 					success = true;
 				} catch (e) {
-					// Check for Prisma unique constraint violation (P2002)
+					// Check for Prisma unique constraint violation
 					// biome-ignore lint/suspicious/noExplicitAny: catching unknown error
 					if (
 						(e as any).code === "P2002" ||
@@ -145,13 +152,13 @@ export const actions = {
 					) {
 						attempts++;
 					} else {
-						throw e; // throw other errors to be caught by outer catch
+						throw e;
 					}
 				}
 			}
 
 			if (!success) {
-				throw new Error("Failed to generate a unique slug.");
+				throw new Error("Failed to generate a unique event ID.");
 			}
 		} catch {
 			return fail(500, {
@@ -161,6 +168,6 @@ export const actions = {
 			});
 		}
 
-		redirect(303, `/e/${slug}`);
+		redirect(303, `/e/${id}`);
 	},
 } satisfies Actions;
