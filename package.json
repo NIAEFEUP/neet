@@ -10,7 +10,8 @@
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-		"contract:emit": "prisma contract emit"
+		"contract:emit": "prisma contract emit",
+		"seed": "tsx src/prisma/seed.ts"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.5.14",
@@ -32,6 +33,7 @@
 	},
 	"dependencies": {
 		"@prisma/orm-postgres": "8.0.0-rc.12",
-		"dotenv": "^18.0.4"
+		"dotenv": "^18.0.4",
+		"temporal-polyfill": "^1.0.5"
 	}
 }
