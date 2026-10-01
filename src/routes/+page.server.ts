@@ -1,4 +1,5 @@
 import { fail, redirect } from "@sveltejs/kit";
+import { Temporal } from "temporal-polyfill";
 import { db } from "../prisma/db";
 import type { Actions } from "./$types";
 
@@ -116,12 +117,14 @@ export const actions = {
 			});
 		}
 
-		// Calculate array of proposed dates
-		const proposedDates: Date[] = [];
-		const currentDate = new Date(start);
-		while (currentDate <= end) {
-			proposedDates.push(new Date(currentDate));
-			currentDate.setDate(currentDate.getDate() + 1);
+		// Calculate array of proposed dates using Temporal API
+		const proposedDates: Temporal.PlainDate[] = [];
+		let currentDate = Temporal.PlainDate.from(startDateStr);
+		const targetEndDate = Temporal.PlainDate.from(endDateStr);
+
+		while (Temporal.PlainDate.compare(currentDate, targetEndDate) <= 0) {
+			proposedDates.push(currentDate);
+			currentDate = currentDate.add({ days: 1 });
 		}
 
 		let id = "";

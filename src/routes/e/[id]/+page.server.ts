@@ -12,6 +12,9 @@ export const load: PageServerLoad = async ({ params }) => {
 	}
 
 	return {
-		event,
+		event: {
+			...event,
+			proposedDates: event.proposedDates.map((d) => d.toString()),
+		},
 	};
 };
