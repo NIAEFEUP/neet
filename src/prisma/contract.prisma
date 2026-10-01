@@ -1,2 +1,47 @@
 // use prisma-8
-// Contract inferred from the live database schema. Edit as needed, then run `prisma contract emit`.
+
+model User {
+  id             Uuid           @id @default(uuid(7))
+  name           String
+  email          String?        @unique
+  
+  createdEvents  Event[]
+  availabilities Availability[]
+}
+
+model Event {
+  id             Uuid           @id @default(uuid(7))
+  title          String
+  description    String?
+  timezone       String         @default("Europe/Lisbon")
+  
+  // The specific days the creator picked
+  proposedDates  Date[]
+  
+  finalStartTime DateTime?
+  finalEndTime   DateTime?
+  
+  // Optional for the MVP so anyone can create an event frictionlessly
+  creatorId      Uuid?
+  creator        User?          @relation(fields: [creatorId], references: [id])
+  
+  availabilities Availability[]
+  
+  createdAt      DateTime       @default(now())
+}
+
+model Availability {
+  id             Int            @id @default(autoincrement())
+  
+  startTime      DateTime
+  endTime        DateTime
+  
+  eventId        Uuid
+  event          Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  
+  userId         Uuid
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+  @@index([userId])
+}

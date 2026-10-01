@@ -21,35 +21,33 @@ Internal availability scheduling tool for [NIAEFEUP](https://niaefeup.pt), inspi
 ### Setup
 
 1. **Install dependencies:**
-
    ```sh
    pnpm install
    ```
 
 2. **Set up environment variables:**
-
    ```sh
    cp .env.example .env
    ```
 
 3. **Start the database:**
    Make sure you have Docker installed and running, then start the local PostgreSQL database:
-
    ```sh
    docker compose up -d
    ```
 
-4. **Initialize Prisma:**
-   Initialize the database with your Prisma contract (this creates the tables):
-
+4. **Initialize Database and Seed:**
+   Apply the migrations to your database and seed it with mock data:
    ```sh
-   pnpm prisma db init
+   pnpm prisma db migrate
+   pnpm run seed
    ```
 
 ### Useful Commands
 
 Here are some handy commands for working with the database and Prisma:
 
+- **`pnpm run seed`** — Populates the database with mock events and availabilities for local testing.
 - **`pnpm run studio`** — Opens Prisma Studio directly so you can visually inspect and edit your database tables.
 - **`pnpm run contract:emit`** — Re-generates TypeScript types (`contract.d.ts`) after you edit your `src/prisma/contract.prisma` file.
 - **`pnpm prisma db update`** — Quickly syncs any schema changes you made in `contract.prisma` to your local database (great for rapid local development).
