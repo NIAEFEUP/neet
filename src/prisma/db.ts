@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { Temporal } from "temporal-polyfill";
-// @ts-ignore: polyfill for Prisma 8
+
 globalThis.Temporal = Temporal;
 
 import postgres from "@prisma/orm-postgres/runtime";

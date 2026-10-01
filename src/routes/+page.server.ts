@@ -146,9 +146,8 @@ export const actions = {
 					id = event.id;
 					success = true;
 				} catch (e) {
-					// Check for Prisma unique constraint violation
-					// biome-ignore lint/suspicious/noExplicitAny: catching unknown error
 					if (
+						// biome-ignore lint/suspicious/noExplicitAny: catching unknown error
 						(e as any).code === "P2002" ||
 						// biome-ignore lint/suspicious/noExplicitAny: catching unknown error
 						(e as any).message?.includes("Unique constraint failed")
