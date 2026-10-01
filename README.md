@@ -95,4 +95,4 @@ This project uses `@sveltejs/adapter-auto`. To deploy, install the appropriate a
 
 ## License
 
-Private — internal use by NIAEFEUP.
+This project is licensed under the [GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0).
