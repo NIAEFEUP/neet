@@ -5,18 +5,30 @@ import { db } from "./db.ts";
 async function main() {
 	console.log("Seeding database... 🌱");
 
-	// Forcefully wipe the database tables before inserting using Prisma's raw SQL execution builder
-	await db
-		.runtime()
-		.execute(
-			db.raw.sql`DELETE FROM "public"."Availability"`.affectedCount().build(),
-		);
-	await db
-		.runtime()
-		.execute(db.raw.sql`DELETE FROM "public"."Event"`.affectedCount().build());
-	await db
-		.runtime()
-		.execute(db.raw.sql`DELETE FROM "public"."User"`.affectedCount().build());
+	// Forcefully wipe ALL tables intelligently using a dynamic Postgres query!
+	// This automatically finds all your tables (even if you add new ones later)
+	// and TRUNCATES them, while ignoring Prisma's internal state tables.
+	const wipePlan = db.raw.sql`
+    DO $$ 
+    DECLARE
+        r RECORD;
+    BEGIN
+        FOR r IN (
+          SELECT tablename 
+          FROM pg_tables 
+          WHERE schemaname = 'public' 
+            AND tablename NOT LIKE 'prisma_%' 
+            AND tablename != '_prisma_migrations'
+        ) LOOP
+            EXECUTE 'TRUNCATE TABLE ' || quote_ident(r.tablename) || ' CASCADE';
+        END LOOP;
+    END $$;
+  `
+		.affectedCount()
+		.build();
+
+	await db.runtime().execute(wipePlan);
+	console.log("Database wiped perfectly! 🧹");
 
 	// Create some users
 	const alice = await db.orm.public.User.create({
