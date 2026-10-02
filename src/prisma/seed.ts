@@ -5,6 +5,19 @@ import { db } from "./db.ts";
 async function main() {
 	console.log("Seeding database... 🌱");
 
+	// Forcefully wipe the database tables before inserting using Prisma's raw SQL execution builder
+	await db
+		.runtime()
+		.execute(
+			db.raw.sql`DELETE FROM "public"."Availability"`.affectedCount().build(),
+		);
+	await db
+		.runtime()
+		.execute(db.raw.sql`DELETE FROM "public"."Event"`.affectedCount().build());
+	await db
+		.runtime()
+		.execute(db.raw.sql`DELETE FROM "public"."User"`.affectedCount().build());
+
 	// Create some users
 	const alice = await db.orm.public.User.create({
 		name: "Alice Silva",
@@ -29,7 +42,6 @@ async function main() {
 	});
 
 	// Add availability for Alice (she is free today 14:00 - 15:30)
-	// We use ZonedDateTime to get an accurate Instant for Lisbon time
 	const aliceStart = today
 		.toZonedDateTime({ timeZone: "Europe/Lisbon", plainTime: "14:00" })
 		.toInstant();
