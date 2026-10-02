@@ -138,6 +138,13 @@
                   "kind": "scalar"
                 }
               },
+              "endTime": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "finalEndTime": {
                 "nullable": true,
                 "type": {
@@ -164,6 +171,13 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/date-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "startTime": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
                   "kind": "scalar"
                 }
               },
@@ -226,6 +240,9 @@
                 "description": {
                   "column": "description"
                 },
+                "endTime": {
+                  "column": "endTime"
+                },
                 "finalEndTime": {
                   "column": "finalEndTime"
                 },
@@ -237,6 +254,9 @@
                 },
                 "proposedDates": {
                   "column": "proposedDates"
+                },
+                "startTime": {
+                  "column": "startTime"
                 },
                 "timezone": {
                   "column": "timezone"
@@ -451,6 +471,11 @@
                   "nativeType": "text",
                   "nullable": true
                 },
+                "endTime": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "finalEndTime": {
                   "codecId": "pg/timestamptz-temporal@1",
                   "nativeType": "timestamptz",
@@ -471,6 +496,11 @@
                   "many": true,
                   "nativeType": "date",
                   "nullable": false
+                },
+                "startTime": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
                 },
                 "timezone": {
                   "codecId": "pg/text@1",
@@ -561,7 +591,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "c307b3b0e2eb63e240a88f70e34e07f118ea66115e590b9d529d7fd87deef231"
+    "storageHash": "40743f4273a2210ce4d130dbab9bd961d5a6b9633e44ce490d25305c997d40da"
   },
   "execution": {
     "executionHash": "3be195f626eff5409de9951666fafe46ed91546d04118d57ae5d9fc8b127efc5",
