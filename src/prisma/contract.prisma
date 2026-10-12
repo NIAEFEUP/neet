@@ -18,6 +18,10 @@ model Event {
   // The specific days the creator picked
   proposedDates  Date[]
   
+  // The daily hours (e.g. "09:00" to "17:00"). If null, it means any time of day is allowed.
+  startTime      String?
+  endTime        String?
+  
   finalStartTime DateTime?
   finalEndTime   DateTime?
   
