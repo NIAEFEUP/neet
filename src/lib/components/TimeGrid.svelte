@@ -5,20 +5,24 @@ import TimeGridCell from "./time-grid/TimeGridCell.svelte";
 import TimeGridDaysHeader from "./time-grid/TimeGridDaysHeader.svelte";
 import TimeGridHeader from "./time-grid/TimeGridHeader.svelte";
 import { TimeGridState } from "./time-grid/time-grid-state.svelte";
-import type { CalendarEvent, SelectedCells } from "./time-grid/types";
+import type {
+	CalendarEvent,
+	CellCoord,
+	SelectedCells,
+} from "./time-grid/types";
 
 /**
- * How long a touch must be held before it becomes a paint drag. It has to be
- * long enough that a deliberate swipe always starts scrolling first, and short
- * enough that holding doesn't feel like waiting.
+ * How long a touch must be held before it becomes a paint drag. This is the
+ * secondary way in — for painting a block that runs *down* the grid — because a
+ * downward drag belongs to the scroller.
  */
-const LONG_PRESS_MS = 300;
+const LONG_PRESS_MS = 250;
 
 /**
- * Movement that hands the gesture back to the scroller. Matches the platform's
- * tap slop — below this the finger is still considered stationary.
+ * Distance that decides what a gesture is. Below it the finger is still
+ * considered stationary, which is what keeps a tap from becoming a drag.
  */
-const SCROLL_SLOP_PX = 8;
+const TOUCH_SLOP_PX = 10;
 
 interface Props {
 	events?: CalendarEvent[];
@@ -46,6 +50,8 @@ let hours = $derived(computeHours(events));
 let activePointerId: number | null = null;
 let longPressTimer: ReturnType<typeof setTimeout> | null = null;
 let startPoint = { x: 0, y: 0 };
+/** The cell the finger went down on, held until the gesture declares itself. */
+let pendingCoord: CellCoord | null = null;
 /** True once this gesture is ours, which is when the browser must stop scrolling. */
 let ownsGesture = false;
 
@@ -60,7 +66,17 @@ function resetPointer() {
 	clearLongPress();
 	activePointerId = null;
 	ownsGesture = false;
+	pendingCoord = null;
 	state.setPressing(null);
+}
+
+function startDrag(coord: CellCoord, haptics = false) {
+	clearLongPress();
+	ownsGesture = true;
+	// Confirms the moment the gesture is committed, on the same frame as the
+	// first painted cell. Android only; other platforms simply ignore it.
+	if (haptics && typeof navigator.vibrate === "function") navigator.vibrate(10);
+	state.beginDrag(coord);
 }
 
 function handlePointerDown(event: PointerEvent) {
@@ -77,55 +93,59 @@ function handlePointerDown(event: PointerEvent) {
 		// Suppress the native text-selection drag that would otherwise start.
 		event.preventDefault();
 		activePointerId = event.pointerId;
-		ownsGesture = true;
-		state.beginDrag(coord);
+		startDrag(coord);
 		return;
 	}
 
-	// Touch and pen: hold to paint, swipe to scroll. The drag only begins once
-	// the press has survived long enough that a scroll can no longer be in play —
-	// by then the browser hasn't started panning, so the guard below can still
-	// cancel it.
+	// Touch and pen are ambiguous until the finger moves: the same press could
+	// become a paint drag or a scroll. Show the affordance, then decide on the
+	// first movement.
 	activePointerId = event.pointerId;
 	startPoint = { x: event.clientX, y: event.clientY };
+	pendingCoord = coord;
 	state.setPressing(coord);
 
 	longPressTimer = setTimeout(() => {
 		longPressTimer = null;
-		ownsGesture = true;
-		if (typeof navigator.vibrate === "function") navigator.vibrate(10);
-		state.beginDrag(coord);
+		if (pendingCoord) startDrag(pendingCoord, true);
 	}, LONG_PRESS_MS);
 }
 
 function handlePointerMove(event: PointerEvent) {
 	if (event.pointerId !== activePointerId) return;
 
-	if (!state.isDragging) {
-		// Still disambiguating between a tap and a scroll.
-		if (longPressTimer !== null) {
-			const moved = Math.hypot(
-				event.clientX - startPoint.x,
-				event.clientY - startPoint.y,
-			);
-			if (moved > SCROLL_SLOP_PX) {
-				// It's a scroll. Drop the press affordance and let the browser have it.
-				clearLongPress();
-				state.setPressing(null);
-			}
-		}
+	if (state.isDragging) {
+		const coord = getCellCoordFromPoint(event.clientX, event.clientY);
+		if (coord) state.updateDrag(coord);
 		return;
 	}
 
-	const coord = getCellCoordFromPoint(event.clientX, event.clientY);
-	if (coord) state.updateDrag(coord);
+	if (!pendingCoord) return;
+
+	const dx = event.clientX - startPoint.x;
+	const dy = event.clientY - startPoint.y;
+
+	// The vertical axis belongs to the scroller, and it wins outright: once the
+	// finger has travelled this far down it is swiping, whatever else it does.
+	if (Math.abs(dy) > TOUCH_SLOP_PX) {
+		resetPointer();
+		return;
+	}
+
+	// Sideways movement is ours, and it needs no waiting. `touch-action: pan-y`
+	// on the cells means the browser can never claim this axis, so a sideways
+	// drag can't turn into a scroll no matter how the container is sized.
+	if (Math.abs(dx) > TOUCH_SLOP_PX) {
+		startDrag(pendingCoord, true);
+		const coord = getCellCoordFromPoint(event.clientX, event.clientY);
+		if (coord) state.updateDrag(coord);
+	}
 }
 
 function handlePointerUp(event: PointerEvent) {
 	if (event.pointerId !== activePointerId) return;
 
-	const pending = state.pressingCell;
-	const wasPending = longPressTimer !== null;
+	const pending = pendingCoord;
 	resetPointer();
 
 	if (state.isDragging) {
@@ -133,8 +153,8 @@ function handlePointerUp(event: PointerEvent) {
 		return;
 	}
 
-	// A tap that never grew into a drag toggles the one cell under the finger.
-	if (wasPending && pending) state.toggleCell(pending);
+	// Nothing moved, so this was a tap: toggle the one cell under the finger.
+	if (pending) state.toggleCell(pending);
 }
 
 function handlePointerCancel(event: PointerEvent) {
@@ -155,12 +175,14 @@ function handleWindowBlur() {
 }
 
 /**
- * Stops the scroller while a long-press has turned into a paint drag.
+ * Stops the scroller once a gesture is ours — after a long-press, or after a
+ * sideways drag has committed to painting.
  *
- * Registered non-passively and up-front: a scroll can only be cancelled on the
- * first move, while the browser is still undecided about what the gesture is.
- * Touch-action can't do this job — narrowing it to `none` would block scrolling
- * for the entire grid, including when the user is just trying to get to later hours.
+ * Registered non-passively and up-front: a scroll can only be cancelled while
+ * the browser is still undecided, which is why the gesture never starts with
+ * movement it might lose. Touch events keep the target fixed at `touchstart`,
+ * so every `touchmove` of the gesture still bubbles here even if the finger
+ * leaves the grid.
  */
 function preventScrollWhilePainting(node: HTMLElement) {
 	function onTouchMove(event: TouchEvent) {
@@ -190,7 +212,7 @@ function preventScrollWhilePainting(node: HTMLElement) {
 		class="max-h-[70dvh] overflow-auto overscroll-contain rounded-lg border border-gray-200"
 	>
 		<div
-			class="grid min-w-150 select-none"
+			class="grid min-w-150 select-none [@media(pointer:coarse)]:min-w-0"
 			role="grid"
 			tabindex="0"
 			style="grid-template-columns: 60px repeat({days.length}, 1fr); grid-auto-rows: 40px;"

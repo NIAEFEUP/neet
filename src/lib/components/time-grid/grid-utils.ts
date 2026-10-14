@@ -107,12 +107,13 @@ const BASE_CELL_CLASS = [
 	// The cell is a control, not content: holding it must not select text or pop
 	// the iOS callout.
 	"[-webkit-touch-callout:none]",
-	// `touch-action: none` here would kill scrolling for the whole grid, because
-	// the value is resolved along the ancestor chain. `manipulation` keeps
-	// panning and pinch-zoom for the scroller but drops the double-tap-zoom
-	// delay, so a tap lands immediately. The paint drag cancels its own scroll
-	// from a non-passive touchmove listener once the long-press has confirmed it.
-	"touch-manipulation",
+	// `touch-action` is resolved along the ancestor chain, so anything narrow
+	// here (`none`) would kill scrolling for the whole grid. The browser keeps
+	// the vertical axis — that is what makes a swipe scroll natively and
+	// reliably — and we take horizontal movement for ourselves, because
+	// `pan-y` means it can never be mistaken for a scroll.
+	// Pinch-zoom stays enabled; blocking it would be an accessibility failure.
+	"[touch-action:pan-y_pinch-zoom]",
 	"cursor-crosshair",
 	// Strong ease-out rather than the weak CSS default, so painting reads as
 	// immediate. Colour transitions are kept under reduced motion — they aid

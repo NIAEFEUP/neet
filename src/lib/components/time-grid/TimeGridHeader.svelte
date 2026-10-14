@@ -12,7 +12,7 @@ let { selectedCount, onClear }: Props = $props();
 		<h2 class="font-semibold text-xl">Time Grid</h2>
 		<!-- Only one of these is ever shown, so the affordance matches the input device. -->
 		<span class="hidden text-gray-500 text-sm [@media(pointer:coarse)]:inline">
-			Hold to paint, swipe to scroll
+			Tap to mark · drag sideways or hold to paint
 		</span>
 		<span class="text-gray-500 text-sm [@media(pointer:coarse)]:hidden">
 			Drag to paint
