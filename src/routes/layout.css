@@ -2,6 +2,11 @@
 @plugin "@tailwindcss/forms";
 @plugin "@tailwindcss/typography";
 
-html {
+html,
+body {
 	-webkit-tap-highlight-color: transparent;
+	/* Stops the iOS rubber-band and pull-to-refresh, which otherwise fire on any
+	   downward drag — including one meant to paint, before the grid has taken the
+	   gesture. This app is a tool, not a document to refresh. */
+	overscroll-behavior: none;
 }

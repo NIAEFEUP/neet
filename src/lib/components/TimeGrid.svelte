@@ -255,7 +255,7 @@ function preventScrollWhilePainting(node: HTMLElement) {
 	{/if}
 
 	<div
-		class="max-h-[70dvh] overflow-auto overscroll-contain rounded-lg border border-gray-200"
+		class="max-h-[70dvh] overflow-auto overscroll-none rounded-lg border border-gray-200"
 	>
 		<div
 			class="grid min-w-150 select-none [-webkit-touch-callout:none] [@media(pointer:coarse)]:min-w-0"
