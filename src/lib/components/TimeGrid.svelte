@@ -1,70 +1,66 @@
 <script lang="ts">
-	import { computeDays, computeHours, formatHour } from './time-grid/date-utils';
-	import { getCellCoordFromPoint } from './time-grid/grid-utils';
-	import { TimeGridState } from './time-grid/time-grid-state.svelte';
-	import TimeGridCell from './time-grid/TimeGridCell.svelte';
-	import TimeGridDaysHeader from './time-grid/TimeGridDaysHeader.svelte';
-	import TimeGridHeader from './time-grid/TimeGridHeader.svelte';
-	import type { CalendarEvent, SelectedCells } from './time-grid/types';
+import { computeDays, computeHours, formatHour } from "./time-grid/date-utils";
+import { getCellCoordFromPoint } from "./time-grid/grid-utils";
+import TimeGridCell from "./time-grid/TimeGridCell.svelte";
+import TimeGridDaysHeader from "./time-grid/TimeGridDaysHeader.svelte";
+import TimeGridHeader from "./time-grid/TimeGridHeader.svelte";
+import { TimeGridState } from "./time-grid/time-grid-state.svelte";
+import type { CalendarEvent, SelectedCells } from "./time-grid/types";
 
-	interface Props {
-		events?: CalendarEvent[];
-		selected?: SelectedCells;
-		onchange?: (selected: SelectedCells) => void;
+interface Props {
+	events?: CalendarEvent[];
+	selected?: SelectedCells;
+	onchange?: (selected: SelectedCells) => void;
+}
+
+let { events = [], selected = $bindable({}), onchange }: Props = $props();
+
+const state = new TimeGridState({
+	initialSelected: selected,
+	getDays: () => days,
+	onSelectionChange: (newSelected) => {
+		selected = newSelected;
+		onchange?.(newSelected);
+	},
+});
+
+$effect(() => {
+	if (selected !== state.selectedCells) {
+		state.setSelectedCells(selected);
+	}
+});
+
+let days = $derived(computeDays(events));
+let hours = $derived(computeHours(events));
+
+function handleMouseMove(e: MouseEvent) {
+	if (!state.isDragging) return;
+	const cell = getCellCoordFromPoint(e.clientX, e.clientY);
+	if (!cell) return;
+	state.updateMouseDrag(cell);
+}
+
+function handleMouseUp() {
+	state.endMouseDrag();
+}
+
+function handleTouchMove(e: TouchEvent) {
+	if (!state.isDragging) return;
+	if (e.cancelable) {
+		e.preventDefault();
 	}
 
-	let {
-		events = [],
-		selected = $bindable({}),
-		onchange
-	}: Props = $props();
+	const touch = e.touches[0];
+	if (!touch) return;
 
-	const state = new TimeGridState({
-		initialSelected: selected,
-		getDays: () => days,
-		onSelectionChange: (newSelected) => {
-			selected = newSelected;
-			onchange?.(newSelected);
-		}
-	});
+	const cell = getCellCoordFromPoint(touch.clientX, touch.clientY);
+	if (!cell) return;
+	state.updateTouchDrag(cell);
+}
 
-	$effect(() => {
-		if (selected !== state.selectedCells) {
-			state.setSelectedCells(selected);
-		}
-	});
-
-	let days = $derived(computeDays(events));
-	let hours = $derived(computeHours(events));
-
-	function handleMouseMove(e: MouseEvent) {
-		if (!state.isDragging) return;
-		const cell = getCellCoordFromPoint(e.clientX, e.clientY);
-		if (!cell) return;
-		state.updateMouseDrag(cell);
-	}
-
-	function handleMouseUp() {
-		state.endMouseDrag();
-	}
-
-	function handleTouchMove(e: TouchEvent) {
-		if (!state.isDragging) return;
-		if (e.cancelable) {
-			e.preventDefault();
-		}
-
-		const touch = e.touches[0];
-		if (!touch) return;
-
-		const cell = getCellCoordFromPoint(touch.clientX, touch.clientY);
-		if (!cell) return;
-		state.updateTouchDrag(cell);
-	}
-
-	function handleTouchEnd() {
-		state.endTouchDrag();
-	}
+function handleTouchEnd() {
+	state.endTouchDrag();
+}
 </script>
 
 <svelte:window

@@ -1,10 +1,10 @@
 <script lang="ts">
-	interface Props {
-		selectedCount: number;
-		onClear: () => void;
-	}
+interface Props {
+	selectedCount: number;
+	onClear: () => void;
+}
 
-	let { selectedCount, onClear }: Props = $props();
+let { selectedCount, onClear }: Props = $props();
 </script>
 
 <div class="flex justify-between items-center mb-4">

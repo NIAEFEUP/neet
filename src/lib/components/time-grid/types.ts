@@ -13,9 +13,9 @@ export interface CellCoord {
 export type CellKey = string;
 
 export type CellVisualState =
-	| 'idle'
-	| 'actively-painting'
-	| 'painted'
-	| 'actively-unpainting';
+	| "idle"
+	| "actively-painting"
+	| "painted"
+	| "actively-unpainting";
 
 export type SelectedCells = Record<CellKey, boolean>;

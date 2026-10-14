@@ -1,5 +1,5 @@
-import { cellKey, cellKeyToDate, getCellsInRect } from './grid-utils';
-import type { CellCoord, CellVisualState, SelectedCells } from './types';
+import { cellKey, cellKeyToDate, getCellsInRect } from "./grid-utils";
+import type { CellCoord, CellVisualState, SelectedCells } from "./types";
 
 export interface TimeGridStateOptions {
 	initialSelected?: SelectedCells;
@@ -40,7 +40,7 @@ export class TimeGridState {
 	}
 
 	resolveKey(dateOrDayIndex: Date | string | number, hour: number): string {
-		if (typeof dateOrDayIndex === 'number') {
+		if (typeof dateOrDayIndex === "number") {
 			const day = this.days[dateOrDayIndex];
 			if (day) return cellKey(day, hour);
 		}
@@ -58,26 +58,35 @@ export class TimeGridState {
 		return !!this.selectedCells[this.resolveKey(dateOrDayIndex, hour)];
 	}
 
-	isInDragSelection(dateOrDayIndex: Date | string | number, hour: number): boolean {
-		return this.selectionRect?.includes(this.resolveKey(dateOrDayIndex, hour)) ?? false;
+	isInDragSelection(
+		dateOrDayIndex: Date | string | number,
+		hour: number,
+	): boolean {
+		return (
+			this.selectionRect?.includes(this.resolveKey(dateOrDayIndex, hour)) ??
+			false
+		);
 	}
 
-	getCellVisualState(dateOrDayIndex: Date | string | number, hour: number): CellVisualState {
+	getCellVisualState(
+		dateOrDayIndex: Date | string | number,
+		hour: number,
+	): CellVisualState {
 		const key = this.resolveKey(dateOrDayIndex, hour);
 
 		if (this.isInDragSelection(dateOrDayIndex, hour)) {
-			return this.paintMode ? 'actively-painting' : 'actively-unpainting';
+			return this.paintMode ? "actively-painting" : "actively-unpainting";
 		}
 
 		if (this.unpaintingCells.includes(key)) {
-			return 'actively-unpainting';
+			return "actively-unpainting";
 		}
 
 		if (this.selectedCells[key]) {
-			return 'painted';
+			return "painted";
 		}
 
-		return 'idle';
+		return "idle";
 	}
 
 	startMouseDrag(coord: CellCoord): void {
@@ -167,7 +176,9 @@ export class TimeGridState {
 	}
 
 	getSelectedISOStrings(): string[] {
-		return Object.keys(this.selectedCells).filter((key) => this.selectedCells[key]);
+		return Object.keys(this.selectedCells).filter(
+			(key) => this.selectedCells[key],
+		);
 	}
 
 	getSelectedDates(): Date[] {

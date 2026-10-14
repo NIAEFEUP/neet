@@ -1,4 +1,4 @@
-import type { CalendarEvent } from './types';
+import type { CalendarEvent } from "./types";
 
 /**
  * Computes the list of dates to display in the grid based on events,
@@ -43,8 +43,14 @@ export function computeHours(events: CalendarEvent[]): number[] {
 		return Array.from({ length: 24 }, (_, i) => i);
 	}
 
-	const minHour = Math.max(0, Math.min(...events.map((e) => e.start.getHours())) - 1);
-	const maxHour = Math.min(23, Math.max(...events.map((e) => e.end.getHours())) + 1);
+	const minHour = Math.max(
+		0,
+		Math.min(...events.map((e) => e.start.getHours())) - 1,
+	);
+	const maxHour = Math.min(
+		23,
+		Math.max(...events.map((e) => e.end.getHours())) + 1,
+	);
 
 	return Array.from({ length: maxHour - minHour + 1 }, (_, i) => minHour + i);
 }
@@ -53,7 +59,7 @@ export function computeHours(events: CalendarEvent[]): number[] {
  * Formats a Date to a short weekday string (e.g., 'Mon').
  */
 export function formatDayShort(date: Date): string {
-	return date.toLocaleDateString('en-US', { weekday: 'short' });
+	return date.toLocaleDateString("en-US", { weekday: "short" });
 }
 
 /**
@@ -67,7 +73,7 @@ export function formatDayNumber(date: Date): string {
  * Formats an hour number to 24h display (e.g., '09:00').
  */
 export function formatHour(hour: number): string {
-	return `${hour.toString().padStart(2, '0')}:00`;
+	return `${hour.toString().padStart(2, "0")}:00`;
 }
 
 /**
@@ -75,8 +81,7 @@ export function formatHour(hour: number): string {
  */
 export function formatDateISO(date: Date): string {
 	const year = date.getFullYear();
-	const month = String(date.getMonth() + 1).padStart(2, '0');
-	const day = String(date.getDate()).padStart(2, '0');
+	const month = String(date.getMonth() + 1).padStart(2, "0");
+	const day = String(date.getDate()).padStart(2, "0");
 	return `${year}-${month}-${day}`;
 }
-

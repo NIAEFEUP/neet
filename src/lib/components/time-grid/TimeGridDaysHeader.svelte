@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { formatDayNumber, formatDayShort } from './date-utils';
+import { formatDayNumber, formatDayShort } from "./date-utils";
 
-	interface Props {
-		days: Date[];
-	}
+interface Props {
+	days: Date[];
+}
 
-	let { days }: Props = $props();
+let { days }: Props = $props();
 </script>
 
 <div class="sticky top-0 left-0 z-30 bg-gray-50 border-r border-b border-gray-200"></div>
