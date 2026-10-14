@@ -175,6 +175,18 @@ function handleWindowBlur() {
 }
 
 /**
+ * A long-press on Android (and right-click on desktop) raises the browser's
+ * context menu, which lands in the middle of a paint drag and cancels it. The
+ * grid has nothing to offer in that menu, so it is suppressed for the whole
+ * surface rather than only mid-gesture — a press can raise it before the
+ * gesture has declared itself a drag, which is exactly when the timer is
+ * still running.
+ */
+function handleContextMenu(event: MouseEvent) {
+	event.preventDefault();
+}
+
+/**
  * Stops the scroller once a gesture is ours — after a long-press, or after a
  * sideways drag has committed to painting.
  *
@@ -212,11 +224,12 @@ function preventScrollWhilePainting(node: HTMLElement) {
 		class="max-h-[70dvh] overflow-auto overscroll-contain rounded-lg border border-gray-200"
 	>
 		<div
-			class="grid min-w-150 select-none [@media(pointer:coarse)]:min-w-0"
+			class="grid min-w-150 select-none [-webkit-touch-callout:none] [@media(pointer:coarse)]:min-w-0"
 			role="grid"
 			tabindex="0"
 			style="grid-template-columns: 60px repeat({days.length}, 1fr); grid-auto-rows: 40px;"
 			onpointerdown={handlePointerDown}
+			oncontextmenu={handleContextMenu}
 			{@attach preventScrollWhilePainting}
 		>
 			<TimeGridDaysHeader {days} />
