@@ -283,6 +283,7 @@ function preventScrollWhilePainting(node: HTMLElement) {
 						date={day}
 						hour={currentHour}
 						visualState={gridState.getCellVisualState(day, currentHour)}
+						radius={gridState.getCellRadius(dayIndex, currentHour)}
 					/>
 				{/each}
 			{/each}

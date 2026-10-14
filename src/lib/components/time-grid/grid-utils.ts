@@ -115,6 +115,11 @@ const BASE_CELL_CLASS = [
 	// `pan-y` means it can never be mistaken for a scroll.
 	// Pinch-zoom stays enabled; blocking it would be an accessibility failure.
 	"[touch-action:pan-y_pinch-zoom]",
+	// The radius itself is set inline per cell, because it depends on the shape
+	// of the painted region around it. This softens whatever radius it is given
+	// into continuous curvature, and browsers without it fall back to a plain
+	// rounded corner.
+	"[corner-shape:squircle]",
 	"cursor-crosshair",
 ].join(" ");
 

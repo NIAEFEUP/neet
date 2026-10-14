@@ -1,6 +1,13 @@
 import { cellKey, cellKeyToDate, getCellsInRect } from "./grid-utils";
 import type { CellCoord, CellVisualState, SelectedCells } from "./types";
 
+/**
+ * Corner radius of the selection, in px. Rows are 36px tall, so this is
+ * comfortably round without reaching the 18px that would make a single hour a
+ * pill. Paired with `corner-shape: squircle` on the cell.
+ */
+const CELL_RADIUS_PX = 12;
+
 export interface TimeGridStateOptions {
 	/** Reads the externally-owned selection — the caller's bindable `selected`. */
 	getSelected: () => SelectedCells;
@@ -111,6 +118,40 @@ export class TimeGridState {
 		}
 
 		return "idle";
+	}
+
+	/**
+	 * Whether a cell is painted in the selection *as the current gesture will
+	 * leave it* — the committed cells with the in-flight drag applied on top.
+	 */
+	private isEffectivelyPainted(dayIndex: number, hour: number): boolean {
+		if (this.isDragging && this.isInDragSelection(dayIndex, hour)) {
+			return this.paintMode;
+		}
+		return this.isSelected(dayIndex, hour);
+	}
+
+	/**
+	 * A CSS `border-radius` value for a cell, as corner radii in TL TR BR BL order.
+	 *
+	 * Rounding belongs to the *region*, not to the cell. A corner is only rounded
+	 * when neither of the two neighbours meeting there is painted, so a run of
+	 * hours fuses into one rounded block rather than becoming a row of rounded
+	 * squares with seams between them. Interior corners stay square, which is
+	 * what lets a block read as a single shape.
+	 */
+	getCellRadius(dayIndex: number, hour: number): string {
+		const up = this.isEffectivelyPainted(dayIndex, hour - 1);
+		const down = this.isEffectivelyPainted(dayIndex, hour + 1);
+		const left = this.isEffectivelyPainted(dayIndex - 1, hour);
+		const right = this.isEffectivelyPainted(dayIndex + 1, hour);
+
+		const tl = !up && !left ? CELL_RADIUS_PX : 0;
+		const tr = !up && !right ? CELL_RADIUS_PX : 0;
+		const br = !down && !right ? CELL_RADIUS_PX : 0;
+		const bl = !down && !left ? CELL_RADIUS_PX : 0;
+
+		return `${tl}px ${tr}px ${br}px ${bl}px`;
 	}
 
 	/**

@@ -19,7 +19,7 @@ let { days }: Props = $props();
 	>
 		<span
 			class={[
-				"flex items-baseline gap-1 rounded-full px-2 py-0.5 text-[11px] [corner-shape:squircle]",
+				"flex items-baseline gap-1 rounded-lg px-2 py-0.5 text-[11px] [corner-shape:squircle]",
 				today ? "bg-gray-900 text-white" : "text-gray-400",
 			]}
 		>

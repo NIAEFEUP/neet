@@ -35,7 +35,7 @@ let {
 		onclick={onClick}
 		disabled={!enabled}
 		aria-label={label}
-		class="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-gray-400 text-lg leading-none transition-[background-color,color,scale] duration-150 ease-out [-webkit-touch-callout:none] enabled:hover:bg-gray-100 enabled:hover:text-gray-700 enabled:active:scale-90 disabled:cursor-not-allowed disabled:opacity-30"
+		class="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-gray-400 text-lg leading-none transition-[background-color,color,scale] duration-150 ease-out [-webkit-touch-callout:none] [corner-shape:squircle] enabled:hover:bg-gray-100 enabled:hover:text-gray-700 enabled:active:scale-90 disabled:cursor-not-allowed disabled:opacity-30"
 	>
 		{glyph}
 	</button>
@@ -74,7 +74,7 @@ let {
 			</span>
 			<button
 				onclick={onClear}
-				class="cursor-pointer rounded-full px-3 py-1.5 font-medium text-gray-500 text-sm transition-[background-color,color,scale] duration-150 ease-out [-webkit-touch-callout:none] hover:bg-gray-100 hover:text-gray-900 active:scale-95"
+				class="cursor-pointer rounded-lg px-3 py-1.5 font-medium text-gray-500 text-sm transition-[background-color,color,scale] duration-150 ease-out [-webkit-touch-callout:none] [corner-shape:squircle] hover:bg-gray-100 hover:text-gray-900 active:scale-95"
 			>
 				Clear
 			</button>
