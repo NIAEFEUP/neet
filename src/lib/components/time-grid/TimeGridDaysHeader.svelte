@@ -9,7 +9,7 @@ let { days }: Props = $props();
 </script>
 
 <div class="sticky top-0 left-0 z-30 bg-gray-50 border-r border-b border-gray-200"></div>
-{#each days as day, dayIndex (dayIndex)}
+{#each days as day (day.getTime())}
 	<div
 		class="sticky top-0 z-20 bg-gray-50 border-r border-b border-gray-200 flex flex-col items-center justify-center p-2 text-xs"
 		role="columnheader"

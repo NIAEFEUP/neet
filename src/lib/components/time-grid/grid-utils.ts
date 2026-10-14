@@ -102,14 +102,32 @@ export function getCellCoordFromPoint(
 	return { dayIndex, hour };
 }
 
-const BASE_CELL_CLASS =
-	"border-r border-b border-gray-100 cursor-pointer transition-colors duration-150 [touch-action:none] [-webkit-touch-callout:none]";
+const BASE_CELL_CLASS = [
+	"border-r border-b border-gray-100",
+	// The cell is a control, not content: holding it must not select text or pop
+	// the iOS callout.
+	"[-webkit-touch-callout:none]",
+	// `touch-action: none` here would kill scrolling for the whole grid, because
+	// the value is resolved along the ancestor chain. `manipulation` keeps
+	// panning and pinch-zoom for the scroller but drops the double-tap-zoom
+	// delay, so a tap lands immediately. The paint drag cancels its own scroll
+	// from a non-passive touchmove listener once the long-press has confirmed it.
+	"touch-manipulation",
+	"cursor-crosshair",
+	// Strong ease-out rather than the weak CSS default, so painting reads as
+	// immediate. Colour transitions are kept under reduced motion — they aid
+	// comprehension; only movement needs to be dropped.
+	"transition-colors duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]",
+].join(" ");
 
 const STATE_CLASSES: Record<CellVisualState, string> = {
-	"actively-painting": "bg-blue-300 hover:bg-blue-300",
-	"actively-unpainting": "bg-blue-300 hover:bg-blue-300",
-	painted: "bg-blue-500 hover:bg-blue-600",
 	idle: "bg-transparent hover:bg-gray-100",
+	// Filled as the finger holds, so the long-press visibly registers before the
+	// drag commits. Distinct from `actively-*` because nothing is selected yet.
+	pressing: "bg-blue-200",
+	"actively-painting": "bg-blue-300",
+	"actively-unpainting": "bg-blue-300",
+	painted: "bg-blue-500 hover:bg-blue-600",
 };
 
 /**

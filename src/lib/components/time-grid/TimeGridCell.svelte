@@ -8,12 +8,9 @@ interface Props {
 	hour: number;
 	date?: Date | string;
 	visualState: CellVisualState;
-	onmousedown: (e: MouseEvent) => void;
-	ontouchstart: (e: TouchEvent) => void;
 }
 
-let { dayIndex, hour, date, visualState, onmousedown, ontouchstart }: Props =
-	$props();
+let { dayIndex, hour, date, visualState }: Props = $props();
 
 let cellClass = $derived(getCellClass(visualState));
 let dateStr = $derived(
@@ -29,6 +26,4 @@ let dateStr = $derived(
 	data-day={dayIndex}
 	data-date={dateStr}
 	data-hour={hour}
-	{onmousedown}
-	{ontouchstart}
 ></div>

@@ -7,14 +7,24 @@ interface Props {
 let { selectedCount, onClear }: Props = $props();
 </script>
 
-<div class="flex justify-between items-center mb-4">
-	<h2 class="text-xl font-semibold">Time Grid</h2>
+<div class="mb-4 flex items-center justify-between gap-4">
+	<div class="flex items-baseline gap-3">
+		<h2 class="font-semibold text-xl">Time Grid</h2>
+		<!-- Only one of these is ever shown, so the affordance matches the input device. -->
+		<span class="hidden text-gray-500 text-sm [@media(pointer:coarse)]:inline">
+			Hold to paint, swipe to scroll
+		</span>
+		<span class="text-gray-500 text-sm [@media(pointer:coarse)]:hidden">
+			Drag to paint
+		</span>
+	</div>
+
 	<div class="flex items-center gap-3">
-		<span class="text-sm text-gray-500">{selectedCount} blocks selected</span>
+		<span class="text-gray-500 text-sm">{selectedCount} blocks selected</span>
 		<button
 			onclick={onClear}
 			disabled={selectedCount === 0}
-			class="px-3 py-1.5 text-sm border border-gray-300 rounded bg-white cursor-pointer transition-colors duration-150 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+			class="cursor-pointer rounded border border-gray-300 bg-white px-3 py-1.5 text-sm transition-[background-color,scale] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] [-webkit-touch-callout:none] enabled:hover:bg-gray-100 enabled:active:scale-[0.97] motion-reduce:transition-colors disabled:cursor-not-allowed disabled:opacity-50"
 		>
 			Clear
 		</button>
