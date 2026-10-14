@@ -103,7 +103,6 @@ export function getCellCoordFromPoint(
 }
 
 const BASE_CELL_CLASS = [
-	"border-r border-b border-gray-100",
 	// The cell is a control, not content: holding it must not select text or pop
 	// the iOS callout.
 	"[-webkit-touch-callout:none]",
@@ -115,25 +114,50 @@ const BASE_CELL_CLASS = [
 	// Pinch-zoom stays enabled; blocking it would be an accessibility failure.
 	"[touch-action:pan-y_pinch-zoom]",
 	"cursor-crosshair",
-	// Strong ease-out rather than the weak CSS default, so painting reads as
-	// immediate. Colour transitions are kept under reduced motion — they aid
-	// comprehension; only movement needs to be dropped.
-	"transition-colors duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]",
 ].join(" ");
 
-const STATE_CLASSES: Record<CellVisualState, string> = {
-	idle: "bg-transparent hover:bg-gray-100",
-	// Filled as the finger holds, so the long-press visibly registers before the
-	// drag commits. Distinct from `actively-*` because nothing is selected yet.
-	pressing: "bg-blue-200",
-	"actively-painting": "bg-blue-300",
-	"actively-unpainting": "bg-blue-300",
-	painted: "bg-blue-500 hover:bg-blue-600",
+/**
+ * Only the empty grid is ruled. A painted cell drops its hairlines, so a
+ * selection reads as one continuous band of time rather than a run of squares —
+ * "free 2 to 5" instead of three adjacent boxes.
+ */
+const RULED = "border-r border-b border-gray-100";
+
+/**
+ * The settle. A committed change eases in over 150ms with a strong ease-out, so
+ * the block lands instead of snapping. Deliberately kept off the in-progress
+ * states: a fade there trails behind the finger while dragging. Colour (rather
+ * than movement) is also what makes it safe to keep under reduced motion.
+ */
+const SETTLE =
+	"transition-colors duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]";
+
+const STATE_CLASSES: Record<Exclude<CellVisualState, "idle">, string> = {
+	// Filled the instant the finger lands, so the hold visibly registers before
+	// it is known to be a drag. No transition: this must track 1:1.
+	pressing: "bg-green-200",
+	"actively-painting": "bg-green-300",
+	"actively-unpainting": "bg-green-300",
+	painted: `bg-green-500 hover:bg-green-600 ${SETTLE}`,
 };
 
 /**
- * Returns Tailwind class list for a given cell visual state.
+ * Today's column carries a neutral tint rather than a second green: green means
+ * "selected" everywhere else, and one colour should not mean two things.
  */
-export function getCellClass(state: CellVisualState): string {
+const TODAY_TINT = "bg-gray-100/70 hover:bg-gray-200/70";
+
+/**
+ * Returns the Tailwind class list for a cell.
+ *
+ * `today` only affects empty cells — a tinted column still has to give way to
+ * whatever the user has actually marked.
+ */
+export function getCellClass(state: CellVisualState, today = false): string {
+	if (state === "idle") {
+		const tint = today ? TODAY_TINT : "bg-transparent hover:bg-gray-100";
+		return `${BASE_CELL_CLASS} ${RULED} ${tint} ${SETTLE}`;
+	}
+
 	return `${BASE_CELL_CLASS} ${STATE_CLASSES[state]}`;
 }

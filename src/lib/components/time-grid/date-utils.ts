@@ -78,6 +78,15 @@ export function formatDayRange(days: Date[]): string {
 }
 
 /**
+ * Whether a date is today. Accepts either a Date or an already-formatted local
+ * ISO date ('YYYY-MM-DD'), which is what the grid's data attributes carry.
+ */
+export function isTodayDate(value: Date | string): boolean {
+	const iso = typeof value === "string" ? value : formatDateISO(value);
+	return iso === formatDateISO(new Date());
+}
+
+/**
  * Formats a Date to a short weekday string (e.g., 'Mon').
  */
 export function formatDayShort(date: Date): string {

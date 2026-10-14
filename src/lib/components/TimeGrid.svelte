@@ -9,7 +9,6 @@ import { getCellCoordFromPoint } from "./time-grid/grid-utils";
 import TimeGridCell from "./time-grid/TimeGridCell.svelte";
 import TimeGridDaysHeader from "./time-grid/TimeGridDaysHeader.svelte";
 import TimeGridHeader from "./time-grid/TimeGridHeader.svelte";
-import TimeGridNav from "./time-grid/TimeGridNav.svelte";
 import { TimeGridState } from "./time-grid/time-grid-state.svelte";
 import type {
 	CalendarEvent,
@@ -64,6 +63,7 @@ let currentPage = $derived(Math.min(page, pageCount - 1));
 let pageStart = $derived(currentPage * DAYS_PER_PAGE);
 /** The columns on screen. Indices stay relative to the full range. */
 let visibleDays = $derived(days.slice(pageStart, pageStart + DAYS_PER_PAGE));
+let rangeLabel = $derived(formatDayRange(visibleDays));
 
 // Gesture bookkeeping deliberately uses plain variables rather than runes: none
 // of it is rendered, and reading reactive state inside the scroll-guard
@@ -240,19 +240,15 @@ function preventScrollWhilePainting(node: HTMLElement) {
 
 <div class="p-4">
 	<TimeGridHeader
+		{rangeLabel}
+		showNavigation={pageCount > 1}
+		canGoPrevious={currentPage > 0}
+		canGoNext={currentPage < pageCount - 1}
+		onPrevious={() => (page = currentPage - 1)}
+		onNext={() => (page = currentPage + 1)}
 		selectedCount={gridState.selectedCount}
 		onClear={() => gridState.clearSelection()}
 	/>
-
-	{#if pageCount > 1}
-		<TimeGridNav
-			label={formatDayRange(visibleDays)}
-			canGoPrevious={currentPage > 0}
-			canGoNext={currentPage < pageCount - 1}
-			onPrevious={() => (page = currentPage - 1)}
-			onNext={() => (page = currentPage + 1)}
-		/>
-	{/if}
 
 	<div
 		class="max-h-[70dvh] overflow-auto overscroll-none rounded-lg border border-gray-200"
@@ -288,4 +284,15 @@ function preventScrollWhilePainting(node: HTMLElement) {
 			{/each}
 		</div>
 	</div>
+
+	<!-- Help sits below the grid: present when you look for it, out of the way of
+	     the thing you came to do. -->
+	<p class="mt-3 text-center text-gray-400 text-xs">
+		<span class="[@media(pointer:coarse)]:hidden">
+			Drag across the grid to mark when you're free
+		</span>
+		<span class="hidden [@media(pointer:coarse)]:inline">
+			Tap to mark · drag sideways or hold to paint
+		</span>
+	</p>
 </div>
