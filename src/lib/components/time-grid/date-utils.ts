@@ -56,6 +56,28 @@ export function computeHours(events: CalendarEvent[]): number[] {
 }
 
 /**
+ * Formats a range of days as a short label, e.g. 'Oct 14 – 20', collapsing the
+ * month when the range stays inside one.
+ */
+export function formatDayRange(days: Date[]): string {
+	if (days.length === 0) return "";
+
+	const first = days[0];
+	const last = days[days.length - 1];
+	const month = (date: Date) =>
+		date.toLocaleDateString("en-US", { month: "short" });
+
+	if (
+		first.getMonth() === last.getMonth() &&
+		first.getFullYear() === last.getFullYear()
+	) {
+		return `${month(first)} ${first.getDate()} – ${last.getDate()}`;
+	}
+
+	return `${month(first)} ${first.getDate()} – ${month(last)} ${last.getDate()}`;
+}
+
+/**
  * Formats a Date to a short weekday string (e.g., 'Mon').
  */
 export function formatDayShort(date: Date): string {

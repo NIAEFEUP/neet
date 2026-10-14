@@ -1,15 +1,27 @@
 <script lang="ts">
-import { computeDays, computeHours, formatHour } from "./time-grid/date-utils";
+import {
+	computeDays,
+	computeHours,
+	formatDayRange,
+	formatHour,
+} from "./time-grid/date-utils";
 import { getCellCoordFromPoint } from "./time-grid/grid-utils";
 import TimeGridCell from "./time-grid/TimeGridCell.svelte";
 import TimeGridDaysHeader from "./time-grid/TimeGridDaysHeader.svelte";
 import TimeGridHeader from "./time-grid/TimeGridHeader.svelte";
+import TimeGridNav from "./time-grid/TimeGridNav.svelte";
 import { TimeGridState } from "./time-grid/time-grid-state.svelte";
 import type {
 	CalendarEvent,
 	CellCoord,
 	SelectedCells,
 } from "./time-grid/types";
+
+/**
+ * Days shown at once. A week keeps a column wide enough to tap on a phone, and
+ * it is the unit people think in when picking times.
+ */
+const DAYS_PER_PAGE = 7;
 
 /**
  * How long a touch must be held before it becomes a paint drag. This is the
@@ -32,7 +44,7 @@ interface Props {
 
 let { events = [], selected = $bindable({}), onchange }: Props = $props();
 
-const state = new TimeGridState({
+const gridState = new TimeGridState({
 	getSelected: () => selected,
 	setSelected: (next) => {
 		selected = next;
@@ -43,6 +55,15 @@ const state = new TimeGridState({
 
 let days = $derived(computeDays(events));
 let hours = $derived(computeHours(events));
+
+// Paging. The page index is clamped on read rather than corrected in an effect,
+// so a range that shrinks underneath the user can never leave the grid blank.
+let page = $state(0);
+let pageCount = $derived(Math.max(1, Math.ceil(days.length / DAYS_PER_PAGE)));
+let currentPage = $derived(Math.min(page, pageCount - 1));
+let pageStart = $derived(currentPage * DAYS_PER_PAGE);
+/** The columns on screen. Indices stay relative to the full range. */
+let visibleDays = $derived(days.slice(pageStart, pageStart + DAYS_PER_PAGE));
 
 // Gesture bookkeeping deliberately uses plain variables rather than runes: none
 // of it is rendered, and reading reactive state inside the scroll-guard
@@ -67,7 +88,7 @@ function resetPointer() {
 	activePointerId = null;
 	ownsGesture = false;
 	pendingCoord = null;
-	state.setPressing(null);
+	gridState.setPressing(null);
 }
 
 function startDrag(coord: CellCoord, haptics = false) {
@@ -76,7 +97,7 @@ function startDrag(coord: CellCoord, haptics = false) {
 	// Confirms the moment the gesture is committed, on the same frame as the
 	// first painted cell. Android only; other platforms simply ignore it.
 	if (haptics && typeof navigator.vibrate === "function") navigator.vibrate(10);
-	state.beginDrag(coord);
+	gridState.beginDrag(coord);
 }
 
 function handlePointerDown(event: PointerEvent) {
@@ -103,7 +124,7 @@ function handlePointerDown(event: PointerEvent) {
 	activePointerId = event.pointerId;
 	startPoint = { x: event.clientX, y: event.clientY };
 	pendingCoord = coord;
-	state.setPressing(coord);
+	gridState.setPressing(coord);
 
 	longPressTimer = setTimeout(() => {
 		longPressTimer = null;
@@ -114,9 +135,9 @@ function handlePointerDown(event: PointerEvent) {
 function handlePointerMove(event: PointerEvent) {
 	if (event.pointerId !== activePointerId) return;
 
-	if (state.isDragging) {
+	if (gridState.isDragging) {
 		const coord = getCellCoordFromPoint(event.clientX, event.clientY);
-		if (coord) state.updateDrag(coord);
+		if (coord) gridState.updateDrag(coord);
 		return;
 	}
 
@@ -138,7 +159,7 @@ function handlePointerMove(event: PointerEvent) {
 	if (Math.abs(dx) > TOUCH_SLOP_PX) {
 		startDrag(pendingCoord, true);
 		const coord = getCellCoordFromPoint(event.clientX, event.clientY);
-		if (coord) state.updateDrag(coord);
+		if (coord) gridState.updateDrag(coord);
 	}
 }
 
@@ -148,30 +169,30 @@ function handlePointerUp(event: PointerEvent) {
 	const pending = pendingCoord;
 	resetPointer();
 
-	if (state.isDragging) {
-		state.endDrag();
+	if (gridState.isDragging) {
+		gridState.endDrag();
 		return;
 	}
 
 	// Nothing moved, so this was a tap: toggle the one cell under the finger.
-	if (pending) state.toggleCell(pending);
+	if (pending) gridState.toggleCell(pending);
 }
 
 function handlePointerCancel(event: PointerEvent) {
 	if (event.pointerId !== activePointerId) return;
 	resetPointer();
-	state.cancelDrag();
+	gridState.cancelDrag();
 }
 
 function handleKeyDown(event: KeyboardEvent) {
 	if (event.key !== "Escape") return;
 	resetPointer();
-	state.cancelDrag();
+	gridState.cancelDrag();
 }
 
 function handleWindowBlur() {
 	resetPointer();
-	state.endDrag();
+	gridState.endDrag();
 }
 
 /**
@@ -216,9 +237,19 @@ function preventScrollWhilePainting(node: HTMLElement) {
 
 <div class="p-4">
 	<TimeGridHeader
-		selectedCount={state.selectedCount}
-		onClear={() => state.clearSelection()}
+		selectedCount={gridState.selectedCount}
+		onClear={() => gridState.clearSelection()}
 	/>
+
+	{#if pageCount > 1}
+		<TimeGridNav
+			label={formatDayRange(visibleDays)}
+			canGoPrevious={currentPage > 0}
+			canGoNext={currentPage < pageCount - 1}
+			onPrevious={() => (page = currentPage - 1)}
+			onNext={() => (page = currentPage + 1)}
+		/>
+	{/if}
 
 	<div
 		class="max-h-[70dvh] overflow-auto overscroll-contain rounded-lg border border-gray-200"
@@ -227,12 +258,12 @@ function preventScrollWhilePainting(node: HTMLElement) {
 			class="grid min-w-150 select-none [-webkit-touch-callout:none] [@media(pointer:coarse)]:min-w-0"
 			role="grid"
 			tabindex="0"
-			style="grid-template-columns: 60px repeat({days.length}, 1fr); grid-auto-rows: 40px;"
+			style="grid-template-columns: 60px repeat({visibleDays.length}, 1fr); grid-auto-rows: 40px;"
 			onpointerdown={handlePointerDown}
 			oncontextmenu={handleContextMenu}
 			{@attach preventScrollWhilePainting}
 		>
-			<TimeGridDaysHeader {days} />
+			<TimeGridDaysHeader days={visibleDays} />
 
 			{#each hours as currentHour (currentHour)}
 				<div
@@ -242,12 +273,13 @@ function preventScrollWhilePainting(node: HTMLElement) {
 					{formatHour(currentHour)}
 				</div>
 
-				{#each days as day, dayIndex (day.getTime())}
+				{#each visibleDays as day, index (day.getTime())}
+					{@const dayIndex = pageStart + index}
 					<TimeGridCell
 						{dayIndex}
 						date={day}
 						hour={currentHour}
-						visualState={state.getCellVisualState(day, currentHour)}
+						visualState={gridState.getCellVisualState(day, currentHour)}
 					/>
 				{/each}
 			{/each}

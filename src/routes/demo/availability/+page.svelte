@@ -38,13 +38,33 @@ const sampleEvents: CalendarEvent[] = [
 	},
 ];
 
+/** Two events a fortnight apart, so the day range spans two pages. */
+const longEvents: CalendarEvent[] = [
+	{
+		id: "kickoff",
+		title: "Kickoff",
+		start: at(0, 9, 0),
+		end: at(0, 10, 0),
+	},
+	{
+		id: "retro",
+		title: "Retro",
+		start: at(13, 15, 0),
+		end: at(13, 16, 0),
+	},
+];
+
+const eventSources: Record<string, CalendarEvent[]> = {
+	sample: sampleEvents,
+	long: longEvents,
+	empty: [],
+};
+
 let eventSource = $state("sample");
 let selected = $state<SelectedCells>({});
 
 // biome-ignore lint/correctness/noUnusedVariables: used in markup
-const events: CalendarEvent[] = $derived(
-	eventSource === "sample" ? sampleEvents : [],
-);
+const events: CalendarEvent[] = $derived(eventSources[eventSource] ?? []);
 // biome-ignore lint/correctness/noUnusedVariables: used in markup
 const selectedKeys: string[] = $derived(Object.keys(selected).sort());
 </script>
@@ -68,6 +88,10 @@ const selectedKeys: string[] = $derived(Object.keys(selected).sort());
 			<label class="flex items-center gap-2 text-sm text-gray-700">
 				<input type="radio" bind:group={eventSource} value="sample" />
 				Sample events
+			</label>
+			<label class="flex items-center gap-2 text-sm text-gray-700">
+				<input type="radio" bind:group={eventSource} value="long" />
+				14 days
 			</label>
 			<label class="flex items-center gap-2 text-sm text-gray-700">
 				<input type="radio" bind:group={eventSource} value="empty" />
