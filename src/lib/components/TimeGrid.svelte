@@ -238,7 +238,7 @@ function preventScrollWhilePainting(node: HTMLElement) {
 	onblur={handleWindowBlur}
 />
 
-<div class="p-4">
+<div class="w-fit max-w-full p-4">
 	<TimeGridHeader
 		{rangeLabel}
 		showNavigation={pageCount > 1}
@@ -250,17 +250,18 @@ function preventScrollWhilePainting(node: HTMLElement) {
 		onClear={() => gridState.clearSelection()}
 	/>
 
-	<!-- A soft canvas holding white tiles. Every border is gone: what separates
-	     one hour from the next is the 2px gutter, and what separates the chrome
-	     from the pickable area is the colour. -->
-	<div
-		class="max-h-[70dvh] overflow-auto overscroll-none rounded-2xl bg-gray-100 p-2 ring-1 ring-black/5 [corner-shape:squircle]"
-	>
+	<!-- No card, no canvas, no gutter: the grid sits on the page. What separated
+	     tiles before was a 2px gap on every edge — 170-odd little voids. Now the
+	     only structure is the hour rules, and the only colour is what you chose. -->
+	<div class="max-h-[70dvh] overflow-auto overscroll-none">
+		<!-- Nothing caps a `1fr` column, so on a wide screen a two-day range turned
+		     each hour into a 7:1 plank. A capped column keeps every tile the same
+		     shape no matter how many days are on screen. -->
 		<div
-			class="grid min-w-150 gap-0.5 select-none [@media(pointer:coarse)]:min-w-0"
+			class="grid select-none"
 			role="grid"
 			tabindex="0"
-			style="grid-template-columns: 60px repeat({visibleDays.length}, 1fr); grid-auto-rows: 40px;"
+			style="grid-template-columns: 44px repeat({visibleDays.length}, minmax(0, 120px)); grid-auto-rows: 36px;"
 			onpointerdown={handlePointerDown}
 			oncontextmenu={handleContextMenu}
 			{@attach preventScrollWhilePainting}
@@ -269,7 +270,7 @@ function preventScrollWhilePainting(node: HTMLElement) {
 
 			{#each hours as currentHour (currentHour)}
 				<div
-					class="sticky left-0 z-10 flex items-center justify-end bg-gray-100 pr-1.5 text-[11px] text-gray-400 tabular-nums"
+					class="sticky left-0 z-10 flex items-center justify-end bg-white pr-2 text-[11px] text-gray-400 tabular-nums"
 					role="rowheader"
 				>
 					{formatHour(currentHour)}
@@ -288,14 +289,16 @@ function preventScrollWhilePainting(node: HTMLElement) {
 		</div>
 	</div>
 
-	<!-- Help sits below the grid: present when you look for it, out of the way of
-	     the thing you came to do. -->
-	<p class="mt-3 text-center text-gray-400 text-xs">
-		<span class="[@media(pointer:coarse)]:hidden">
-			Drag across the grid to mark when you're free
-		</span>
-		<span class="hidden [@media(pointer:coarse)]:inline">
-			Tap to mark · drag sideways or hold to paint
-		</span>
-	</p>
+	<!-- The empty state doubles as the help text: it answers "what do I do here"
+	     exactly when that question exists, and gets out of the way afterwards. -->
+	{#if gridState.selectedCount === 0}
+		<p class="mt-3 text-center text-gray-400 text-xs">
+			<span class="[@media(pointer:coarse)]:hidden">
+				Drag across to mark when you're free
+			</span>
+			<span class="hidden [@media(pointer:coarse)]:inline">
+				Tap to mark · drag sideways or hold to paint
+			</span>
+		</p>
+	{/if}
 </div>

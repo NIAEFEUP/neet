@@ -69,7 +69,7 @@ const events: CalendarEvent[] = $derived(eventSources[eventSource] ?? []);
 const selectedKeys: string[] = $derived(Object.keys(selected).sort());
 </script>
 
-<div class="mx-auto mt-10 max-w-4xl rounded-xl bg-white p-6 shadow">
+<div class="mx-auto mt-10 max-w-xl rounded-xl bg-white p-6 shadow">
 	<h1 class="text-3xl font-bold text-green-700">Time Grid</h1>
 	<p class="mt-1 mb-6 text-sm text-gray-500">
 		Manual-testing demo route for the availability grid — nothing links here,

@@ -47,8 +47,15 @@ let {
 		{#if showNavigation}
 			{@render navButton("‹", "Previous days", canGoPrevious, onPrevious)}
 		{/if}
-		<!-- Fixed width so stepping pages cannot shift the arrows under the finger. -->
-		<span class="min-w-28 text-center font-medium text-gray-900 text-sm">
+		<!-- Fixed width so stepping pages cannot shift the arrows under the finger.
+		     Only when there are arrows to sit between, though — otherwise it would
+		     be indented from the edge the grid itself starts on. -->
+		<span
+			class={[
+				"font-medium text-gray-900 text-sm",
+				showNavigation ? "min-w-28 text-center" : "",
+			]}
+		>
 			{rangeLabel}
 		</span>
 		{#if showNavigation}
@@ -56,18 +63,21 @@ let {
 		{/if}
 	</div>
 
-	<div class="flex items-center gap-2">
-		<!-- Tabular figures: proportional digits would reflow this row on every
-		     cell the drag crosses. -->
-		<span class="tabular-nums text-gray-400 text-xs">
-			{selectedCount} blocks selected
-		</span>
-		<button
-			onclick={onClear}
-			disabled={selectedCount === 0}
-			class="cursor-pointer rounded-full px-3 py-1.5 font-medium text-gray-500 text-sm transition-[background-color,color,scale] duration-150 ease-out [-webkit-touch-callout:none] enabled:hover:bg-gray-100 enabled:hover:text-gray-900 enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-30"
-		>
-			Clear
-		</button>
-	</div>
+	<!-- Nothing to say when nothing is chosen: the toolbar collapses to just the
+	     range, and the grid explains itself instead. -->
+	{#if selectedCount > 0}
+		<div class="flex items-center gap-2">
+			<!-- Tabular figures: proportional digits would reflow this row on every
+			     cell the drag crosses. -->
+			<span class="tabular-nums text-gray-400 text-xs">
+				{selectedCount} selected
+			</span>
+			<button
+				onclick={onClear}
+				class="cursor-pointer rounded-full px-3 py-1.5 font-medium text-gray-500 text-sm transition-[background-color,color,scale] duration-150 ease-out [-webkit-touch-callout:none] hover:bg-gray-100 hover:text-gray-900 active:scale-95"
+			>
+				Clear
+			</button>
+		</div>
+	{/if}
 </div>
