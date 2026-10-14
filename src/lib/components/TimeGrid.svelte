@@ -250,11 +250,14 @@ function preventScrollWhilePainting(node: HTMLElement) {
 		onClear={() => gridState.clearSelection()}
 	/>
 
+	<!-- A soft canvas holding white tiles. Every border is gone: what separates
+	     one hour from the next is the 2px gutter, and what separates the chrome
+	     from the pickable area is the colour. -->
 	<div
-		class="max-h-[70dvh] overflow-auto overscroll-none rounded-lg border border-gray-200"
+		class="max-h-[70dvh] overflow-auto overscroll-none rounded-2xl bg-gray-100 p-2 ring-1 ring-black/5 [corner-shape:squircle]"
 	>
 		<div
-			class="grid min-w-150 select-none [-webkit-touch-callout:none] [@media(pointer:coarse)]:min-w-0"
+			class="grid min-w-150 gap-0.5 select-none [@media(pointer:coarse)]:min-w-0"
 			role="grid"
 			tabindex="0"
 			style="grid-template-columns: 60px repeat({visibleDays.length}, 1fr); grid-auto-rows: 40px;"
@@ -266,7 +269,7 @@ function preventScrollWhilePainting(node: HTMLElement) {
 
 			{#each hours as currentHour (currentHour)}
 				<div
-					class="sticky left-0 z-10 flex items-center justify-center border-r border-b border-gray-200 bg-gray-50 text-gray-500 text-xs"
+					class="sticky left-0 z-10 flex items-center justify-end bg-gray-100 pr-1.5 text-[11px] text-gray-400 tabular-nums"
 					role="rowheader"
 				>
 					{formatHour(currentHour)}

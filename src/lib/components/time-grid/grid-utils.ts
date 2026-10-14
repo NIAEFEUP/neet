@@ -102,9 +102,13 @@ export function getCellCoordFromPoint(
 	return { dayIndex, hour };
 }
 
+/**
+ * The tile. Its only job visually is to be a shape: every border in this grid is
+ * gone, and what separates one hour from the next is the gutter between tiles,
+ * not a line. `corner-shape` softens the corner into a squircle where the
+ * browser supports it and is simply ignored where it does not.
+ */
 const BASE_CELL_CLASS = [
-	// The cell is a control, not content: holding it must not select text or pop
-	// the iOS callout.
 	"[-webkit-touch-callout:none]",
 	// `touch-action` is resolved along the ancestor chain, so anything narrow
 	// here (`none`) would kill scrolling for the whole grid. The browser keeps
@@ -113,50 +117,44 @@ const BASE_CELL_CLASS = [
 	// `pan-y` means it can never be mistaken for a scroll.
 	// Pinch-zoom stays enabled; blocking it would be an accessibility failure.
 	"[touch-action:pan-y_pinch-zoom]",
+	"rounded-lg [corner-shape:squircle]",
 	"cursor-crosshair",
 ].join(" ");
 
 /**
- * Only the empty grid is ruled. A painted cell drops its hairlines, so a
- * selection reads as one continuous band of time rather than a run of squares —
- * "free 2 to 5" instead of three adjacent boxes.
+ * One hue, revealed by degrees. The colour never changes while painting — only
+ * how much of it is present. That keeps the whole interaction on a single axis,
+ * so a cell reads as lighter or heavier rather than as a different colour.
+ *
+ * Each state carries its own complete transition, and exactly one state class is
+ * ever applied, so these can never fight each other:
+ * feedback the finger is actively driving must be instant, and only committed
+ * change is allowed to ease.
  */
-const RULED = "border-r border-b border-gray-100";
-
-/**
- * The settle. A committed change eases in over 150ms with a strong ease-out, so
- * the block lands instead of snapping. Deliberately kept off the in-progress
- * states: a fade there trails behind the finger while dragging. Colour (rather
- * than movement) is also what makes it safe to keep under reduced motion.
- */
-const SETTLE =
-	"transition-colors duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]";
+const EASE = "ease-[cubic-bezier(0.23,1,0.32,1)]";
 
 const STATE_CLASSES: Record<Exclude<CellVisualState, "idle">, string> = {
-	// Filled the instant the finger lands, so the hold visibly registers before
-	// it is known to be a drag. No transition: this must track 1:1.
-	pressing: "bg-green-200",
-	"actively-painting": "bg-green-300",
-	"actively-unpainting": "bg-green-300",
-	painted: `bg-green-500 hover:bg-green-600 ${SETTLE}`,
+	// Held, before it is known to be a drag: it shrinks away from its neighbours,
+	// which is the whole press cue a tile of this size needs.
+	pressing:
+		"bg-green-500/20 scale-90 transition-[background-color,scale] duration-100 ease-out",
+	// Actively sweeping: the fill snaps 1:1 to the finger, but the tile eases
+	// back to full size so releasing or sweeping on never pops.
+	"actively-painting":
+		"bg-green-500/40 transition-[scale] duration-150 ease-out",
+	"actively-unpainting":
+		"bg-green-500/40 transition-[scale] duration-150 ease-out",
+	// Committed. This is the only change the user is not currently dragging, so
+	// it is the only one that gets to fade.
+	painted: `bg-green-500 hover:bg-green-600 transition-[background-color,scale] duration-150 ${EASE}`,
 };
 
 /**
- * Today's column carries a neutral tint rather than a second green: green means
- * "selected" everywhere else, and one colour should not mean two things.
- */
-const TODAY_TINT = "bg-gray-100/70 hover:bg-gray-200/70";
-
-/**
  * Returns the Tailwind class list for a cell.
- *
- * `today` only affects empty cells — a tinted column still has to give way to
- * whatever the user has actually marked.
  */
-export function getCellClass(state: CellVisualState, today = false): string {
+export function getCellClass(state: CellVisualState): string {
 	if (state === "idle") {
-		const tint = today ? TODAY_TINT : "bg-transparent hover:bg-gray-100";
-		return `${BASE_CELL_CLASS} ${RULED} ${tint} ${SETTLE}`;
+		return `${BASE_CELL_CLASS} bg-white hover:bg-gray-50 transition-colors duration-150 ${EASE}`;
 	}
 
 	return `${BASE_CELL_CLASS} ${STATE_CLASSES[state]}`;

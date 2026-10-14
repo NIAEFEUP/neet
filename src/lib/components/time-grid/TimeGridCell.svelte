@@ -1,5 +1,5 @@
 <script lang="ts">
-import { formatDateISO, isTodayDate } from "./date-utils";
+import { formatDateISO } from "./date-utils";
 import { getCellClass } from "./grid-utils";
 import type { CellVisualState } from "./types";
 
@@ -12,11 +12,9 @@ interface Props {
 
 let { dayIndex, hour, date, visualState }: Props = $props();
 
+let cellClass = $derived(getCellClass(visualState));
 let dateStr = $derived(
 	date ? (typeof date === "string" ? date : formatDateISO(date)) : undefined,
-);
-let cellClass = $derived(
-	getCellClass(visualState, date ? isTodayDate(date) : false),
 );
 </script>
 

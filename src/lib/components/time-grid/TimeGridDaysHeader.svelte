@@ -8,22 +8,24 @@ interface Props {
 let { days }: Props = $props();
 </script>
 
-<div class="sticky top-0 left-0 z-30 bg-gray-50 border-r border-b border-gray-200"></div>
+<!-- The chrome shares the canvas colour, so it reads as one continuous strip
+     rather than as a row of cells with a background. -->
+<div class="sticky top-0 left-0 z-30 bg-gray-100"></div>
 {#each days as day (day.getTime())}
 	{@const today = isTodayDate(day)}
 	<div
-		class="sticky top-0 z-20 flex flex-col items-center gap-0.5 border-r border-b border-gray-200 bg-gray-50 px-1 py-2"
+		class="sticky top-0 z-20 flex flex-col items-center gap-1 bg-gray-100 px-1 py-2"
 		role="columnheader"
 	>
-		<span class="font-medium text-[10px] text-gray-500 uppercase tracking-wider">
+		<span class="font-medium text-[10px] text-gray-400 uppercase tracking-widest">
 			{formatDayShort(day)}
 		</span>
-		<!-- Both branches are the same size so today's chip stays in line with the
-		     plain numbers either side of it. -->
+		<!-- Today's date sits in a squircle. The chip is the same 24px box either
+		     way, so the column never falls out of line with its neighbours. -->
 		<span
 			class={[
-				"flex h-6 w-6 items-center justify-center rounded-full font-medium text-sm",
-				today ? "bg-gray-900 text-white" : "text-gray-700",
+				"flex h-6 w-6 items-center justify-center rounded-lg font-semibold text-sm [corner-shape:squircle]",
+				today ? "bg-gray-900 text-white" : "font-medium text-gray-500",
 			]}
 		>
 			{formatDayNumber(day)}
