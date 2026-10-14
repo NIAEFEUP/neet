@@ -75,6 +75,8 @@ let startPoint = { x: 0, y: 0 };
 let pendingCoord: CellCoord | null = null;
 /** True once this gesture is ours, which is when the browser must stop scrolling. */
 let ownsGesture = false;
+/** True while a touch press is in flight — used to scope the context-menu guard. */
+let touchGesture = false;
 
 function clearLongPress() {
 	if (longPressTimer !== null) {
@@ -87,6 +89,7 @@ function resetPointer() {
 	clearLongPress();
 	activePointerId = null;
 	ownsGesture = false;
+	touchGesture = false;
 	pendingCoord = null;
 	gridState.setPressing(null);
 }
@@ -122,6 +125,7 @@ function handlePointerDown(event: PointerEvent) {
 	// become a paint drag or a scroll. Show the affordance, then decide on the
 	// first movement.
 	activePointerId = event.pointerId;
+	touchGesture = true;
 	startPoint = { x: event.clientX, y: event.clientY };
 	pendingCoord = coord;
 	gridState.setPressing(coord);
@@ -196,15 +200,14 @@ function handleWindowBlur() {
 }
 
 /**
- * A long-press on Android (and right-click on desktop) raises the browser's
- * context menu, which lands in the middle of a paint drag and cancels it. The
- * grid has nothing to offer in that menu, so it is suppressed for the whole
- * surface rather than only mid-gesture — a press can raise it before the
- * gesture has declared itself a drag, which is exactly when the timer is
- * still running.
+ * A long-press on Android raises the browser's context menu in the middle of a
+ * paint drag, which cancels it. Suppressed only while a touch press is actually
+ * in flight: the menu from a long-press always arrives with the finger still
+ * down, so this is reliable, and desktop right-click has nothing to do with us
+ * and keeps working.
  */
 function handleContextMenu(event: MouseEvent) {
-	event.preventDefault();
+	if (touchGesture) event.preventDefault();
 }
 
 /**
