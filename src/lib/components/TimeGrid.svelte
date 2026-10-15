@@ -261,7 +261,7 @@ function preventScrollWhilePainting(node: HTMLElement) {
 			class="grid select-none"
 			role="grid"
 			tabindex="0"
-			style="grid-template-columns: 44px repeat({visibleDays.length}, minmax(0, 120px)); grid-auto-rows: 36px;"
+			style="grid-template-columns: 44px repeat({visibleDays.length}, minmax(0, 120px)); grid-auto-rows: 36px; column-gap: 2px;"
 			onpointerdown={handlePointerDown}
 			oncontextmenu={handleContextMenu}
 			{@attach preventScrollWhilePainting}

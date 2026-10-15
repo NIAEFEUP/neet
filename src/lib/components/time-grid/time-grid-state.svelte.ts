@@ -134,24 +134,22 @@ export class TimeGridState {
 	/**
 	 * A CSS `border-radius` value for a cell, as corner radii in TL TR BR BL order.
 	 *
-	 * Rounding belongs to the *region*, not to the cell. A corner is only rounded
-	 * when neither of the two neighbours meeting there is painted, so a run of
-	 * hours fuses into one rounded block rather than becoming a row of rounded
-	 * squares with seams between them. Interior corners stay square, which is
-	 * what lets a block read as a single shape.
+	 * Rounding belongs to the region, not to the cell: a corner is only rounded
+	 * when the hour above or below it is not painted, so a run of hours fuses
+	 * into one shape.
+	 *
+	 * Horizontally, nothing merges. Each day is its own shape — a selection
+	 * running across midnight is two blocks, not one — which is also what
+	 * separates the columns, now that the grid has no vertical rules.
 	 */
 	getCellRadius(dayIndex: number, hour: number): string {
 		const up = this.isEffectivelyPainted(dayIndex, hour - 1);
 		const down = this.isEffectivelyPainted(dayIndex, hour + 1);
-		const left = this.isEffectivelyPainted(dayIndex - 1, hour);
-		const right = this.isEffectivelyPainted(dayIndex + 1, hour);
 
-		const tl = !up && !left ? CELL_RADIUS_PX : 0;
-		const tr = !up && !right ? CELL_RADIUS_PX : 0;
-		const br = !down && !right ? CELL_RADIUS_PX : 0;
-		const bl = !down && !left ? CELL_RADIUS_PX : 0;
+		const top = up ? 0 : CELL_RADIUS_PX;
+		const bottom = down ? 0 : CELL_RADIUS_PX;
 
-		return `${tl}px ${tr}px ${br}px ${bl}px`;
+		return `${top}px ${top}px ${bottom}px ${bottom}px`;
 	}
 
 	/**
