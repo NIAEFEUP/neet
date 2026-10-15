@@ -121,30 +121,34 @@ export class TimeGridState {
 	}
 
 	/**
-	 * Whether a cell is painted in the selection *as the current gesture will
-	 * leave it* — the committed cells with the in-flight drag applied on top.
+	 * Whether a cell is part of the visible filled region.
+	 *
+	 * Deliberately *not* the same as "will still be selected when the gesture
+	 * commits". A cell being unpainted keeps a fill while the pointer is over it,
+	 * so it has to count as part of the region — otherwise every cell under the
+	 * pointer rounds off on its own and a run breaks into a stack of pills
+	 * instead of one shape with a lighter section where the erase is happening.
 	 */
-	private isEffectivelyPainted(dayIndex: number, hour: number): boolean {
-		if (this.isDragging && this.isInDragSelection(dayIndex, hour)) {
-			return this.paintMode;
-		}
-		return this.isSelected(dayIndex, hour);
+	private isVisuallyFilled(dayIndex: number, hour: number): boolean {
+		return (
+			this.isSelected(dayIndex, hour) || this.isInDragSelection(dayIndex, hour)
+		);
 	}
 
 	/**
 	 * A CSS `border-radius` value for a cell, as corner radii in TL TR BR BL order.
 	 *
 	 * Rounding belongs to the region, not to the cell: a corner is only rounded
-	 * when the hour above or below it is not painted, so a run of hours fuses
-	 * into one shape.
+	 * when the hour above or below it is not filled, so a run of hours fuses into
+	 * one shape.
 	 *
 	 * Horizontally, nothing merges. Each day is its own shape — a selection
 	 * running across midnight is two blocks, not one — which is also what
 	 * separates the columns, now that the grid has no vertical rules.
 	 */
 	getCellRadius(dayIndex: number, hour: number): string {
-		const up = this.isEffectivelyPainted(dayIndex, hour - 1);
-		const down = this.isEffectivelyPainted(dayIndex, hour + 1);
+		const up = this.isVisuallyFilled(dayIndex, hour - 1);
+		const down = this.isVisuallyFilled(dayIndex, hour + 1);
 
 		const top = up ? 0 : CELL_RADIUS_PX;
 		const bottom = down ? 0 : CELL_RADIUS_PX;
