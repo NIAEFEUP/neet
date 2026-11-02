@@ -1,0 +1,529 @@
+[
+  {
+    "id": "dropConstraint.Availability.Availability_userId_fkey",
+    "label": "Drop constraint \"Availability_userId_fkey\" on \"Availability\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "Availability_userId_fkey",
+        "table": "Availability"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"Availability_userId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Availability_userId_fkey",
+          "public",
+          "\"public\".\"Availability\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop constraint \"Availability_userId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"Availability\" DROP CONSTRAINT \"Availability_userId_fkey\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"Availability_userId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Availability_userId_fkey",
+          "public",
+          "\"public\".\"Availability\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "dropIndex.Availability.Availability_userId_idx_a489d58a",
+    "label": "Drop index \"Availability_userId_idx_a489d58a\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "Availability_userId_idx_a489d58a",
+        "table": "Availability"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"Availability_userId_idx_a489d58a\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Availability_userId_idx_a489d58a\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop index \"Availability_userId_idx_a489d58a\"",
+        "sql": "DROP INDEX \"public\".\"Availability_userId_idx_a489d58a\"",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"Availability_userId_idx_a489d58a\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Availability_userId_idx_a489d58a\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "dropColumn.Availability.userId",
+    "label": "Drop column \"userId\" from \"Availability\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "userId",
+        "table": "Availability"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"userId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Availability",
+          "userId"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop column \"userId\"",
+        "sql": "ALTER TABLE \"public\".\"Availability\" DROP COLUMN \"userId\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"userId\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Availability",
+          "userId"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.Participant",
+    "label": "Create table \"Participant\"",
+    "summary": "Creates table \"Participant\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "Participant"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"Participant\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Participant\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"Participant\"",
+        "sql": "CREATE TABLE \"public\".\"Participant\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"eventId\" uuid NOT NULL,\n  \"id\" uuid NOT NULL,\n  \"modality\" text DEFAULT 'in_person' NOT NULL,\n  \"name\" text NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"Participant_modality_check_5669a018\" CHECK (\"modality\" IN ('in_person', 'online'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"Participant\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Participant\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Availability.status",
+    "label": "Add column \"status\" to \"Availability\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "status",
+        "table": "Availability"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"status\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Availability",
+          "status"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"status\"",
+        "sql": "ALTER TABLE \"public\".\"Availability\" ADD COLUMN \"status\" text DEFAULT 'available' NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"status\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Availability",
+          "status"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Availability.participantId",
+    "label": "Add column \"participantId\" to \"Availability\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "participantId",
+        "table": "Availability"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"participantId\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Availability",
+          "participantId"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"participantId\"",
+        "sql": "ALTER TABLE \"public\".\"Availability\" ADD COLUMN \"participantId\" uuid"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"participantId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Availability",
+          "participantId"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "data_migration.clear-legacy-availabilities",
+    "label": "Data transform: clear-legacy-availabilities",
+    "operationClass": "data",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [
+      {
+        "description": "Check clear-legacy-availabilities has work to do",
+        "sql": "SELECT EXISTS (SELECT \"id\" AS \"id\" FROM \"public\".\"Availability\" WHERE \"participantId\" IS NULL LIMIT 1) AS ok",
+        "params": []
+      }
+    ],
+    "execute": [
+      {
+        "description": "Run clear-legacy-availabilities",
+        "sql": "DELETE FROM \"public\".\"Availability\" WHERE \"participantId\" IS NULL",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "Verify clear-legacy-availabilities resolved all violations",
+        "sql": "SELECT NOT EXISTS (SELECT \"id\" AS \"id\" FROM \"public\".\"Availability\" WHERE \"participantId\" IS NULL LIMIT 1) AS ok",
+        "params": []
+      }
+    ]
+  },
+  {
+    "id": "alterNullability.setNotNull.Availability.participantId",
+    "label": "Set NOT NULL on \"Availability\".\"participantId\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "participantId",
+        "table": "Availability"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"participantId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Availability",
+          "participantId"
+        ]
+      },
+      {
+        "description": "ensure no NULL values in \"participantId\"",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"public\".\"Availability\" WHERE \"participantId\" IS NULL) AS \"result\"",
+        "params": []
+      }
+    ],
+    "execute": [
+      {
+        "description": "set NOT NULL on \"participantId\"",
+        "sql": "ALTER TABLE \"public\".\"Availability\" ALTER COLUMN \"participantId\" SET NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"participantId\" is NOT NULL",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "public",
+          "Availability",
+          "participantId",
+          "NO"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "checkConstraint.Availability.Availability_status_check_22f79d17",
+    "label": "Add check constraint \"Availability_status_check_22f79d17\" on \"Availability\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "checkConstraint",
+        "name": "Availability_status_check_22f79d17",
+        "table": "Availability"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"Availability_status_check_22f79d17\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Availability_status_check_22f79d17",
+          "public",
+          "\"public\".\"Availability\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add check constraint \"Availability_status_check_22f79d17\"",
+        "sql": "ALTER TABLE \"public\".\"Availability\" ADD CONSTRAINT \"Availability_status_check_22f79d17\" CHECK (\"status\" IN ('available', 'if_need_be'))"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"Availability_status_check_22f79d17\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Availability_status_check_22f79d17",
+          "public",
+          "\"public\".\"Availability\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.Availability.Availability_participantId_idx_e6c70ceb",
+    "label": "Create index \"Availability_participantId_idx_e6c70ceb\" on \"Availability\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "Availability_participantId_idx_e6c70ceb",
+        "table": "Availability"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"Availability_participantId_idx_e6c70ceb\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Availability_participantId_idx_e6c70ceb\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"Availability_participantId_idx_e6c70ceb\"",
+        "sql": "CREATE INDEX \"Availability_participantId_idx_e6c70ceb\" ON \"public\".\"Availability\" (\"participantId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"Availability_participantId_idx_e6c70ceb\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Availability_participantId_idx_e6c70ceb\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.Participant.Participant_eventId_idx_6a266d47",
+    "label": "Create index \"Participant_eventId_idx_6a266d47\" on \"Participant\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "Participant_eventId_idx_6a266d47",
+        "table": "Participant"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"Participant_eventId_idx_6a266d47\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Participant_eventId_idx_6a266d47\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"Participant_eventId_idx_6a266d47\"",
+        "sql": "CREATE INDEX \"Participant_eventId_idx_6a266d47\" ON \"public\".\"Participant\" (\"eventId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"Participant_eventId_idx_6a266d47\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Participant_eventId_idx_6a266d47\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.Participant.Participant_eventId_fkey",
+    "label": "Add foreign key \"Participant_eventId_fkey\" on \"Participant\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "Participant_eventId_fkey",
+        "table": "Participant"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"Participant_eventId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Participant_eventId_fkey",
+          "public",
+          "\"public\".\"Participant\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"Participant_eventId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"Participant\"\nADD CONSTRAINT \"Participant_eventId_fkey\"\nFOREIGN KEY (\"eventId\")\nREFERENCES \"public\".\"Event\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"Participant_eventId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Participant_eventId_fkey",
+          "public",
+          "\"public\".\"Participant\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.Availability.Availability_participantId_fkey",
+    "label": "Add foreign key \"Availability_participantId_fkey\" on \"Availability\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "Availability_participantId_fkey",
+        "table": "Availability"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"Availability_participantId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Availability_participantId_fkey",
+          "public",
+          "\"public\".\"Availability\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"Availability_participantId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"Availability\"\nADD CONSTRAINT \"Availability_participantId_fkey\"\nFOREIGN KEY (\"participantId\")\nREFERENCES \"public\".\"Participant\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"Availability_participantId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Availability_participantId_fkey",
+          "public",
+          "\"public\".\"Availability\""
+        ]
+      }
+    ]
+  }
+]

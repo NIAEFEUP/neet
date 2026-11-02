@@ -12,12 +12,23 @@ export interface CellCoord {
 
 export type CellKey = string;
 
+/**
+ * How strongly the guest can make a block. Kept separate from the database
+ * enum (`available` / `if_need_be`) so the UI can use a shorter, friendlier
+ * word for the second one.
+ */
+export type CellMode = "available" | "maybe";
+
 export type CellVisualState =
 	| "idle"
 	/** Held down, before a long-press has been confirmed into a drag. */
 	| "pressing"
-	| "actively-painting"
-	| "painted"
-	| "actively-unpainting";
+	/** The drag is applying the current brush. */
+	| "active-available"
+	| "active-maybe"
+	/** The drag is clearing a block that is already entirely in the brush. */
+	| "active-clearing"
+	| "available"
+	| "maybe";
 
-export type SelectedCells = Record<CellKey, boolean>;
+export type SelectedCells = Record<CellKey, CellMode>;

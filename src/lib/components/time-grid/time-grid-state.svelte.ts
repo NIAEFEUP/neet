@@ -1,5 +1,10 @@
 import { cellKey, cellKeyToDate, getCellsInRect } from "./grid-utils";
-import type { CellCoord, CellVisualState, SelectedCells } from "./types";
+import type {
+	CellCoord,
+	CellMode,
+	CellVisualState,
+	SelectedCells,
+} from "./types";
 
 /**
  * Corner radius of the selection, in px. Rows are 36px tall, so this is
@@ -15,6 +20,8 @@ export interface TimeGridStateOptions {
 	setSelected: (selected: SelectedCells) => void;
 	/** The normalized day columns currently rendered. */
 	getDays: () => Date[];
+	/** The brush the guest is painting with right now. */
+	getMode: () => CellMode;
 }
 
 /**
@@ -23,11 +30,11 @@ export interface TimeGridStateOptions {
  * Every input drives the same model: a drag records a start and an end cell, the
  * rectangle between them is the selection, and the change is committed on
  * release. Whether that change paints or erases is decided by the rectangle
- * itself: if every cell in it is already selected the drag erases, and if even
- * one cell is not it paints the whole block. Starting inside a painted region
- * and sweeping outward therefore adds the new hours instead of deleting the old
- * ones. Drags with no movement commit a single cell, which is what makes a tap
- * work.
+ * itself: if every cell in it already carries the active brush the drag erases,
+ * and if even one cell differs it paints the whole block with the brush. Starting
+ * inside a painted region and sweeping outward therefore adds the new hours
+ * instead of deleting the old ones. Drags with no movement commit a single cell,
+ * which is what makes a tap work.
  *
  * The selection itself is *not* stored here. It lives with the caller (a
  * bindable prop), and this class reads and writes it through `getSelected` /
@@ -47,11 +54,13 @@ export class TimeGridState {
 	private getSelected: () => SelectedCells;
 	private setSelected: (selected: SelectedCells) => void;
 	private getDays: () => Date[];
+	private getMode: () => CellMode;
 
 	constructor(options: TimeGridStateOptions) {
 		this.getSelected = options.getSelected;
 		this.setSelected = options.setSelected;
 		this.getDays = options.getDays;
+		this.getMode = options.getMode;
 	}
 
 	get days(): Date[] {
@@ -62,7 +71,7 @@ export class TimeGridState {
 		return this.getSelected();
 	}
 
-	/** Only truthy entries count — a key set to `false` is not a selection. */
+	/** Any recorded mode counts, whichever brush painted it. */
 	selectedCount = $derived(
 		Object.values(this.selectedCells).filter(Boolean).length,
 	);
@@ -75,16 +84,17 @@ export class TimeGridState {
 	private selectionSet = $derived(new Set(this.selectionRect ?? []));
 
 	/**
-	 * A rectangle that is entirely selected erases; one with a single unpainted
-	 * cell paints all of it. Checked against the committed selection, which does
-	 * not change until release, so "already selected" always means "selected
-	 * before this gesture".
+	 * A rectangle that is entirely in the active brush erases; one with a single
+	 * cell in a different mode paints all of it. Checked against the committed
+	 * selection, which does not change until release, so "already selected" always
+	 * means "selected before this gesture".
 	 */
 	paintMode = $derived.by(() => {
 		const rect = this.selectionRect;
 		if (!rect?.length) return true;
 
-		return !rect.every((key) => this.selectedCells[key]);
+		const mode = this.getMode();
+		return !rect.every((key) => this.selectedCells[key] === mode);
 	});
 
 	/** Replaces the selection wholesale. */
@@ -97,9 +107,13 @@ export class TimeGridState {
 		return day ? cellKey(day, hour) : null;
 	}
 
-	isSelected(dayIndex: number, hour: number): boolean {
+	getCellMode(dayIndex: number, hour: number): CellMode | null {
 		const key = this.keyFor(dayIndex, hour);
-		return key ? !!this.selectedCells[key] : false;
+		return key ? (this.selectedCells[key] ?? null) : null;
+	}
+
+	isSelected(dayIndex: number, hour: number): boolean {
+		return this.getCellMode(dayIndex, hour) !== null;
 	}
 
 	isInDragSelection(dayIndex: number, hour: number): boolean {
@@ -116,16 +130,18 @@ export class TimeGridState {
 
 	getCellVisualState(dayIndex: number, hour: number): CellVisualState {
 		if (this.isInDragSelection(dayIndex, hour)) {
-			return this.paintMode ? "actively-painting" : "actively-unpainting";
+			if (!this.paintMode) return "active-clearing";
+			return this.getMode() === "available"
+				? "active-available"
+				: "active-maybe";
 		}
 
 		if (this.isPressing(dayIndex, hour)) {
 			return "pressing";
 		}
 
-		if (this.isSelected(dayIndex, hour)) {
-			return "painted";
-		}
+		const mode = this.getCellMode(dayIndex, hour);
+		if (mode) return mode;
 
 		return "idle";
 	}
@@ -215,18 +231,19 @@ export class TimeGridState {
 	}
 
 	/**
-	 * Applies paint or erase to every key, and reports only when at least one
-	 * cell actually changed. A drag that merely crosses already-painted cells
-	 * must not look like an edit to the caller.
+	 * Applies the active brush or clears every key, and reports only when at
+	 * least one cell actually changed. A drag that merely crosses cells already
+	 * in the brush must not look like an edit to the caller.
 	 */
 	private applyToKeys(keys: string[]): void {
 		const next = { ...this.selectedCells };
+		const mode = this.getMode();
 		let changed = false;
 
 		for (const key of keys) {
 			if (this.paintMode) {
-				if (!next[key]) {
-					next[key] = true;
+				if (next[key] !== mode) {
+					next[key] = mode;
 					changed = true;
 				}
 			} else if (next[key]) {

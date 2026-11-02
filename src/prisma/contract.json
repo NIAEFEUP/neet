@@ -12,6 +12,10 @@
       "model": "Event",
       "namespace": "public"
     },
+    "Participant": {
+      "model": "Participant",
+      "namespace": "public"
+    },
     "User": {
       "model": "User",
       "namespace": "public"
@@ -20,6 +24,34 @@
   "domain": {
     "namespaces": {
       "public": {
+        "enum": {
+          "AvailabilityStatus": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "available",
+                "value": "available"
+              },
+              {
+                "name": "if_need_be",
+                "value": "if_need_be"
+              }
+            ]
+          },
+          "Modality": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "in_person",
+                "value": "in_person"
+              },
+              {
+                "name": "online",
+                "value": "online"
+              }
+            ]
+          }
+        },
         "models": {
           "Availability": {
             "fields": {
@@ -44,6 +76,13 @@
                   "kind": "scalar"
                 }
               },
+              "participantId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
               "startTime": {
                 "nullable": false,
                 "type": {
@@ -51,11 +90,17 @@
                   "kind": "scalar"
                 }
               },
-              "userId": {
+              "status": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/uuid@1",
+                  "codecId": "pg/text@1",
                   "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "AvailabilityStatus",
+                  "namespaceId": "public",
+                  "plane": "domain"
                 }
               }
             },
@@ -76,19 +121,19 @@
                   "namespace": "public"
                 }
               },
-              "user": {
+              "participant": {
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
                   "localFields": [
-                    "userId"
+                    "participantId"
                   ],
                   "targetFields": [
                     "id"
                   ]
                 },
                 "to": {
-                  "model": "User",
+                  "model": "Participant",
                   "namespace": "public"
                 }
               }
@@ -104,11 +149,14 @@
                 "id": {
                   "column": "id"
                 },
+                "participantId": {
+                  "column": "participantId"
+                },
                 "startTime": {
                   "column": "startTime"
                 },
-                "userId": {
-                  "column": "userId"
+                "status": {
+                  "column": "status"
                 }
               },
               "namespaceId": "public",
@@ -227,6 +275,21 @@
                   "model": "User",
                   "namespace": "public"
                 }
+              },
+              "participants": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "eventId"
+                  ]
+                },
+                "to": {
+                  "model": "Participant",
+                  "namespace": "public"
+                }
               }
             },
             "storage": {
@@ -269,6 +332,105 @@
               "table": "Event"
             }
           },
+          "Participant": {
+            "fields": {
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "eventId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "modality": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "Modality",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              },
+              "name": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "availabilities": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "participantId"
+                  ]
+                },
+                "to": {
+                  "model": "Availability",
+                  "namespace": "public"
+                }
+              },
+              "event": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "eventId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Event",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "eventId": {
+                  "column": "eventId"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "modality": {
+                  "column": "modality"
+                },
+                "name": {
+                  "column": "name"
+                }
+              },
+              "namespaceId": "public",
+              "table": "Participant"
+            }
+          },
           "User": {
             "fields": {
               "email": {
@@ -294,21 +456,6 @@
               }
             },
             "relations": {
-              "availabilities": {
-                "cardinality": "1:N",
-                "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "userId"
-                  ]
-                },
-                "to": {
-                  "model": "Availability",
-                  "namespace": "public"
-                }
-              },
               "createdEvents": {
                 "cardinality": "1:N",
                 "on": {
@@ -351,6 +498,13 @@
         "entries": {
           "table": {
             "Availability": {
+              "checks": [
+                {
+                  "expression": "\"status\" IN ('available', 'if_need_be')",
+                  "name": "Availability_status_check_22f79d17",
+                  "prefix": "Availability_status_check"
+                }
+              ],
               "columns": {
                 "endTime": {
                   "codecId": "pg/timestamptz-temporal@1",
@@ -371,15 +525,30 @@
                   "nativeType": "int4",
                   "nullable": false
                 },
+                "participantId": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false
+                },
                 "startTime": {
                   "codecId": "pg/timestamptz-temporal@1",
                   "nativeType": "timestamptz",
                   "nullable": false
                 },
-                "userId": {
-                  "codecId": "pg/uuid@1",
-                  "nativeType": "uuid",
-                  "nullable": false
+                "status": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "available"
+                  },
+                  "nativeType": "text",
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "AvailabilityStatus",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
                 }
               },
               "foreignKeys": [
@@ -404,7 +573,7 @@
                   "onDelete": "cascade",
                   "source": {
                     "columns": [
-                      "userId"
+                      "participantId"
                     ],
                     "namespaceId": "public",
                     "tableName": "Availability"
@@ -414,7 +583,7 @@
                       "id"
                     ],
                     "namespaceId": "public",
-                    "tableName": "User"
+                    "tableName": "Participant"
                   }
                 }
               ],
@@ -429,10 +598,10 @@
                 },
                 {
                   "columns": [
-                    "userId"
+                    "participantId"
                   ],
-                  "name": "Availability_userId_idx_a489d58a",
-                  "prefix": "Availability_userId_idx",
+                  "name": "Availability_participantId_idx_e6c70ceb",
+                  "prefix": "Availability_participantId_idx",
                   "unique": false
                 }
               ],
@@ -552,6 +721,91 @@
               },
               "uniques": []
             },
+            "Participant": {
+              "checks": [
+                {
+                  "expression": "\"modality\" IN ('in_person', 'online')",
+                  "name": "Participant_modality_check_5669a018",
+                  "prefix": "Participant_modality_check"
+                }
+              ],
+              "columns": {
+                "createdAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "eventId": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false
+                },
+                "modality": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "in_person"
+                  },
+                  "nativeType": "text",
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "Modality",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
+                "name": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "eventId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Participant"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Event"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "eventId"
+                  ],
+                  "name": "Participant_eventId_idx_6a266d47",
+                  "prefix": "Participant_eventId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": []
+            },
             "User": {
               "columns": {
                 "email": {
@@ -585,16 +839,32 @@
                 }
               ]
             }
+          },
+          "valueSet": {
+            "AvailabilityStatus": {
+              "kind": "valueSet",
+              "values": [
+                "available",
+                "if_need_be"
+              ]
+            },
+            "Modality": {
+              "kind": "valueSet",
+              "values": [
+                "in_person",
+                "online"
+              ]
+            }
           }
         },
         "id": "public",
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "40743f4273a2210ce4d130dbab9bd961d5a6b9633e44ce490d25305c997d40da"
+    "storageHash": "7a6c828df60ceaf477fb5d859e628d8a8afa43dac17135f34e90f4eeb47e3c03"
   },
   "execution": {
-    "executionHash": "3be195f626eff5409de9951666fafe46ed91546d04118d57ae5d9fc8b127efc5",
+    "executionHash": "988fbba321f964a9c51e3003b03c2307fefc691eb1d3b93a80cb713a0b7b0798",
     "mutations": {
       "defaults": [
         {
@@ -606,6 +876,17 @@
             "column": "id",
             "namespace": "public",
             "table": "Event"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv7",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "id",
+            "namespace": "public",
+            "table": "Participant"
           }
         },
         {
