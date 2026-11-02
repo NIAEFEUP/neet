@@ -33,8 +33,8 @@
                 "value": "yes"
               },
               {
-                "name": "online",
-                "value": "online"
+                "name": "if_need_be",
+                "value": "if_need_be"
               }
             ]
           }
@@ -471,8 +471,8 @@
             "Availability": {
               "checks": [
                 {
-                  "expression": "\"status\" IN ('yes', 'online')",
-                  "name": "Availability_status_check_262c9415",
+                  "expression": "\"status\" IN ('yes', 'if_need_be')",
+                  "name": "Availability_status_check_a85a7e5d",
                   "prefix": "Availability_status_check"
                 }
               ],
@@ -794,7 +794,7 @@
               "kind": "valueSet",
               "values": [
                 "yes",
-                "online"
+                "if_need_be"
               ]
             }
           }
@@ -803,7 +803,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "6027ccc12d326edc043b35c5814b16d64d3b2b08c98cfce545bdaf4c768be464"
+    "storageHash": "7b525222390501732368f17d5d765041988e5c9b450eaccb4db85ba6e3a74f28"
   },
   "execution": {
     "executionHash": "988fbba321f964a9c51e3003b03c2307fefc691eb1d3b93a80cb713a0b7b0798",

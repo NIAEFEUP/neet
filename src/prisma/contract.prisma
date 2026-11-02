@@ -1,10 +1,10 @@
 // use prisma-8
 
-/// How a participant can make a given block: a plain yes, or they can join online.
+/// How a participant can make a given block: a plain yes, or if they are needed.
 enum AvailabilityStatus {
   @@type("pg/text@1")
-  yes    = "yes"
-  online = "online"
+  yes        = "yes"
+  if_need_be = "if_need_be"
 }
 
 model User {

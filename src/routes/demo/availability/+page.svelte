@@ -84,9 +84,9 @@ const selectedEntries = $derived(
 					Yes
 				</label>
 				<label class="flex items-center gap-2 text-sm text-gray-700">
-					<input type="radio" bind:group={brush} value="online" />
+					<input type="radio" bind:group={brush} value="maybe" />
 					<span class="h-3 w-3 rounded-sm bg-yellow-600" aria-hidden="true"></span>
-					Online
+					If need be
 				</label>
 			</div>
 		</div>

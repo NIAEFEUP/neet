@@ -79,7 +79,7 @@ async function main() {
 		name: bob.name,
 	});
 
-	// Alice is free in the afternoon, and can join online for the last hour.
+	// Alice is free in the afternoon, and can stretch to 17:00 if needed.
 	await db.orm.public.Availability.create({
 		eventId: event.id,
 		participantId: aliceParticipant.id,
@@ -93,7 +93,7 @@ async function main() {
 		participantId: aliceParticipant.id,
 		startTime: at(today, "16:00"),
 		endTime: at(today, "17:00"),
-		status: "online",
+		status: "if_need_be",
 	});
 
 	// Bob is free tomorrow morning.

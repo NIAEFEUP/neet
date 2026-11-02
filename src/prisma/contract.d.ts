@@ -34,7 +34,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'6027ccc12d326edc043b35c5814b16d64d3b2b08c98cfce545bdaf4c768be464'>;
+  StorageHashBase<'7b525222390501732368f17d5d765041988e5c9b450eaccb4db85ba6e3a74f28'>;
 export type ExecutionHash =
   ExecutionHashBase<'988fbba321f964a9c51e3003b03c2307fefc691eb1d3b93a80cb713a0b7b0798'>;
 export type ProfileHash =
@@ -256,7 +256,7 @@ export type FieldOutputTypes = {
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly participantId: CodecTypes['pg/uuid@1']['output'];
       readonly startTime: CodecTypes['pg/timestamptz-temporal@1']['output'];
-      readonly status: 'yes' | 'online';
+      readonly status: 'yes' | 'if_need_be';
     };
     readonly Event: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
@@ -292,7 +292,7 @@ export type FieldInputTypes = {
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly participantId: CodecTypes['pg/uuid@1']['input'];
       readonly startTime: CodecTypes['pg/timestamptz-temporal@1']['input'];
-      readonly status: 'yes' | 'online';
+      readonly status: 'yes' | 'if_need_be';
     };
     readonly Event: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
@@ -328,7 +328,7 @@ export type StorageColumnTypes = {
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly participantId: CodecTypes['pg/uuid@1']['output'];
       readonly startTime: CodecTypes['pg/timestamptz-temporal@1']['output'];
-      readonly status: 'yes' | 'online';
+      readonly status: 'yes' | 'if_need_be';
     };
     readonly Event: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
@@ -364,7 +364,7 @@ export type StorageColumnInputTypes = {
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly participantId: CodecTypes['pg/uuid@1']['input'];
       readonly startTime: CodecTypes['pg/timestamptz-temporal@1']['input'];
-      readonly status: 'yes' | 'online';
+      readonly status: 'yes' | 'if_need_be';
     };
     readonly Event: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
@@ -400,7 +400,7 @@ export namespace Models {
     id: CodecTypes['pg/int4@1']['output'];
     participantId: CodecTypes['pg/uuid@1']['output'];
     startTime: CodecTypes['pg/timestamptz-temporal@1']['output'];
-    status: 'yes' | 'online';
+    status: 'yes' | 'if_need_be';
     event: public_Event;
     participant: public_Participant;
     readonly [RelationKeys]?: 'event' | 'participant';
@@ -715,7 +715,7 @@ type ContractBase = Omit<
           readonly valueSet: {
             readonly AvailabilityStatus: {
               readonly kind: 'valueSet';
-              readonly values: readonly ['yes', 'online'];
+              readonly values: readonly ['yes', 'if_need_be'];
             };
           };
         };
@@ -1025,7 +1025,7 @@ type ContractBase = Omit<
             readonly codecId: 'pg/text@1';
             readonly members: readonly [
               { readonly name: 'yes'; readonly value: 'yes' },
-              { readonly name: 'online'; readonly value: 'online' },
+              { readonly name: 'if_need_be'; readonly value: 'if_need_be' },
             ];
           };
         };

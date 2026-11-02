@@ -13,10 +13,10 @@ export interface CellCoord {
 export type CellKey = string;
 
 /**
- * How a guest can make a block: a plain yes, or online. Mirrors the database
- * `AvailabilityStatus` enum.
+ * How a guest can make a block: a plain yes, or if they are needed. Mirrors the
+ * database `AvailabilityStatus` enum (`yes` / `if_need_be`).
  */
-export type CellMode = "yes" | "online";
+export type CellMode = "yes" | "maybe";
 
 export type CellVisualState =
 	| "idle"
@@ -24,10 +24,10 @@ export type CellVisualState =
 	| "pressing"
 	/** The drag is applying the current brush. */
 	| "active-yes"
-	| "active-online"
+	| "active-maybe"
 	/** The drag is clearing a block that is already entirely in the brush. */
 	| "active-clearing"
 	| "yes"
-	| "online";
+	| "maybe";
 
 export type SelectedCells = Record<CellKey, CellMode>;

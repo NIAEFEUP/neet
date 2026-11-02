@@ -246,60 +246,24 @@
     ]
   },
   {
-    "id": "data_migration.rename-if-need-be-to-online",
-    "label": "Data transform: rename-if-need-be-to-online",
-    "operationClass": "data",
-    "target": {
-      "id": "postgres"
-    },
-    "precheck": [
-      {
-        "description": "Check rename-if-need-be-to-online has work to do",
-        "sql": "SELECT EXISTS (SELECT \"id\" AS \"id\" FROM \"public\".\"Availability\" WHERE \"status\" = $1 LIMIT 1) AS ok",
-        "params": [
-          "if_need_be"
-        ]
-      }
-    ],
-    "execute": [
-      {
-        "description": "Run rename-if-need-be-to-online",
-        "sql": "UPDATE \"public\".\"Availability\" SET \"status\" = $1 WHERE \"status\" = $2",
-        "params": [
-          "online",
-          "if_need_be"
-        ]
-      }
-    ],
-    "postcheck": [
-      {
-        "description": "Verify rename-if-need-be-to-online resolved all violations",
-        "sql": "SELECT NOT EXISTS (SELECT \"id\" AS \"id\" FROM \"public\".\"Availability\" WHERE \"status\" = $1 LIMIT 1) AS ok",
-        "params": [
-          "if_need_be"
-        ]
-      }
-    ]
-  },
-  {
-    "id": "checkConstraint.Availability.Availability_status_check_262c9415",
-    "label": "Add check constraint \"Availability_status_check_262c9415\" on \"Availability\"",
+    "id": "checkConstraint.Availability.Availability_status_check_a85a7e5d",
+    "label": "Add check constraint \"Availability_status_check_a85a7e5d\" on \"Availability\"",
     "operationClass": "additive",
     "target": {
       "id": "postgres",
       "details": {
         "schema": "public",
         "objectType": "checkConstraint",
-        "name": "Availability_status_check_262c9415",
+        "name": "Availability_status_check_a85a7e5d",
         "table": "Availability"
       }
     },
     "precheck": [
       {
-        "description": "ensure constraint \"Availability_status_check_262c9415\" does not exist",
+        "description": "ensure constraint \"Availability_status_check_a85a7e5d\" does not exist",
         "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
         "params": [
-          "Availability_status_check_262c9415",
+          "Availability_status_check_a85a7e5d",
           "public",
           "\"public\".\"Availability\""
         ]
@@ -307,16 +271,16 @@
     ],
     "execute": [
       {
-        "description": "add check constraint \"Availability_status_check_262c9415\"",
-        "sql": "ALTER TABLE \"public\".\"Availability\" ADD CONSTRAINT \"Availability_status_check_262c9415\" CHECK (\"status\" IN ('yes', 'online'))"
+        "description": "add check constraint \"Availability_status_check_a85a7e5d\"",
+        "sql": "ALTER TABLE \"public\".\"Availability\" ADD CONSTRAINT \"Availability_status_check_a85a7e5d\" CHECK (\"status\" IN ('yes', 'if_need_be'))"
       }
     ],
     "postcheck": [
       {
-        "description": "verify constraint \"Availability_status_check_262c9415\" exists",
+        "description": "verify constraint \"Availability_status_check_a85a7e5d\" exists",
         "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
         "params": [
-          "Availability_status_check_262c9415",
+          "Availability_status_check_a85a7e5d",
           "public",
           "\"public\".\"Availability\""
         ]
