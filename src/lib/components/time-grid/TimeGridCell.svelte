@@ -4,17 +4,33 @@ import { getCellClass } from "./grid-utils";
 import type { CellVisualState } from "./types";
 
 interface Props {
+	id: string;
+	/** Space-separated column and row header ids, used as the accessible name. */
+	labelledBy: string;
 	dayIndex: number;
 	hour: number;
 	date?: Date | string;
 	visualState: CellVisualState;
 	/** Corner radii in TL TR BR BL order, computed from the painted region. */
 	radius: string;
+	selected: boolean;
+	/** True when the keyboard cursor is on this cell. */
+	focused: boolean;
 }
 
-let { dayIndex, hour, date, visualState, radius }: Props = $props();
+let {
+	id,
+	labelledBy,
+	dayIndex,
+	hour,
+	date,
+	visualState,
+	radius,
+	selected,
+	focused,
+}: Props = $props();
 
-let cellClass = $derived(getCellClass(visualState));
+let cellClass = $derived(getCellClass(visualState, focused));
 let dateStr = $derived(
 	date ? (typeof date === "string" ? date : formatDateISO(date)) : undefined,
 );
@@ -31,10 +47,12 @@ let shape = $derived(
 </script>
 
 <div
+	{id}
 	class={cellClass}
 	style={shape}
 	role="gridcell"
-	tabindex="0"
+	aria-labelledby={labelledBy}
+	aria-selected={selected}
 	data-cell
 	data-day={dayIndex}
 	data-date={dateStr}

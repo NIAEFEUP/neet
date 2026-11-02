@@ -13,7 +13,8 @@ export interface TimeGridStateOptions {
 	getSelected: () => SelectedCells;
 	/** Writes it back. Called once per committed change, never per cell. */
 	setSelected: (selected: SelectedCells) => void;
-	getDays?: () => Date[];
+	/** The normalized day columns currently rendered. */
+	getDays: () => Date[];
 }
 
 /**
@@ -43,7 +44,7 @@ export class TimeGridState {
 
 	private getSelected: () => SelectedCells;
 	private setSelected: (selected: SelectedCells) => void;
-	private getDays?: () => Date[];
+	private getDays: () => Date[];
 
 	constructor(options: TimeGridStateOptions) {
 		this.getSelected = options.getSelected;
@@ -52,68 +53,62 @@ export class TimeGridState {
 	}
 
 	get days(): Date[] {
-		return this.getDays?.() ?? [];
+		return this.getDays();
 	}
 
 	get selectedCells(): SelectedCells {
 		return this.getSelected();
 	}
 
-	selectedCount = $derived(Object.keys(this.selectedCells).length);
+	/** Only truthy entries count — a key set to `false` is not a selection. */
+	selectedCount = $derived(
+		Object.values(this.selectedCells).filter(Boolean).length,
+	);
 
 	selectionRect = $derived.by(() => {
 		if (!this.dragStartCell || !this.dragEndCell) return null;
 		return getCellsInRect(this.dragStartCell, this.dragEndCell, this.days);
 	});
 
+	private selectionSet = $derived(new Set(this.selectionRect ?? []));
+
 	/** Replaces the selection wholesale. */
 	setSelectedCells(cells: SelectedCells): void {
 		this.setSelected(cells);
 	}
 
-	resolveKey(dateOrDayIndex: Date | string | number, hour: number): string {
-		if (typeof dateOrDayIndex === "number") {
-			const day = this.days[dateOrDayIndex];
-			if (day) return cellKey(day, hour);
-		}
-		return cellKey(dateOrDayIndex, hour);
+	private keyFor(dayIndex: number, hour: number): string | null {
+		const day = this.days[dayIndex];
+		return day ? cellKey(day, hour) : null;
 	}
 
-	isSelected(dateOrDayIndex: Date | string | number, hour: number): boolean {
-		return !!this.selectedCells[this.resolveKey(dateOrDayIndex, hour)];
+	isSelected(dayIndex: number, hour: number): boolean {
+		const key = this.keyFor(dayIndex, hour);
+		return key ? !!this.selectedCells[key] : false;
 	}
 
-	isInDragSelection(
-		dateOrDayIndex: Date | string | number,
-		hour: number,
-	): boolean {
+	isInDragSelection(dayIndex: number, hour: number): boolean {
+		const key = this.keyFor(dayIndex, hour);
+		return key ? this.selectionSet.has(key) : false;
+	}
+
+	isPressing(dayIndex: number, hour: number): boolean {
 		return (
-			this.selectionRect?.includes(this.resolveKey(dateOrDayIndex, hour)) ??
-			false
+			this.pressingCell?.dayIndex === dayIndex &&
+			this.pressingCell?.hour === hour
 		);
 	}
 
-	isPressing(dateOrDayIndex: Date | string | number, hour: number): boolean {
-		if (!this.pressingCell) return false;
-		return (
-			this.resolveKey(this.pressingCell.dayIndex, this.pressingCell.hour) ===
-			this.resolveKey(dateOrDayIndex, hour)
-		);
-	}
-
-	getCellVisualState(
-		dateOrDayIndex: Date | string | number,
-		hour: number,
-	): CellVisualState {
-		if (this.isInDragSelection(dateOrDayIndex, hour)) {
+	getCellVisualState(dayIndex: number, hour: number): CellVisualState {
+		if (this.isInDragSelection(dayIndex, hour)) {
 			return this.paintMode ? "actively-painting" : "actively-unpainting";
 		}
 
-		if (this.isPressing(dateOrDayIndex, hour)) {
+		if (this.isPressing(dayIndex, hour)) {
 			return "pressing";
 		}
 
-		if (this.isSelected(dateOrDayIndex, hour)) {
+		if (this.isSelected(dayIndex, hour)) {
 			return "painted";
 		}
 
@@ -184,9 +179,7 @@ export class TimeGridState {
 		if (!this.isDragging) return;
 
 		const rect = this.selectionRect;
-		if (rect) {
-			this.applyToKeys(rect);
-		}
+		if (rect?.length) this.applyToKeys(rect);
 
 		this.resetGesture();
 	}
@@ -207,16 +200,28 @@ export class TimeGridState {
 		this.setSelected({});
 	}
 
+	/**
+	 * Applies paint or erase to every key, and reports only when at least one
+	 * cell actually changed. A drag that merely crosses already-painted cells
+	 * must not look like an edit to the caller.
+	 */
 	private applyToKeys(keys: string[]): void {
 		const next = { ...this.selectedCells };
+		let changed = false;
+
 		for (const key of keys) {
 			if (this.paintMode) {
-				next[key] = true;
-			} else {
+				if (!next[key]) {
+					next[key] = true;
+					changed = true;
+				}
+			} else if (next[key]) {
 				delete next[key];
+				changed = true;
 			}
 		}
-		this.setSelected(next);
+
+		if (changed) this.setSelected(next);
 	}
 
 	private resetGesture(): void {

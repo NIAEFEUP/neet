@@ -1,9 +1,9 @@
-export interface CalendarEvent {
-	id: string;
-	title: string;
-	start: Date;
-	end: Date;
-}
+/**
+ * A day column. Pass a local `Date`, or an ISO calendar date (`'YYYY-MM-DD'`).
+ * Strings are preferred when the data comes from the server: they carry no
+ * timezone, so the column always shows the date the organizer picked.
+ */
+export type DayInput = Date | string;
 
 export interface CellCoord {
 	dayIndex: number;

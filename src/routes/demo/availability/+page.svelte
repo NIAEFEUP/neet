@@ -1,75 +1,50 @@
 <script lang="ts">
-import type { CalendarEvent, SelectedCells } from "$lib";
+import { Temporal } from "temporal-polyfill";
+import type { SelectedCells } from "$lib";
 // biome-ignore lint/correctness/noUnusedImports: used in markup
 import { TimeGrid } from "$lib";
 
-/**
- * Builds a local-time Date `dayOffset` days from today at the given time.
- */
-function at(dayOffset: number, hour: number, minute = 0): Date {
-	const today = new Date();
-	return new Date(
-		today.getFullYear(),
-		today.getMonth(),
-		today.getDate() + dayOffset,
-		hour,
-		minute,
-	);
+interface Scenario {
+	label: string;
+	days: number;
+	startHour: number;
+	endHour: number;
 }
 
-const sampleEvents: CalendarEvent[] = [
-	{
-		id: "team-standup",
-		title: "Team Standup",
-		start: at(0, 9, 0),
-		end: at(0, 9, 30),
+/** Ranges that exercise paging, the hour bounds, and the scroll container. */
+const scenarios: Record<string, Scenario> = {
+	week: { label: "One week · 08–19", days: 7, startHour: 8, endHour: 19 },
+	fortnight: {
+		label: "Two weeks · 08–19",
+		days: 14,
+		startHour: 8,
+		endHour: 19,
 	},
-	{
-		id: "design-review",
-		title: "Design Review",
-		start: at(1, 14, 0),
-		end: at(1, 15, 30),
-	},
-	{
-		id: "sprint-planning",
-		title: "Sprint Planning",
-		start: at(2, 10, 0),
-		end: at(2, 12, 0),
-	},
-];
-
-/** Two events a fortnight apart, so the day range spans two pages. */
-const longEvents: CalendarEvent[] = [
-	{
-		id: "kickoff",
-		title: "Kickoff",
-		start: at(0, 9, 0),
-		end: at(0, 10, 0),
-	},
-	{
-		id: "retro",
-		title: "Retro",
-		start: at(13, 15, 0),
-		end: at(13, 16, 0),
-	},
-];
-
-const eventSources: Record<string, CalendarEvent[]> = {
-	sample: sampleEvents,
-	long: longEvents,
-	empty: [],
+	fullday: { label: "Two days · 24h", days: 2, startHour: 0, endHour: 24 },
 };
 
-let eventSource = $state("sample");
+let scenarioKey = $state("week");
 let selected = $state<SelectedCells>({});
 
-// biome-ignore lint/correctness/noUnusedVariables: used in markup
-const events: CalendarEvent[] = $derived(eventSources[eventSource] ?? []);
-// biome-ignore lint/correctness/noUnusedVariables: used in markup
-const selectedKeys: string[] = $derived(Object.keys(selected).sort());
+const scenario = $derived(scenarios[scenarioKey] ?? scenarios.week);
+
+/** Today onwards, as plain ISO dates. Computed on the client (no SSR here). */
+const dates = $derived.by(() => {
+	const today = Temporal.Now.plainDateISO();
+
+	return Array.from({ length: scenario.days }, (_, offset) =>
+		today.add({ days: offset }).toString(),
+	);
+});
+
+const selectedKeys = $derived(
+	Object.keys(selected)
+		.filter((key) => selected[key])
+		.sort(),
+);
 </script>
 
-<div class="mx-auto mt-10 max-w-xl rounded-xl bg-white p-6 shadow">
+<div class="mx-auto mt-10 max-w-5xl rounded-xl bg-white p-6 shadow">
 	<h1 class="text-3xl font-bold text-green-700">Time Grid</h1>
 	<p class="mt-1 mb-6 text-sm text-gray-500">
 		Manual-testing demo route for the availability grid — nothing links here,
@@ -77,30 +52,32 @@ const selectedKeys: string[] = $derived(Object.keys(selected).sort());
 	</p>
 
 	<div class="mb-4 flex items-center gap-3">
-		<span class="text-sm font-medium text-gray-700" id="event-source-label">
-			Events
+		<span class="text-sm font-medium text-gray-700" id="scenario-label">
+			Scenario
 		</span>
 		<div
-			class="inline-flex items-center gap-4 rounded-md border border-gray-300 px-3 py-2"
+			class="inline-flex flex-wrap items-center gap-4 rounded-md border border-gray-300 px-3 py-2"
 			role="radiogroup"
-			aria-labelledby="event-source-label"
+			aria-labelledby="scenario-label"
 		>
-			<label class="flex items-center gap-2 text-sm text-gray-700">
-				<input type="radio" bind:group={eventSource} value="sample" />
-				Sample events
-			</label>
-			<label class="flex items-center gap-2 text-sm text-gray-700">
-				<input type="radio" bind:group={eventSource} value="long" />
-				14 days
-			</label>
-			<label class="flex items-center gap-2 text-sm text-gray-700">
-				<input type="radio" bind:group={eventSource} value="empty" />
-				No events
-			</label>
+			{#each Object.entries(scenarios) as [key, value] (key)}
+				<label class="flex items-center gap-2 text-sm text-gray-700">
+					<input type="radio" bind:group={scenarioKey} value={key} />
+					{value.label}
+				</label>
+			{/each}
 		</div>
 	</div>
 
-	<TimeGrid {events} bind:selected />
+	<div class="flex justify-center">
+		<TimeGrid
+			{dates}
+			startHour={scenario.startHour}
+			endHour={scenario.endHour}
+			bind:selected
+			label="Availability demo"
+		/>
+	</div>
 
 	<div class="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
 		<p class="text-sm font-medium text-gray-700">

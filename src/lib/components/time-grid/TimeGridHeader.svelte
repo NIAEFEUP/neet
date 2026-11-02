@@ -32,6 +32,7 @@ let {
 )}
 	<!-- Borderless: a control only shows itself under the pointer. -->
 	<button
+		type="button"
 		onclick={onClick}
 		disabled={!enabled}
 		aria-label={label}
@@ -66,13 +67,14 @@ let {
 	<!-- Nothing to say when nothing is chosen: the toolbar collapses to just the
 	     range, and the grid explains itself instead. -->
 	{#if selectedCount > 0}
-		<div class="flex items-center gap-2">
+		<div class="flex items-center gap-2" aria-live="polite">
 			<!-- Tabular figures: proportional digits would reflow this row on every
 			     cell the drag crosses. -->
 			<span class="tabular-nums text-gray-400 text-xs">
 				{selectedCount} selected
 			</span>
 			<button
+				type="button"
 				onclick={onClear}
 				class="cursor-pointer rounded-lg px-3 py-1.5 font-medium text-gray-500 text-sm transition-[background-color,color,scale] duration-150 ease-out [-webkit-touch-callout:none] [corner-shape:squircle] hover:bg-gray-100 hover:text-gray-900 active:scale-95"
 			>

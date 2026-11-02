@@ -1,46 +1,30 @@
 import { formatDateISO } from "./date-utils";
-import type { CellCoord, CellVisualState } from "./types";
+import type { CellCoord, CellVisualState, DayInput } from "./types";
 
 /**
  * Serializes a cell's coordinates to a unique string key.
- * Can accept a Date object, an ISO date string ('YYYY-MM-DD'), or dayIndex number for fallback.
+ * Accepts the same day values as the grid: a local `Date` or `'YYYY-MM-DD'`.
  */
-export function cellKey(
-	dateOrDay: Date | string | number,
-	hour: number,
-): string {
-	if (typeof dateOrDay === "number") {
-		return `${dateOrDay}-${hour}`;
-	}
+export function cellKey(day: DayInput, hour: number): string {
 	const dateStr =
-		typeof dateOrDay === "string" ? dateOrDay : formatDateISO(dateOrDay);
+		typeof day === "string" ? day.slice(0, 10) : formatDateISO(day);
 	const hourStr = String(hour).padStart(2, "0");
 	return `${dateStr}T${hourStr}:00`;
 }
 
 /**
- * Parses a serialized cell key back into date string and hour number, or dayIndex.
+ * Parses a serialized cell key back into its ISO date and hour.
  */
 export function parseCellKey(
 	key: string,
-): { date: string; hour: number } | { dayIndex: number; hour: number } | null {
-	const isoMatch = /^(\d{4}-\d{2}-\d{2})T(\d{2}):00$/.exec(key);
-	if (isoMatch) {
-		return {
-			date: isoMatch[1],
-			hour: parseInt(isoMatch[2], 10),
-		};
-	}
+): { date: string; hour: number } | null {
+	const match = /^(\d{4}-\d{2}-\d{2})T(\d{2}):00$/.exec(key);
+	if (!match) return null;
 
-	const indexMatch = /^(\d+)-(\d+)$/.exec(key);
-	if (indexMatch) {
-		return {
-			dayIndex: parseInt(indexMatch[1], 10),
-			hour: parseInt(indexMatch[2], 10),
-		};
-	}
-
-	return null;
+	return {
+		date: match[1],
+		hour: Number.parseInt(match[2], 10),
+	};
 }
 
 /**
@@ -48,7 +32,8 @@ export function parseCellKey(
  */
 export function cellKeyToDate(key: string): Date | null {
 	const parsed = parseCellKey(key);
-	if (!parsed || !("date" in parsed)) return null;
+	if (!parsed) return null;
+
 	const [year, month, day] = parsed.date.split("-").map(Number);
 	return new Date(year, month - 1, day, parsed.hour, 0, 0, 0);
 }
@@ -66,7 +51,7 @@ export function dateToCellKey(date: Date): string {
 export function getCellsInRect(
 	start: CellCoord,
 	end: CellCoord,
-	days?: Date[],
+	days: DayInput[],
 ): string[] {
 	const minDay = Math.min(start.dayIndex, end.dayIndex);
 	const maxDay = Math.max(start.dayIndex, end.dayIndex);
@@ -75,9 +60,11 @@ export function getCellsInRect(
 
 	const cells: string[] = [];
 	for (let d = minDay; d <= maxDay; d++) {
-		const dayRef = days?.[d] ?? d;
+		const day = days[d];
+		if (!day) continue;
+
 		for (let h = minHour; h <= maxHour; h++) {
-			cells.push(cellKey(dayRef, h));
+			cells.push(cellKey(day, h));
 		}
 	}
 	return cells;
@@ -103,6 +90,26 @@ export function getCellCoordFromPoint(
 }
 
 /**
+ * DOM ids for the ARIA grid. The prefix keeps two grids on one page distinct,
+ * and column/row ids give each cell an accessible name built from its headers.
+ */
+export function columnId(prefix: string, dayIndex: number): string {
+	return `${prefix}-col-${dayIndex}`;
+}
+
+export function rowId(prefix: string, hour: number): string {
+	return `${prefix}-row-${hour}`;
+}
+
+export function gridCellId(
+	prefix: string,
+	dayIndex: number,
+	hour: number,
+): string {
+	return `${prefix}-cell-${dayIndex}-${hour}`;
+}
+
+/**
  * The cell has no border, no radius and no background of its own: it is a
  * target, and the only thing that should be visible is what the user put there.
  */
@@ -122,6 +129,13 @@ const BASE_CELL_CLASS = [
 	"[corner-shape:squircle]",
 	"cursor-crosshair",
 ].join(" ");
+
+/**
+ * The keyboard cursor. Drawn as an outline so it follows the cell's shape
+ * without changing its size, and lifted above its neighbours so the ring is
+ * never clipped by the next cell.
+ */
+const FOCUSED = "relative z-20 outline-2 -outline-offset-2 outline-gray-900";
 
 /**
  * Hours are the axis you scan repeatedly, so they get a rule. Days are named
@@ -162,10 +176,11 @@ const STATE_CLASSES: Record<Exclude<CellVisualState, "idle">, string> = {
 /**
  * Returns the Tailwind class list for a cell.
  */
-export function getCellClass(state: CellVisualState): string {
-	if (state === "idle") {
-		return `${BASE_CELL_CLASS} ${RULED} hover:bg-gray-50 transition-colors duration-150 ease-out`;
-	}
+export function getCellClass(state: CellVisualState, focused = false): string {
+	const visual =
+		state === "idle"
+			? `${BASE_CELL_CLASS} ${RULED} hover:bg-gray-50 transition-colors duration-150 ease-out`
+			: `${BASE_CELL_CLASS} ${STATE_CLASSES[state]}`;
 
-	return `${BASE_CELL_CLASS} ${STATE_CLASSES[state]}`;
+	return focused ? `${visual} ${FOCUSED}` : visual;
 }
