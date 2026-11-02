@@ -11,6 +11,11 @@ interface Scenario {
 	endHour: number;
 }
 
+const modeLabel: Record<CellMode, string> = {
+	yes: "Yes",
+	maybe: "If need be",
+};
+
 /** Ranges that exercise paging, the hour bounds, and the scroll container. */
 const scenarios: Record<string, Scenario> = {
 	week: { label: "One week · 08–19", days: 7, startHour: 8, endHour: 19 },
@@ -121,7 +126,7 @@ const selectedEntries = $derived(
 					>
 						{key}
 						<span class={mode === "yes" ? "text-green-700" : "text-yellow-700"}>
-							· {mode}
+							· {modeLabel[mode]}
 						</span>
 					</li>
 				{/each}
