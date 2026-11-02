@@ -161,7 +161,7 @@ function goToPage(next: number) {
 
 function participantClass(active: boolean): string {
 	return [
-		"cursor-pointer rounded-full px-3 py-1 font-medium text-xs transition-colors duration-150",
+		"w-full cursor-pointer rounded-md px-3 py-1.5 text-left font-medium text-xs transition-colors duration-150",
 		active
 			? "bg-gray-900 text-white"
 			: "bg-gray-100 text-gray-600 hover:bg-gray-200",
@@ -230,51 +230,18 @@ function participantClass(active: boolean): string {
 			There are no dates to show for this event.
 		</p>
 	{:else}
-		<div class="mb-3 flex flex-wrap items-center gap-2">
-			<span class="text-sm font-medium text-gray-700">
-				Participants
-				<span class="font-normal text-gray-400">
-					({responses.length})
-				</span>
-			</span>
-
-			<button
-				type="button"
-				aria-pressed={isolatedId === null}
-				onclick={() => {
-					pinnedId = null;
-					hoveredId = null;
-				}}
-				class={participantClass(isolatedId === null)}
-			>
-				Everyone
-			</button>
-
-			{#each responses as response (response.id)}
-				<button
-					type="button"
-					aria-pressed={isolatedId === response.id}
-					onmouseenter={() => (hoveredId = response.id)}
-					onmouseleave={() => (hoveredId = null)}
-					onfocus={() => (hoveredId = response.id)}
-					onblur={() => (hoveredId = null)}
-					onclick={() =>
-						(pinnedId = pinnedId === response.id ? null : response.id)}
-					class={participantClass(isolatedId === response.id)}
-				>
-					{response.name}
-				</button>
-			{/each}
-		</div>
-
-		<div class="max-h-[70dvh] overflow-auto overscroll-none">
+		<div
+			class="flex flex-col items-center gap-4 lg:flex-row lg:items-start lg:justify-center"
+		>
+			<div class="w-full min-w-0 lg:w-fit">
+				<div class="max-h-[70dvh] overflow-auto overscroll-none">
 			<div
 				class="grid select-none"
 				role="grid"
 				aria-label={label}
 				aria-rowcount={hours.length + 1}
 				aria-colcount={visibleDays.length + 1}
-				style="grid-template-columns: 44px repeat({visibleDays.length}, minmax(0, 120px)); grid-auto-rows: 36px; column-gap: 2px;"
+				style="grid-template-columns: 44px repeat({visibleDays.length}, minmax(0, 104px)); grid-auto-rows: 36px; column-gap: 2px;"
 			>
 				<TimeGridDaysHeader
 					days={visibleDays}
@@ -309,7 +276,47 @@ function participantClass(active: boolean): string {
 						{/each}
 					</div>
 				{/each}
+					</div>
+				</div>
 			</div>
+
+			<aside class="w-full shrink-0 lg:w-36">
+				<p class="mb-2 text-sm font-medium text-gray-700">
+					Participants
+					<span class="font-normal text-gray-400">
+						({responses.length})
+					</span>
+				</p>
+				<div class="flex flex-col gap-1 lg:max-h-[70dvh] lg:overflow-auto">
+					<button
+						type="button"
+						aria-pressed={isolatedId === null}
+						onclick={() => {
+							pinnedId = null;
+							hoveredId = null;
+						}}
+						class={participantClass(isolatedId === null)}
+					>
+						Everyone
+					</button>
+
+					{#each responses as response (response.id)}
+						<button
+							type="button"
+							aria-pressed={isolatedId === response.id}
+							onmouseenter={() => (hoveredId = response.id)}
+							onmouseleave={() => (hoveredId = null)}
+							onfocus={() => (hoveredId = response.id)}
+							onblur={() => (hoveredId = null)}
+							onclick={() =>
+								(pinnedId = pinnedId === response.id ? null : response.id)}
+							class={participantClass(isolatedId === response.id)}
+						>
+							{response.name}
+						</button>
+					{/each}
+				</div>
+			</aside>
 		</div>
 	{/if}
 </div>
