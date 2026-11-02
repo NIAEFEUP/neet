@@ -22,9 +22,12 @@ export interface TimeGridStateOptions {
  *
  * Every input drives the same model: a drag records a start and an end cell, the
  * rectangle between them is the selection, and the change is committed on
- * release. Painting or erasing is decided once, from the cell the drag started
- * on, so a single drag can never flip between the two halfway through. Drags
- * with no movement commit a single cell, which is what makes a tap work.
+ * release. Whether that change paints or erases is decided by the rectangle
+ * itself: if every cell in it is already selected the drag erases, and if even
+ * one cell is not it paints the whole block. Starting inside a painted region
+ * and sweeping outward therefore adds the new hours instead of deleting the old
+ * ones. Drags with no movement commit a single cell, which is what makes a tap
+ * work.
  *
  * The selection itself is *not* stored here. It lives with the caller (a
  * bindable prop), and this class reads and writes it through `getSelected` /
@@ -37,7 +40,6 @@ export interface TimeGridStateOptions {
  */
 export class TimeGridState {
 	isDragging = $state(false);
-	paintMode = $state(true);
 	dragStartCell = $state<CellCoord | null>(null);
 	dragEndCell = $state<CellCoord | null>(null);
 	pressingCell = $state<CellCoord | null>(null);
@@ -71,6 +73,19 @@ export class TimeGridState {
 	});
 
 	private selectionSet = $derived(new Set(this.selectionRect ?? []));
+
+	/**
+	 * A rectangle that is entirely selected erases; one with a single unpainted
+	 * cell paints all of it. Checked against the committed selection, which does
+	 * not change until release, so "already selected" always means "selected
+	 * before this gesture".
+	 */
+	paintMode = $derived.by(() => {
+		const rect = this.selectionRect;
+		if (!rect?.length) return true;
+
+		return !rect.every((key) => this.selectedCells[key]);
+	});
 
 	/** Replaces the selection wholesale. */
 	setSelectedCells(cells: SelectedCells): void {
@@ -160,10 +175,9 @@ export class TimeGridState {
 		this.pressingCell = coord;
 	}
 
-	/** Starts a drag at `coord`, choosing paint or erase from the cell's current state. */
+	/** Starts a drag at `coord`. Paint or erase follows from the rectangle it grows into. */
 	beginDrag(coord: CellCoord): void {
 		this.pressingCell = null;
-		this.paintMode = !this.isSelected(coord.dayIndex, coord.hour);
 		this.isDragging = true;
 		this.dragStartCell = coord;
 		this.dragEndCell = coord;
