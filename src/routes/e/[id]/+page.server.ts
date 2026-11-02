@@ -6,6 +6,10 @@ import {
 	validateSelectedCells,
 } from "$lib/components/time-grid/availability";
 import { hoursBetween, parseHour } from "$lib/components/time-grid/date-utils";
+import type {
+	HeatmapCounts,
+	PublicResponse,
+} from "$lib/components/time-grid/types";
 import { db } from "../../../prisma/db";
 import type { Actions, PageServerLoad } from "./$types";
 
@@ -26,29 +30,47 @@ export const load: PageServerLoad = async ({ params, cookies }) => {
 	const dates = event.proposedDates.map((date) => date.toString());
 	const cookieId = cookies.get(participantCookie(event.id));
 
-	let participant: {
-		name: string;
-		selected: ReturnType<typeof availabilityToSelected>;
-	} | null = null;
+	// Every response is public, so load them all in one pass: one participant
+	// query and one availability query, then group the ranges by participant.
+	const [participants, availabilities] = await Promise.all([
+		db.orm.public.Participant.where({ eventId: event.id }).all(),
+		db.orm.public.Availability.where({ eventId: event.id }).all(),
+	]);
 
-	if (cookieId) {
-		const row = await db.orm.public.Participant.where({
-			id: cookieId,
-			eventId: event.id,
-		}).first();
+	const blocksByParticipant = new Map<string, typeof availabilities>();
+	for (const block of availabilities) {
+		const blocks = blocksByParticipant.get(block.participantId) ?? [];
+		blocks.push(block);
+		blocksByParticipant.set(block.participantId, blocks);
+	}
 
-		if (row) {
-			const blocks = await db.orm.public.Availability.where({
-				participantId: row.id,
-				eventId: event.id,
-			}).all();
+	const responses: PublicResponse[] = participants
+		.map((row) => ({
+			id: row.id,
+			name: row.name,
+			selected: availabilityToSelected(
+				blocksByParticipant.get(row.id) ?? [],
+				event.timezone,
+			),
+		}))
+		.sort((a, b) => a.name.localeCompare(b.name));
 
-			participant = {
-				name: row.name,
-				selected: availabilityToSelected(blocks, event.timezone),
-			};
+	// One cell can hold both signals: a count of yes and a count of if-need-be.
+	const heat: HeatmapCounts = {};
+	for (const response of responses) {
+		for (const [key, mode] of Object.entries(response.selected)) {
+			let cell = heat[key];
+			if (!cell) {
+				cell = { yes: 0, maybe: 0 };
+				heat[key] = cell;
+			}
+			cell[mode] += 1;
 		}
 	}
+
+	const current = cookieId
+		? (responses.find((response) => response.id === cookieId) ?? null)
+		: null;
 
 	return {
 		event: {
@@ -60,7 +82,11 @@ export const load: PageServerLoad = async ({ params, cookies }) => {
 			startTime: event.startTime,
 			endTime: event.endTime,
 		},
-		participant,
+		participant: current
+			? { name: current.name, selected: current.selected }
+			: null,
+		responses,
+		heat,
 	};
 };
 

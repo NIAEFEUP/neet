@@ -4,7 +4,12 @@ import { untrack } from "svelte";
 import { enhance } from "$app/forms";
 import { page } from "$app/state";
 import type { CellMode, SelectedCells } from "$lib";
-import { normalizeDays, parseHour, TimeGrid } from "$lib";
+import {
+	AvailabilityResponses,
+	normalizeDays,
+	parseHour,
+	TimeGrid,
+} from "$lib";
 import type { ActionData, PageData } from "./$types";
 
 let { data, form } = $props<{ data: PageData; form: ActionData }>();
@@ -18,6 +23,7 @@ let name = $state(untrack(() => data.participant?.name ?? ""));
 let brush = $state<CellMode>("yes");
 let isSubmitting = $state(false);
 let saved = $state(false);
+let view = $state<"responses" | "answer">("responses");
 
 const dates = $derived(data.event.proposedDates);
 const startHour = $derived(parseHour(data.event.startTime) ?? 0);
@@ -49,6 +55,15 @@ function markDirty() {
 	saved = false;
 }
 
+function openAnswer() {
+	saved = false;
+	view = "answer";
+}
+
+function closeAnswer() {
+	view = "responses";
+}
+
 const handleEnhance: SubmitFunction = () => {
 	isSubmitting = true;
 	saved = false;
@@ -58,7 +73,10 @@ const handleEnhance: SubmitFunction = () => {
 		// the guest mark their hours again.
 		await update({ reset: false });
 		isSubmitting = false;
-		if (result.type === "success") saved = true;
+		if (result.type === "success") {
+			saved = true;
+			view = "responses";
+		}
 	};
 };
 </script>
@@ -91,17 +109,69 @@ const handleEnhance: SubmitFunction = () => {
 		</div>
 	</div>
 
-	<div class="mt-6 rounded-xl bg-white p-6 shadow">
-		<h2 class="text-lg font-semibold text-gray-900">When are you free?</h2>
-		<p class="mt-1 mb-4 text-sm text-gray-500">
-			Drag across the grid to mark when you can make it. <strong>Yes</strong> is
-			a firm yes; <strong>If need be</strong> means you can make it if it comes
-			to that. On a phone, tap to mark an hour, or hold and drag to paint a
-			block.
-		</p>
 
-		{#if dates.length > 0}
-			<form method="POST" use:enhance={handleEnhance}>
+	{#if view === "responses"}
+		<div class="mt-6 rounded-xl bg-white p-6 shadow">
+			<div class="flex flex-wrap items-start justify-between gap-4">
+				<div>
+					<h2 class="text-lg font-semibold text-gray-900">
+						Everyone's availability
+					</h2>
+					<p class="mt-1 text-sm text-gray-500">
+						Every saved answer is public. Hover a name to isolate that person's
+						hours; on a phone, tap the name.
+					</p>
+				</div>
+				<button
+					type="button"
+					onclick={openAnswer}
+					class="inline-flex shrink-0 cursor-pointer items-center justify-center rounded-lg bg-green-700 px-5 py-2 font-medium text-sm text-white transition-[background-color,scale,opacity] duration-150 ease-out [corner-shape:squircle] hover:bg-green-800 active:scale-[0.98]"
+				>
+					{data.participant ? "Update my availability" : "Add my availability"}
+				</button>
+			</div>
+
+			{#if saved}
+				<p class="mt-3 text-sm text-green-700" aria-live="polite">
+					Saved. You can update your answer any time.
+				</p>
+			{/if}
+
+			<div class="mt-4">
+				<AvailabilityResponses
+					{dates}
+					{startHour}
+					{endHour}
+					responses={data.responses}
+					counts={data.heat}
+				/>
+			</div>
+		</div>
+	{:else}
+		<div class="mt-6 rounded-xl bg-white p-6 shadow">
+			<div class="flex flex-wrap items-start justify-between gap-4">
+				<div class="max-w-2xl">
+					<h2 class="text-lg font-semibold text-gray-900">
+						{data.participant ? "Update your availability" : "Add your availability"}
+					</h2>
+					<p class="mt-1 text-sm text-gray-500">
+						Drag across the clean grid to mark when you can make it.
+						<strong>Yes</strong> is a firm yes; <strong>If need be</strong> means
+						you can make it if it comes to that. On a phone, tap to mark an hour,
+						or hold and drag to paint a block.
+					</p>
+				</div>
+				<button
+					type="button"
+					onclick={closeAnswer}
+					class="inline-flex shrink-0 cursor-pointer items-center justify-center rounded-lg px-4 py-2 font-medium text-gray-600 text-sm transition-colors duration-150 ease-out hover:bg-gray-100 hover:text-gray-900"
+				>
+					Back to responses
+				</button>
+			</div>
+
+			{#if dates.length > 0}
+				<form method="POST" use:enhance={handleEnhance}>
 				<input
 					type="hidden"
 					name="selected"
@@ -220,10 +290,11 @@ const handleEnhance: SubmitFunction = () => {
 					</p>
 				{/if}
 			</form>
-		{:else}
-			<p class="text-sm text-gray-500">
-				This event has no proposed dates yet.
-			</p>
-		{/if}
-	</div>
+			{:else}
+				<p class="mt-4 text-sm text-gray-500">
+					This event has no proposed dates yet.
+				</p>
+			{/if}
+		</div>
+	{/if}
 </div>
