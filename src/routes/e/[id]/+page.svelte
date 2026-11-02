@@ -15,12 +15,7 @@ let selected = $state<SelectedCells>(
 	untrack(() => data.participant?.selected ?? {}),
 );
 let name = $state(untrack(() => data.participant?.name ?? ""));
-let modality = $state<"in_person" | "online">(
-	untrack(() =>
-		data.participant?.modality === "online" ? "online" : "in_person",
-	),
-);
-let brush = $state<CellMode>("available");
+let brush = $state<CellMode>("yes");
 let isSubmitting = $state(false);
 let saved = $state(false);
 
@@ -99,8 +94,9 @@ const handleEnhance: SubmitFunction = () => {
 	<div class="mt-6 rounded-xl bg-white p-6 shadow">
 		<h2 class="text-lg font-semibold text-gray-900">When are you free?</h2>
 		<p class="mt-1 mb-4 text-sm text-gray-500">
-			Drag across the grid to mark the hours you're available. On a phone, tap
-			to mark an hour, or hold and drag to paint a block.
+			Drag across the grid to mark when you can make it. <strong>Yes</strong> is
+			a firm yes; <strong>Online</strong> means you can only join remotely. On a
+			phone, tap to mark an hour, or hold and drag to paint a block.
 		</p>
 
 		{#if dates.length > 0}
@@ -130,34 +126,6 @@ const handleEnhance: SubmitFunction = () => {
 							class="mt-1 block w-64 rounded-md border-gray-300 shadow-sm focus:border-green-600 focus:ring-green-600"
 						/>
 					</div>
-
-					<fieldset>
-						<legend class="text-sm font-medium text-gray-700">
-							How would you join?
-						</legend>
-						<div class="mt-1 flex items-center gap-4">
-							<label class="flex items-center gap-2 text-sm text-gray-700">
-								<input
-									type="radio"
-									name="modality"
-									value="in_person"
-									bind:group={modality}
-									onchange={markDirty}
-								/>
-								In person
-							</label>
-							<label class="flex items-center gap-2 text-sm text-gray-700">
-								<input
-									type="radio"
-									name="modality"
-									value="online"
-									bind:group={modality}
-									onchange={markDirty}
-								/>
-								Online
-							</label>
-						</div>
-					</fieldset>
 				</div>
 
 				<div class="mb-3 flex flex-wrap items-center gap-2">
@@ -169,11 +137,11 @@ const handleEnhance: SubmitFunction = () => {
 					>
 						<button
 							type="button"
-							aria-pressed={brush === "available"}
-							onclick={() => (brush = "available")}
+							aria-pressed={brush === "yes"}
+							onclick={() => (brush = "yes")}
 							class={[
 								"inline-flex cursor-pointer items-center gap-2 rounded-md px-3 py-1.5 font-medium text-sm transition-[background-color,color,box-shadow] duration-150 ease-out [corner-shape:squircle]",
-								brush === "available"
+								brush === "yes"
 									? "bg-white text-gray-900 shadow-sm ring-1 ring-black/5"
 									: "text-gray-500 hover:text-gray-700",
 							]}
@@ -182,15 +150,15 @@ const handleEnhance: SubmitFunction = () => {
 								class="h-2.5 w-2.5 rounded-full bg-green-700"
 								aria-hidden="true"
 							></span>
-							Available
+							Yes
 						</button>
 						<button
 							type="button"
-							aria-pressed={brush === "maybe"}
-							onclick={() => (brush = "maybe")}
+							aria-pressed={brush === "online"}
+							onclick={() => (brush = "online")}
 							class={[
 								"inline-flex cursor-pointer items-center gap-2 rounded-md px-3 py-1.5 font-medium text-sm transition-[background-color,color,box-shadow] duration-150 ease-out [corner-shape:squircle]",
-								brush === "maybe"
+								brush === "online"
 									? "bg-white text-gray-900 shadow-sm ring-1 ring-black/5"
 									: "text-gray-500 hover:text-gray-700",
 							]}
@@ -199,7 +167,7 @@ const handleEnhance: SubmitFunction = () => {
 								class="h-2.5 w-2.5 rounded-full bg-yellow-600"
 								aria-hidden="true"
 							></span>
-							If need be
+							Online
 						</button>
 					</div>
 				</div>

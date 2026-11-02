@@ -72,22 +72,20 @@ async function main() {
 	const aliceParticipant = await db.orm.public.Participant.create({
 		eventId: event.id,
 		name: alice.name,
-		modality: "in_person",
 	});
 
 	const bobParticipant = await db.orm.public.Participant.create({
 		eventId: event.id,
 		name: bob.name,
-		modality: "online",
 	});
 
-	// Alice is free in the afternoon, and could stretch to 17:00 if needed.
+	// Alice is free in the afternoon, and can join online for the last hour.
 	await db.orm.public.Availability.create({
 		eventId: event.id,
 		participantId: aliceParticipant.id,
 		startTime: at(today, "14:00"),
 		endTime: at(today, "16:00"),
-		status: "available",
+		status: "yes",
 	});
 
 	await db.orm.public.Availability.create({
@@ -95,7 +93,7 @@ async function main() {
 		participantId: aliceParticipant.id,
 		startTime: at(today, "16:00"),
 		endTime: at(today, "17:00"),
-		status: "if_need_be",
+		status: "online",
 	});
 
 	// Bob is free tomorrow morning.
@@ -104,7 +102,7 @@ async function main() {
 		participantId: bobParticipant.id,
 		startTime: at(tomorrow, "10:00"),
 		endTime: at(tomorrow, "12:00"),
-		status: "available",
+		status: "yes",
 	});
 
 	console.log("Database seeded successfully! 🎉");

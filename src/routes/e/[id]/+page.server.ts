@@ -28,7 +28,6 @@ export const load: PageServerLoad = async ({ params, cookies }) => {
 
 	let participant: {
 		name: string;
-		modality: string;
 		selected: ReturnType<typeof availabilityToSelected>;
 	} | null = null;
 
@@ -46,7 +45,6 @@ export const load: PageServerLoad = async ({ params, cookies }) => {
 
 			participant = {
 				name: row.name,
-				modality: row.modality,
 				selected: availabilityToSelected(blocks, event.timezone),
 			};
 		}
@@ -76,10 +74,9 @@ export const actions = {
 
 		const form = await request.formData();
 		const name = String(form.get("name") ?? "").trim();
-		const modality = String(form.get("modality") ?? "");
 		const selected = parseSelectedCells(form.get("selected"));
 
-		const preserved = { name, modality };
+		const preserved = { name };
 
 		if (!name) {
 			return fail(400, { ...preserved, message: "Add your name first." });
@@ -88,12 +85,6 @@ export const actions = {
 			return fail(400, {
 				...preserved,
 				message: "That name is too long (80 characters max).",
-			});
-		}
-		if (modality !== "in_person" && modality !== "online") {
-			return fail(400, {
-				...preserved,
-				message: "Choose whether you'd join online or in person.",
 			});
 		}
 		if (!selected) {
@@ -139,7 +130,7 @@ export const actions = {
 				if (existing) {
 					await tx.orm.public.Participant.where({
 						id: existing.id,
-					}).update({ name, modality });
+					}).update({ name });
 
 					// The ORM's delete removes a single row for a non-unique filter;
 					// a resubmission has to replace all of this participant's blocks.
@@ -153,7 +144,6 @@ export const actions = {
 					const created = await tx.orm.public.Participant.create({
 						eventId: event.id,
 						name,
-						modality,
 					});
 					id = created.id;
 				}

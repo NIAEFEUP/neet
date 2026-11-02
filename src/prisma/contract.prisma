@@ -1,17 +1,10 @@
 // use prisma-8
 
-/// How a participant wants to attend. Chosen once per response.
-enum Modality {
-  @@type("pg/text@1")
-  in_person = "in_person"
-  online    = "online"
-}
-
-/// How strongly a participant can make a given block.
+/// How a participant can make a given block: a plain yes, or they can join online.
 enum AvailabilityStatus {
   @@type("pg/text@1")
-  available  = "available"
-  if_need_be = "if_need_be"
+  yes    = "yes"
+  online = "online"
 }
 
 model User {
@@ -53,7 +46,6 @@ model Event {
 model Participant {
   id             Uuid       @id @default(uuid(7))
   name           String
-  modality       Modality   @default(in_person)
 
   eventId        Uuid
   event          Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
@@ -70,7 +62,7 @@ model Availability {
 
   startTime     DateTime
   endTime       DateTime
-  status        AvailabilityStatus @default(available)
+  status        AvailabilityStatus @default(yes)
 
   eventId       Uuid
   event         Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)

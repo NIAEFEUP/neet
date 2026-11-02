@@ -131,9 +131,7 @@ export class TimeGridState {
 	getCellVisualState(dayIndex: number, hour: number): CellVisualState {
 		if (this.isInDragSelection(dayIndex, hour)) {
 			if (!this.paintMode) return "active-clearing";
-			return this.getMode() === "available"
-				? "active-available"
-				: "active-maybe";
+			return this.getMode() === "yes" ? "active-yes" : "active-online";
 		}
 
 		if (this.isPressing(dayIndex, hour)) {

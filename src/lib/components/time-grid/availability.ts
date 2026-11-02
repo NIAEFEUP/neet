@@ -3,7 +3,7 @@ import { cellKey, parseCellKey } from "./grid-utils";
 import type { CellMode, SelectedCells } from "./types";
 
 /** The values stored in the database, mirroring the contract enum. */
-export type AvailabilityStatus = "available" | "if_need_be";
+export type AvailabilityStatus = "yes" | "online";
 
 export interface AvailabilityBlock {
 	startTime: Temporal.Instant;
@@ -19,17 +19,17 @@ export interface StoredAvailabilityBlock {
 }
 
 const MODE_TO_STATUS: Record<CellMode, AvailabilityStatus> = {
-	available: "available",
-	maybe: "if_need_be",
+	yes: "yes",
+	online: "online",
 };
 
 const STATUS_TO_MODE: Record<AvailabilityStatus, CellMode> = {
-	available: "available",
-	if_need_be: "maybe",
+	yes: "yes",
+	online: "online",
 };
 
 export function isCellMode(value: unknown): value is CellMode {
-	return value === "available" || value === "maybe";
+	return value === "yes" || value === "online";
 }
 
 export function modeToStatus(mode: CellMode): AvailabilityStatus {

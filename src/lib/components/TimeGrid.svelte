@@ -61,7 +61,7 @@ let {
 	dates,
 	startHour = 0,
 	endHour = 24,
-	mode = "available",
+	mode = "yes",
 	selected = $bindable({}),
 	onchange,
 	label = "Availability",

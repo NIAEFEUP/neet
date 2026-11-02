@@ -24,7 +24,7 @@ const scenarios: Record<string, Scenario> = {
 };
 
 let scenarioKey = $state("week");
-let brush = $state<CellMode>("available");
+let brush = $state<CellMode>("yes");
 let selected = $state<SelectedCells>({});
 
 const scenario = $derived(scenarios[scenarioKey] ?? scenarios.week);
@@ -79,14 +79,14 @@ const selectedEntries = $derived(
 				aria-labelledby="brush-label"
 			>
 				<label class="flex items-center gap-2 text-sm text-gray-700">
-					<input type="radio" bind:group={brush} value="available" />
+					<input type="radio" bind:group={brush} value="yes" />
 					<span class="h-3 w-3 rounded-sm bg-green-700" aria-hidden="true"></span>
-					Available
+					Yes
 				</label>
 				<label class="flex items-center gap-2 text-sm text-gray-700">
-					<input type="radio" bind:group={brush} value="maybe" />
+					<input type="radio" bind:group={brush} value="online" />
 					<span class="h-3 w-3 rounded-sm bg-yellow-600" aria-hidden="true"></span>
-					If need be
+					Online
 				</label>
 			</div>
 		</div>
@@ -120,7 +120,7 @@ const selectedEntries = $derived(
 						class="rounded border border-gray-200 bg-white px-2 py-0.5 font-mono text-xs text-gray-700"
 					>
 						{key}
-						<span class={mode === "available" ? "text-green-700" : "text-yellow-700"}>
+						<span class={mode === "yes" ? "text-green-700" : "text-yellow-700"}>
 							· {mode}
 						</span>
 					</li>

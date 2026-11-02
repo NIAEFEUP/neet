@@ -29,21 +29,8 @@
             "codecId": "pg/text@1",
             "members": [
               {
-                "name": "available",
-                "value": "available"
-              },
-              {
-                "name": "if_need_be",
-                "value": "if_need_be"
-              }
-            ]
-          },
-          "Modality": {
-            "codecId": "pg/text@1",
-            "members": [
-              {
-                "name": "in_person",
-                "value": "in_person"
+                "name": "yes",
+                "value": "yes"
               },
               {
                 "name": "online",
@@ -355,19 +342,6 @@
                   "kind": "scalar"
                 }
               },
-              "modality": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/text@1",
-                  "kind": "scalar"
-                },
-                "valueSet": {
-                  "entityKind": "enum",
-                  "entityName": "Modality",
-                  "namespaceId": "public",
-                  "plane": "domain"
-                }
-              },
               "name": {
                 "nullable": false,
                 "type": {
@@ -419,9 +393,6 @@
                 },
                 "id": {
                   "column": "id"
-                },
-                "modality": {
-                  "column": "modality"
                 },
                 "name": {
                   "column": "name"
@@ -500,8 +471,8 @@
             "Availability": {
               "checks": [
                 {
-                  "expression": "\"status\" IN ('available', 'if_need_be')",
-                  "name": "Availability_status_check_22f79d17",
+                  "expression": "\"status\" IN ('yes', 'online')",
+                  "name": "Availability_status_check_262c9415",
                   "prefix": "Availability_status_check"
                 }
               ],
@@ -539,7 +510,7 @@
                   "codecId": "pg/text@1",
                   "default": {
                     "kind": "literal",
-                    "value": "available"
+                    "value": "yes"
                   },
                   "nativeType": "text",
                   "nullable": false,
@@ -722,13 +693,6 @@
               "uniques": []
             },
             "Participant": {
-              "checks": [
-                {
-                  "expression": "\"modality\" IN ('in_person', 'online')",
-                  "name": "Participant_modality_check_5669a018",
-                  "prefix": "Participant_modality_check"
-                }
-              ],
               "columns": {
                 "createdAt": {
                   "codecId": "pg/timestamptz-temporal@1",
@@ -748,21 +712,6 @@
                   "codecId": "pg/uuid@1",
                   "nativeType": "uuid",
                   "nullable": false
-                },
-                "modality": {
-                  "codecId": "pg/text@1",
-                  "default": {
-                    "kind": "literal",
-                    "value": "in_person"
-                  },
-                  "nativeType": "text",
-                  "nullable": false,
-                  "valueSet": {
-                    "entityKind": "valueSet",
-                    "entityName": "Modality",
-                    "namespaceId": "public",
-                    "plane": "storage"
-                  }
                 },
                 "name": {
                   "codecId": "pg/text@1",
@@ -844,14 +793,7 @@
             "AvailabilityStatus": {
               "kind": "valueSet",
               "values": [
-                "available",
-                "if_need_be"
-              ]
-            },
-            "Modality": {
-              "kind": "valueSet",
-              "values": [
-                "in_person",
+                "yes",
                 "online"
               ]
             }
@@ -861,7 +803,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "7a6c828df60ceaf477fb5d859e628d8a8afa43dac17135f34e90f4eeb47e3c03"
+    "storageHash": "6027ccc12d326edc043b35c5814b16d64d3b2b08c98cfce545bdaf4c768be464"
   },
   "execution": {
     "executionHash": "988fbba321f964a9c51e3003b03c2307fefc691eb1d3b93a80cb713a0b7b0798",
