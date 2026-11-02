@@ -4,7 +4,12 @@ import { untrack } from "svelte";
 import { enhance } from "$app/forms";
 import { page } from "$app/state";
 import type { CellMode, SelectedCells } from "$lib";
-import { normalizeDays, parseHour, TimeGrid } from "$lib";
+import {
+	AvailabilityResponses,
+	normalizeDays,
+	parseHour,
+	TimeGrid,
+} from "$lib";
 import type { ActionData, PageData } from "./$types";
 
 let { data, form } = $props<{ data: PageData; form: ActionData }>();
@@ -225,5 +230,24 @@ const handleEnhance: SubmitFunction = () => {
 				This event has no proposed dates yet.
 			</p>
 		{/if}
+	</div>
+
+	<div class="mt-6 rounded-xl bg-white p-6 shadow">
+		<div class="flex flex-wrap items-baseline justify-between gap-2">
+			<h2 class="text-lg font-semibold text-gray-900">Responses</h2>
+			<p class="text-xs text-gray-400">Public to everyone with this link</p>
+		</div>
+		<p class="mt-1 mb-4 text-sm text-gray-500">
+			Every saved answer is shown here. Hover a name to isolate that person's
+			hours; on a phone, tap the name.
+		</p>
+
+		<AvailabilityResponses
+			{dates}
+			{startHour}
+			{endHour}
+			responses={data.responses}
+			counts={data.heat}
+		/>
 	</div>
 </div>

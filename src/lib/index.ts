@@ -1,3 +1,4 @@
+export { default as AvailabilityResponses } from "./components/AvailabilityResponses.svelte";
 export { default as TimeGrid } from "./components/TimeGrid.svelte";
 export * from "./components/time-grid/availability";
 export * from "./components/time-grid/date-utils";
