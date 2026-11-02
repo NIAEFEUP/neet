@@ -31,3 +31,18 @@ export type CellVisualState =
 	| "maybe";
 
 export type SelectedCells = Record<CellKey, CellMode>;
+
+/** One guest's public response, with their hours expanded to editable cells. */
+export interface PublicResponse {
+	id: string;
+	name: string;
+	selected: SelectedCells;
+}
+
+/** How many guests picked each mode for a slot. */
+export interface HeatCell {
+	yes: number;
+	maybe: number;
+}
+
+export type HeatmapCounts = Record<CellKey, HeatCell>;
