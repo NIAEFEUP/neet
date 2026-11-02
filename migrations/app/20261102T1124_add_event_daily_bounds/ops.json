@@ -1,0 +1,86 @@
+[
+  {
+    "id": "column.public.Event.endTime",
+    "label": "Add column \"endTime\" to \"Event\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "endTime",
+        "table": "Event"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"endTime\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Event",
+          "endTime"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"endTime\"",
+        "sql": "ALTER TABLE \"public\".\"Event\" ADD COLUMN \"endTime\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"endTime\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Event",
+          "endTime"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Event.startTime",
+    "label": "Add column \"startTime\" to \"Event\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "startTime",
+        "table": "Event"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"startTime\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Event",
+          "startTime"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"startTime\"",
+        "sql": "ALTER TABLE \"public\".\"Event\" ADD COLUMN \"startTime\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"startTime\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Event",
+          "startTime"
+        ]
+      }
+    ]
+  }
+]

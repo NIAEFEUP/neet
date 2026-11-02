@@ -16,7 +16,12 @@ import TimeGridCell from "./time-grid/TimeGridCell.svelte";
 import TimeGridDaysHeader from "./time-grid/TimeGridDaysHeader.svelte";
 import TimeGridHeader from "./time-grid/TimeGridHeader.svelte";
 import { TimeGridState } from "./time-grid/time-grid-state.svelte";
-import type { CellCoord, DayInput, SelectedCells } from "./time-grid/types";
+import type {
+	CellCoord,
+	CellMode,
+	DayInput,
+	SelectedCells,
+} from "./time-grid/types";
 
 /**
  * Days shown at once. A week keeps a column wide enough to tap on a phone, and
@@ -44,6 +49,8 @@ interface Props {
 	startHour?: number;
 	/** Last hour boundary, exclusive. Defaults to the end of the day. */
 	endHour?: number;
+	/** The brush new drags apply. */
+	mode?: CellMode;
 	selected?: SelectedCells;
 	onchange?: (selected: SelectedCells) => void;
 	/** Accessible name for the grid. */
@@ -54,6 +61,7 @@ let {
 	dates,
 	startHour = 0,
 	endHour = 24,
+	mode = "yes",
 	selected = $bindable({}),
 	onchange,
 	label = "Availability",
@@ -72,6 +80,7 @@ const gridState = new TimeGridState({
 		onchange?.(next);
 	},
 	getDays: () => days,
+	getMode: () => mode,
 });
 
 // Paging. The page index is clamped on read rather than corrected in an effect,

@@ -148,12 +148,12 @@ const FOCUSED = "relative z-20 outline-2 -outline-offset-2 outline-gray-900";
 const RULED = "border-b border-black/5";
 
 /**
- * One hue, revealed by degrees. The colour never changes while painting, only
- * how much of it is present.
+ * Two hues, each revealed by degrees. The colour never changes while painting,
+ * only how much of it is present.
  *
- * Committed is a *deep* green rather than a bright one: it is calmer across a
- * large area, and it reaches 5:1 against white where the lighter tone managed
- * only 2.2:1 — under the 3:1 a state indicator needs.
+ * Committed is a *deep* tone rather than a bright one: it is calmer across a
+ * large area, and it reaches 5:1 (green) / 3:1 (yellow) against white where the
+ * lighter tones managed only 2.2:1 — under the 3:1 a state indicator needs.
  *
  * Each state carries its own complete transition and exactly one state class is
  * ever applied, so they cannot fight: what the finger is driving must be
@@ -161,16 +161,19 @@ const RULED = "border-b border-black/5";
  */
 const STATE_CLASSES: Record<Exclude<CellVisualState, "idle">, string> = {
 	// Held, before it is known to be a drag.
-	pressing: "bg-green-700/15",
-	// Actively sweeping: tracks the pointer 1:1, so deliberately no transition.
-	"actively-painting": "bg-green-700/35",
-	"actively-unpainting": "bg-green-700/35",
+	pressing: "bg-gray-900/10",
+	// Actively sweeping with a brush: tracks the pointer 1:1, so no transition.
+	"active-yes": "bg-green-700/35",
+	"active-maybe": "bg-yellow-600/40",
+	// Clearing a block that is already entirely in the active brush.
+	"active-clearing": "bg-gray-900/25",
 	// Committed: the only change the user is not currently dragging. No hover
 	// fill, deliberately — the pointer always comes to rest on the last cell it
 	// crossed, and a darker tile inside a selection reads as an inconsistency in
 	// the selection rather than as feedback.
-	painted:
-		"bg-green-700 transition-colors duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]",
+	yes: "bg-green-700 transition-colors duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]",
+	maybe:
+		"bg-yellow-600 transition-colors duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]",
 };
 
 /**

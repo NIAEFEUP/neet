@@ -1,0 +1,290 @@
+[
+  {
+    "id": "dropCheckConstraint.Availability.Availability_status_check_22f79d17",
+    "label": "Drop check constraint \"Availability_status_check_22f79d17\" on \"Availability\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "checkConstraint",
+        "name": "Availability_status_check_22f79d17",
+        "table": "Availability"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"Availability_status_check_22f79d17\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Availability_status_check_22f79d17",
+          "public",
+          "\"public\".\"Availability\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop check constraint \"Availability_status_check_22f79d17\"",
+        "sql": "ALTER TABLE \"public\".\"Availability\" DROP CONSTRAINT \"Availability_status_check_22f79d17\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"Availability_status_check_22f79d17\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Availability_status_check_22f79d17",
+          "public",
+          "\"public\".\"Availability\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "dropCheckConstraint.Participant.Participant_modality_check_5669a018",
+    "label": "Drop check constraint \"Participant_modality_check_5669a018\" on \"Participant\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "checkConstraint",
+        "name": "Participant_modality_check_5669a018",
+        "table": "Participant"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"Participant_modality_check_5669a018\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Participant_modality_check_5669a018",
+          "public",
+          "\"public\".\"Participant\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop check constraint \"Participant_modality_check_5669a018\"",
+        "sql": "ALTER TABLE \"public\".\"Participant\" DROP CONSTRAINT \"Participant_modality_check_5669a018\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"Participant_modality_check_5669a018\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Participant_modality_check_5669a018",
+          "public",
+          "\"public\".\"Participant\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "dropColumn.Participant.modality",
+    "label": "Drop column \"modality\" from \"Participant\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "modality",
+        "table": "Participant"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"modality\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Participant",
+          "modality"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop column \"modality\"",
+        "sql": "ALTER TABLE \"public\".\"Participant\" DROP COLUMN \"modality\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"modality\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Participant",
+          "modality"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "dropDefault.Availability.status",
+    "label": "Drop default on \"Availability\".\"status\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "status",
+        "table": "Availability"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"status\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Availability",
+          "status"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop default on \"status\"",
+        "sql": "ALTER TABLE \"public\".\"Availability\" ALTER COLUMN \"status\" DROP DEFAULT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"status\" has no default",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"column_default\" IS NULL)) AS \"result\"",
+        "params": [
+          "public",
+          "Availability",
+          "status"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "setDefault.Availability.status",
+    "label": "Set default on \"Availability\".\"status\"",
+    "operationClass": "widening",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "status",
+        "table": "Availability"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"status\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Availability",
+          "status"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "set default on \"status\"",
+        "sql": "ALTER TABLE \"public\".\"Availability\" ALTER COLUMN \"status\" SET DEFAULT 'yes'"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"status\" has a default",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"column_default\" IS NOT NULL)) AS \"result\"",
+        "params": [
+          "public",
+          "Availability",
+          "status"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "data_migration.rename-available-to-yes",
+    "label": "Data transform: rename-available-to-yes",
+    "operationClass": "data",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [
+      {
+        "description": "Check rename-available-to-yes has work to do",
+        "sql": "SELECT EXISTS (SELECT \"id\" AS \"id\" FROM \"public\".\"Availability\" WHERE \"status\" = $1 LIMIT 1) AS ok",
+        "params": [
+          "available"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "Run rename-available-to-yes",
+        "sql": "UPDATE \"public\".\"Availability\" SET \"status\" = $1 WHERE \"status\" = $2",
+        "params": [
+          "yes",
+          "available"
+        ]
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "Verify rename-available-to-yes resolved all violations",
+        "sql": "SELECT NOT EXISTS (SELECT \"id\" AS \"id\" FROM \"public\".\"Availability\" WHERE \"status\" = $1 LIMIT 1) AS ok",
+        "params": [
+          "available"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "checkConstraint.Availability.Availability_status_check_a85a7e5d",
+    "label": "Add check constraint \"Availability_status_check_a85a7e5d\" on \"Availability\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "checkConstraint",
+        "name": "Availability_status_check_a85a7e5d",
+        "table": "Availability"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"Availability_status_check_a85a7e5d\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Availability_status_check_a85a7e5d",
+          "public",
+          "\"public\".\"Availability\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add check constraint \"Availability_status_check_a85a7e5d\"",
+        "sql": "ALTER TABLE \"public\".\"Availability\" ADD CONSTRAINT \"Availability_status_check_a85a7e5d\" CHECK (\"status\" IN ('yes', 'if_need_be'))"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"Availability_status_check_a85a7e5d\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Availability_status_check_a85a7e5d",
+          "public",
+          "\"public\".\"Availability\""
+        ]
+      }
+    ]
+  }
+]

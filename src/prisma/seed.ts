@@ -2,6 +2,18 @@ import "dotenv/config";
 import { Temporal } from "temporal-polyfill";
 import { db } from "./db.ts";
 
+const TIMEZONE = "Europe/Lisbon";
+
+/** Local-time instant on a plain date, e.g. `at(today, "14:00")`. */
+function at(date: Temporal.PlainDate, time: string): Temporal.Instant {
+	return date
+		.toZonedDateTime({
+			timeZone: TIMEZONE,
+			plainTime: Temporal.PlainTime.from(time),
+		})
+		.toInstant();
+}
+
 async function main() {
 	console.log("Seeding database... 🌱");
 
@@ -42,49 +54,59 @@ async function main() {
 	});
 
 	// Create an event created by Alice
-	const today = Temporal.Now.plainDateISO("Europe/Lisbon");
+	const today = Temporal.Now.plainDateISO(TIMEZONE);
 	const tomorrow = today.add({ days: 1 });
+	const dayAfter = today.add({ days: 2 });
 
 	const event = await db.orm.public.Event.create({
 		title: "Reunião Geral NIAEFEUP",
 		description: "Discussão sobre novos projetos, hackathons e atividades.",
 		creatorId: alice.id,
-		proposedDates: [today, tomorrow],
-		timezone: "Europe/Lisbon",
+		proposedDates: [today, tomorrow, dayAfter],
+		timezone: TIMEZONE,
+		startTime: "09:00",
+		endTime: "18:00",
 	});
 
-	// Add availability for Alice (she is free today 14:00 - 15:30)
-	const aliceStart = today
-		.toZonedDateTime({ timeZone: "Europe/Lisbon", plainTime: "14:00" })
-		.toInstant();
-	const aliceEnd = today
-		.toZonedDateTime({ timeZone: "Europe/Lisbon", plainTime: "15:30" })
-		.toInstant();
+	// Guests answer per event, without accounts.
+	const aliceParticipant = await db.orm.public.Participant.create({
+		eventId: event.id,
+		name: alice.name,
+	});
+
+	const bobParticipant = await db.orm.public.Participant.create({
+		eventId: event.id,
+		name: bob.name,
+	});
+
+	// Alice is free in the afternoon, and can stretch to 17:00 if needed.
+	await db.orm.public.Availability.create({
+		eventId: event.id,
+		participantId: aliceParticipant.id,
+		startTime: at(today, "14:00"),
+		endTime: at(today, "16:00"),
+		status: "yes",
+	});
 
 	await db.orm.public.Availability.create({
 		eventId: event.id,
-		userId: alice.id,
-		startTime: aliceStart,
-		endTime: aliceEnd,
+		participantId: aliceParticipant.id,
+		startTime: at(today, "16:00"),
+		endTime: at(today, "17:00"),
+		status: "if_need_be",
 	});
 
-	// Add availability for Bob (he is free tomorrow 10:00 - 12:00)
-	const bobStart = tomorrow
-		.toZonedDateTime({ timeZone: "Europe/Lisbon", plainTime: "10:00" })
-		.toInstant();
-	const bobEnd = tomorrow
-		.toZonedDateTime({ timeZone: "Europe/Lisbon", plainTime: "12:00" })
-		.toInstant();
-
+	// Bob is free tomorrow morning.
 	await db.orm.public.Availability.create({
 		eventId: event.id,
-		userId: bob.id,
-		startTime: bobStart,
-		endTime: bobEnd,
+		participantId: bobParticipant.id,
+		startTime: at(tomorrow, "10:00"),
+		endTime: at(tomorrow, "12:00"),
+		status: "yes",
 	});
 
 	console.log("Database seeded successfully! 🎉");
-	console.log(`Created Event: ${event.title}`);
+	console.log(`Created Event: ${event.title} (${event.id})`);
 }
 
 main()
