@@ -424,7 +424,7 @@ function preventScrollWhilePainting(node: HTMLElement) {
 	onblur={handleWindowBlur}
 />
 
-<div class="w-fit max-w-full p-4">
+	<div class="w-fit max-w-full p-4">
 	<TimeGridHeader
 		{rangeLabel}
 		showNavigation={pageCount > 1}
@@ -437,7 +437,7 @@ function preventScrollWhilePainting(node: HTMLElement) {
 	/>
 
 	{#if visibleDays.length === 0 || hours.length === 0}
-		<p class="px-2 py-6 text-center text-gray-400 text-sm">
+		<p class="px-2 py-6 text-center text-[13px] text-[#9b9b9b]">
 			There are no dates to show for this event.
 		</p>
 	{:else}
@@ -474,7 +474,7 @@ function preventScrollWhilePainting(node: HTMLElement) {
 				{#each hours as currentHour (currentHour)}
 					<div role="row" class="contents">
 						<div
-							class="sticky left-0 z-10 flex items-center justify-end bg-white pr-2 text-[11px] text-gray-400 tabular-nums"
+							class="sticky left-0 z-10 flex items-center justify-end bg-white pr-2 text-[11px] text-[#b5b5b5] tabular-nums"
 							role="rowheader"
 							id={rowId(idPrefix, currentHour)}
 						>
@@ -511,7 +511,7 @@ function preventScrollWhilePainting(node: HTMLElement) {
 	<!-- The empty state doubles as the help text: it answers "what do I do here"
 	     exactly when that question exists, and gets out of the way afterwards. -->
 	{#if gridState.selectedCount === 0}
-		<p class="mt-3 text-center text-gray-400 text-xs">
+		<p class="mt-3 text-center text-[#b5b5b5] text-[11px]">
 			<span class="[@media(pointer:coarse)]:hidden">
 				Drag across to mark when you're free
 			</span>
@@ -521,3 +521,4 @@ function preventScrollWhilePainting(node: HTMLElement) {
 		</p>
 	{/if}
 </div>
+
