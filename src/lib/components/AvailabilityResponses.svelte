@@ -73,17 +73,50 @@ function intensity(count: number, max: number): number {
 	return Math.min(0.92, 0.14 + 0.78 * (count / max));
 }
 
-function cellStyle(key: string): string | undefined {
+function isFilled(day: Date, hour: number): boolean {
+	const key = cellKey(day, hour);
+	if (isolated) return !!isolated.selected[key];
+	const cell = counts[key];
+	return !!cell && cell.yes + cell.maybe > 0;
+}
+
+/**
+ * Rounding belongs to the run, not to the cell: a heat block fuses vertically
+ * and only its top and bottom edges are rounded, exactly like a selection.
+ */
+function cellRadius(day: Date, hour: number): string | undefined {
+	if (!isFilled(day, hour)) return undefined;
+
+	const up = isFilled(day, hour - 1);
+	const down = isFilled(day, hour + 1);
+	const top = up ? 0 : 12;
+	const bottom = down ? 0 : 12;
+	return `${top}px ${top}px ${bottom}px ${bottom}px`;
+}
+
+function cellStyle(
+	key: string,
+	radius: string | undefined,
+): string | undefined {
+	const parts: string[] = [];
+	if (radius) parts.push(`border-radius: ${radius};`);
+
 	if (isolated) {
 		const mode = isolated.selected[key];
-		if (!mode) return undefined;
-		return mode === "yes"
-			? "background-color: rgb(21, 128, 61);"
-			: "background-color: rgb(217, 119, 6);";
+		if (mode) {
+			parts.push(
+				mode === "yes"
+					? "background-color: rgb(21, 128, 61);"
+					: "background-color: rgb(217, 119, 6);",
+			);
+		}
+		return parts.length > 0 ? parts.join(" ") : undefined;
 	}
 
 	const cell = counts[key];
-	if (!cell || cell.yes + cell.maybe === 0) return undefined;
+	if (!cell || cell.yes + cell.maybe === 0) {
+		return parts.length > 0 ? parts.join(" ") : undefined;
+	}
 
 	const total = cell.yes + cell.maybe;
 	const yesAlpha = intensity(cell.yes, maxYes);
@@ -91,13 +124,16 @@ function cellStyle(key: string): string | undefined {
 	const split = (cell.yes / total) * 100;
 
 	if (cell.maybe === 0) {
-		return `background-color: rgba(21, 128, 61, ${yesAlpha});`;
-	}
-	if (cell.yes === 0) {
-		return `background-color: rgba(217, 119, 6, ${maybeAlpha});`;
+		parts.push(`background-color: rgba(21, 128, 61, ${yesAlpha});`);
+	} else if (cell.yes === 0) {
+		parts.push(`background-color: rgba(217, 119, 6, ${maybeAlpha});`);
+	} else {
+		parts.push(
+			`background: linear-gradient(90deg, rgba(21, 128, 61, ${yesAlpha}) 0%, rgba(21, 128, 61, ${yesAlpha}) ${split}%, rgba(217, 119, 6, ${maybeAlpha}) ${split}%, rgba(217, 119, 6, ${maybeAlpha}) 100%);`,
+		);
 	}
 
-	return `background: linear-gradient(90deg, rgba(21, 128, 61, ${yesAlpha}) 0%, rgba(21, 128, 61, ${yesAlpha}) ${split}%, rgba(217, 119, 6, ${maybeAlpha}) ${split}%, rgba(217, 119, 6, ${maybeAlpha}) 100%);`;
+	return parts.join(" ");
 }
 
 function cellLabel(day: Date, hour: number, key: string): string {
@@ -258,12 +294,17 @@ function participantClass(active: boolean): string {
 
 						{#each visibleDays as day, index (day.getTime())}
 							{@const key = cellKey(day, currentHour)}
+							{@const filled = isFilled(day, currentHour)}
+							{@const radius = cellRadius(day, currentHour)}
 							<div
 								role="gridcell"
 								aria-label={cellLabel(day, currentHour, key)}
 								title={cellLabel(day, currentHour, key)}
-								class="border-b border-black/5"
-								style={cellStyle(key)}
+								class={[
+									"[corner-shape:squircle]",
+									filled ? "" : "border-b border-black/5",
+								]}
+								style={cellStyle(key, radius)}
 							></div>
 						{/each}
 					</div>
