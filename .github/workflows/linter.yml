@@ -17,6 +17,9 @@ jobs:
       - name: Setup Biome
         uses: biomejs/setup-biome@v2
         with:
-          version: latest
+          # Keep in sync with the @biomejs/biome devDependency. `latest` picks up
+          # new rule names and schema versions that the committed biome.json
+          # does not know about, which fails the job on configuration alone.
+          version: 2.5.14
       - name: Run Biome
         run: biome ci .
