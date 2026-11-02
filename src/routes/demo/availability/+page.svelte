@@ -11,6 +11,7 @@ interface Scenario {
 	endHour: number;
 }
 
+// biome-ignore lint/correctness/noUnusedVariables: used in markup
 const modeLabel: Record<CellMode, string> = {
 	yes: "Yes",
 	maybe: "If need be",
@@ -29,12 +30,14 @@ const scenarios: Record<string, Scenario> = {
 };
 
 let scenarioKey = $state("week");
+// biome-ignore lint/correctness/noUnusedVariables: used in markup
 let brush = $state<CellMode>("yes");
 let selected = $state<SelectedCells>({});
 
 const scenario = $derived(scenarios[scenarioKey] ?? scenarios.week);
 
 /** Today onwards, as plain ISO dates. Computed on the client (no SSR here). */
+// biome-ignore lint/correctness/noUnusedVariables: used in markup
 const dates = $derived.by(() => {
 	const today = Temporal.Now.plainDateISO();
 
@@ -43,61 +46,98 @@ const dates = $derived.by(() => {
 	);
 });
 
+// biome-ignore lint/correctness/noUnusedVariables: used in markup
 const selectedEntries = $derived(
 	Object.entries(selected).sort(([a], [b]) => a.localeCompare(b)),
 );
 </script>
 
-<div class="mx-auto mt-10 max-w-5xl rounded-xl bg-white p-6 shadow">
-	<h1 class="text-3xl font-bold text-green-700">Time Grid</h1>
-	<p class="mt-1 mb-6 text-sm text-gray-500">
-		Manual-testing demo route for the availability grid — nothing links here,
-		open <code class="font-mono text-gray-700">/demo/availability</code> directly.
-	</p>
+<svelte:head>
+	<title>Availability grid demo · neet</title>
+	<meta
+		name="description"
+		content="Manual testing workspace for the neet availability grid, scenarios, and selection brushes."
+	/>
+</svelte:head>
 
-	<div class="mb-4 flex flex-wrap items-center gap-4">
-		<div class="flex items-center gap-3">
-			<span class="text-sm font-medium text-gray-700" id="scenario-label">
+<div class="mx-auto w-full max-w-[1120px] px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+	<header class="pb-6 border-b border-[#f0f0f0]">
+		<h1 class="font-semibold text-[24px] leading-tight tracking-[-0.035em] text-[#0a0a0a] sm:text-[28px]">
+			Availability grid
+		</h1>
+		<p class="mt-1.5 text-[13px] text-[#6b6b6b]">
+			Manual-testing workspace for grid scenarios and selection brushes.
+		</p>
+	</header>
+
+	<div class="mt-6 flex flex-col gap-4 border-b border-[#f0f0f0] pb-6 lg:flex-row lg:items-center lg:justify-between">
+		<div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+			<span class="shrink-0 font-medium text-[13px] text-[#0a0a0a]" id="scenario-label">
 				Scenario
 			</span>
 			<div
-				class="inline-flex flex-wrap items-center gap-4 rounded-md border border-gray-300 px-3 py-2"
+				class="flex flex-wrap items-center gap-x-4 gap-y-2"
 				role="radiogroup"
 				aria-labelledby="scenario-label"
 			>
 				{#each Object.entries(scenarios) as [key, value] (key)}
-					<label class="flex items-center gap-2 text-sm text-gray-700">
-						<input type="radio" bind:group={scenarioKey} value={key} />
+					<label class="flex cursor-pointer items-center gap-2 text-[13px] text-[#6b6b6b] hover:text-[#0a0a0a]">
+						<input
+							type="radio"
+							bind:group={scenarioKey}
+							value={key}
+							class="h-3.5 w-3.5 border-[#e2e2e2] text-[#166534] focus:ring-[#166534]"
+						/>
 						{value.label}
 					</label>
 				{/each}
 			</div>
 		</div>
 
-		<div class="flex items-center gap-3">
-			<span class="text-sm font-medium text-gray-700" id="brush-label">
+		<div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+			<span class="shrink-0 font-medium text-[13px] text-[#0a0a0a]" id="brush-label">
 				Brush
 			</span>
 			<div
-				class="inline-flex items-center gap-4 rounded-md border border-gray-300 px-3 py-2"
+				class="inline-flex items-center rounded-md border border-[#e2e2e2] bg-[#f5f5f5] p-0.5"
 				role="radiogroup"
 				aria-labelledby="brush-label"
 			>
-				<label class="flex items-center gap-2 text-sm text-gray-700">
-					<input type="radio" bind:group={brush} value="yes" />
-					<span class="h-3 w-3 rounded-sm bg-green-700" aria-hidden="true"></span>
+				<button
+					type="button"
+					role="radio"
+					aria-checked={brush === "yes"}
+					onclick={() => (brush = "yes")}
+					class={[
+						"inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-[5px] px-3 font-medium text-[12px] transition-[background-color,color,box-shadow,transform] duration-150 ease-[var(--ease-out)] active:scale-[0.97]",
+						brush === "yes"
+							? "bg-white text-[#0a0a0a] shadow-sm"
+							: "text-[#6b6b6b] hover:text-[#0a0a0a]",
+					]}
+				>
+					<span class="h-2 w-2 rounded-[2px] bg-[#166534]" aria-hidden="true"></span>
 					Yes
-				</label>
-				<label class="flex items-center gap-2 text-sm text-gray-700">
-					<input type="radio" bind:group={brush} value="maybe" />
-					<span class="h-3 w-3 rounded-sm bg-yellow-600" aria-hidden="true"></span>
+				</button>
+				<button
+					type="button"
+					role="radio"
+					aria-checked={brush === "maybe"}
+					onclick={() => (brush = "maybe")}
+					class={[
+						"inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-[5px] px-3 font-medium text-[12px] transition-[background-color,color,box-shadow,transform] duration-150 ease-[var(--ease-out)] active:scale-[0.97]",
+						brush === "maybe"
+							? "bg-white text-[#0a0a0a] shadow-sm"
+							: "text-[#6b6b6b] hover:text-[#0a0a0a]",
+					]}
+				>
+					<span class="h-2 w-2 rounded-[2px] bg-amber-500" aria-hidden="true"></span>
 					If need be
-				</label>
+				</button>
 			</div>
 		</div>
 	</div>
 
-	<div class="flex justify-center">
+	<div class="flex justify-center py-8 sm:py-10">
 		<TimeGrid
 			{dates}
 			startHour={scenario.startHour}
@@ -108,24 +148,23 @@ const selectedEntries = $derived(
 		/>
 	</div>
 
-	<div class="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
-		<p class="text-sm font-medium text-gray-700">
-			<code class="font-mono">bind:selected</code> currently holds
+	<div class="border-t border-[#f0f0f0] pt-4">
+		<p class="font-medium text-[13px] text-[#0a0a0a]">
+			<code class="font-mono text-xs">bind:selected</code> currently holds
 			{selectedEntries.length} cell{selectedEntries.length === 1 ? "" : "s"}
 		</p>
 
+
 		{#if selectedEntries.length === 0}
-			<p class="mt-1 text-sm text-gray-500">
+			<p class="mt-1 text-[13px] text-[#9b9b9b]">
 				Drag across the grid to select cells and watch this readout update.
 			</p>
 		{:else}
-			<ul class="mt-2 flex flex-wrap gap-2">
+			<ul class="mt-3 flex flex-wrap gap-x-5 gap-y-1.5">
 				{#each selectedEntries as [key, mode] (key)}
-					<li
-						class="rounded border border-gray-200 bg-white px-2 py-0.5 font-mono text-xs text-gray-700"
-					>
+					<li class="font-mono text-xs text-[#6b6b6b]">
 						{key}
-						<span class={mode === "yes" ? "text-green-700" : "text-yellow-700"}>
+						<span class={mode === "yes" ? "text-[#166534]" : "text-amber-600"}>
 							· {modeLabel[mode]}
 						</span>
 					</li>
