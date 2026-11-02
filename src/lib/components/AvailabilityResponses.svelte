@@ -161,10 +161,10 @@ function goToPage(next: number) {
 
 function participantClass(active: boolean): string {
 	return [
-		"w-full cursor-pointer rounded-md px-3 py-1.5 text-left font-medium text-xs transition-colors duration-150",
+		"w-full cursor-pointer rounded-md px-3 py-1.5 text-left font-medium text-[12px] transition-[background-color,color] duration-150 ease-[var(--ease-out)]",
 		active
-			? "bg-gray-900 text-white"
-			: "bg-gray-100 text-gray-600 hover:bg-gray-200",
+			? "bg-[#0a0a0a] text-white"
+			: "bg-[#f5f5f5] text-[#6b6b6b] hover:bg-[#ebebeb] hover:text-[#0a0a0a]",
 	].join(" ");
 }
 </script>
@@ -178,14 +178,14 @@ function participantClass(active: boolean): string {
 					aria-label="Previous days"
 					disabled={currentPage === 0}
 					onclick={() => goToPage(currentPage - 1)}
-					class="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-gray-400 text-lg leading-none transition-colors enabled:hover:bg-gray-100 enabled:hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-30"
+					class="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-[#9b9b9b] text-lg leading-none transition-[background-color,color] duration-150 enabled:hover:bg-[#f5f5f5] enabled:hover:text-[#0a0a0a] disabled:cursor-not-allowed disabled:opacity-30"
 				>
 					‹
 				</button>
 			{/if}
 			<span
 				class={[
-					"font-medium text-gray-900 text-sm",
+					"font-medium text-[#0a0a0a] text-[13px]",
 					pageCount > 1 ? "min-w-28 text-center" : "",
 				]}
 			>
@@ -197,36 +197,35 @@ function participantClass(active: boolean): string {
 					aria-label="Next days"
 					disabled={currentPage === pageCount - 1}
 					onclick={() => goToPage(currentPage + 1)}
-					class="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-gray-400 text-lg leading-none transition-colors enabled:hover:bg-gray-100 enabled:hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-30"
+					class="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-[#9b9b9b] text-lg leading-none transition-[background-color,color] duration-150 enabled:hover:bg-[#f5f5f5] enabled:hover:text-[#0a0a0a] disabled:cursor-not-allowed disabled:opacity-30"
 				>
 					›
 				</button>
 			{/if}
 		</div>
 
-		<div class="flex flex-wrap items-center gap-3 text-gray-400 text-xs">
-			<span class="flex items-center gap-1">
-				<span class="h-2.5 w-2.5 rounded-sm bg-green-700" aria-hidden="true"
-				></span>
+		<div class="flex items-center gap-3 text-[#9b9b9b] text-[11px]">
+			<span class="flex items-center gap-1.5">
+				<span class="h-2 w-2 rounded-[2px] bg-[#166534]" aria-hidden="true"></span>
 				Yes
 			</span>
-			<span class="flex items-center gap-1">
-				<span class="h-2.5 w-2.5 rounded-sm bg-yellow-600" aria-hidden="true"
-				></span>
+			<span class="flex items-center gap-1.5">
+				<span class="h-2 w-2 rounded-[2px] bg-amber-500" aria-hidden="true"></span>
 				If need be
 			</span>
 			<span>Darker = more people</span>
 		</div>
 	</div>
 
+
 	{#if responses.length === 0}
 		<p
-			class="rounded-lg border border-gray-200 bg-gray-50 px-4 py-6 text-center text-gray-500 text-sm"
+			class="rounded-lg border border-[#e8e8e8] bg-[#fafafa] px-4 py-6 text-center text-[13px] text-[#9b9b9b]"
 		>
 			No responses yet. Saved answers appear here for everyone with the link.
 		</p>
 	{:else if visibleDays.length === 0 || hours.length === 0}
-		<p class="px-2 py-6 text-center text-gray-400 text-sm">
+		<p class="px-2 py-6 text-center text-[13px] text-[#9b9b9b]">
 			There are no dates to show for this event.
 		</p>
 	{:else}
@@ -252,7 +251,7 @@ function participantClass(active: boolean): string {
 				{#each hours as currentHour (currentHour)}
 					<div role="row" class="contents">
 						<div
-							class="sticky left-0 z-10 flex items-center justify-end bg-white pr-2 text-[11px] text-gray-400 tabular-nums"
+							class="sticky left-0 z-10 flex items-center justify-end bg-white pr-2 text-[11px] text-[#b5b5b5] tabular-nums"
 							role="rowheader"
 							id={rowId(idPrefix, currentHour)}
 						>
@@ -269,54 +268,55 @@ function participantClass(active: boolean): string {
 								title={cellLabel(day, currentHour, key)}
 								class={[
 									"[corner-shape:squircle]",
-									filled ? "" : "border-b border-black/5",
+									filled ? "" : "border-b border-black/[0.04]",
 								]}
 								style={cellStyle(key, radius)}
 							></div>
 						{/each}
 					</div>
 				{/each}
-					</div>
 				</div>
 			</div>
+		</div>
 
-			<aside class="w-full shrink-0 lg:w-36">
-				<p class="mb-2 text-sm font-medium text-gray-700">
-					Participants
-					<span class="font-normal text-gray-400">
-						({responses.length})
-					</span>
-				</p>
-				<div class="flex flex-col gap-1 lg:max-h-[70dvh] lg:overflow-auto">
+		<aside class="w-full shrink-0 lg:w-36">
+			<p class="mb-2 text-[12px] font-medium text-[#6b6b6b]">
+				Participants
+				<span class="font-normal text-[#b5b5b5]">
+					({responses.length})
+				</span>
+			</p>
+			<div class="flex flex-col gap-1 lg:max-h-[70dvh] lg:overflow-auto">
+				<button
+					type="button"
+					aria-pressed={isolatedId === null}
+					onclick={() => {
+						pinnedId = null;
+						hoveredId = null;
+					}}
+					class={participantClass(isolatedId === null)}
+				>
+					Everyone
+				</button>
+
+				{#each responses as response (response.id)}
 					<button
 						type="button"
-						aria-pressed={isolatedId === null}
-						onclick={() => {
-							pinnedId = null;
-							hoveredId = null;
-						}}
-						class={participantClass(isolatedId === null)}
+						aria-pressed={isolatedId === response.id}
+						onmouseenter={() => (hoveredId = response.id)}
+						onmouseleave={() => (hoveredId = null)}
+						onfocus={() => (hoveredId = response.id)}
+						onblur={() => (hoveredId = null)}
+						onclick={() =>
+							(pinnedId = pinnedId === response.id ? null : response.id)}
+						class={participantClass(isolatedId === response.id)}
 					>
-						Everyone
+						{response.name}
 					</button>
-
-					{#each responses as response (response.id)}
-						<button
-							type="button"
-							aria-pressed={isolatedId === response.id}
-							onmouseenter={() => (hoveredId = response.id)}
-							onmouseleave={() => (hoveredId = null)}
-							onfocus={() => (hoveredId = response.id)}
-							onblur={() => (hoveredId = null)}
-							onclick={() =>
-								(pinnedId = pinnedId === response.id ? null : response.id)}
-							class={participantClass(isolatedId === response.id)}
-						>
-							{response.name}
-						</button>
-					{/each}
-				</div>
-			</aside>
+				{/each}
+			</div>
+		</aside>
 		</div>
 	{/if}
 </div>
+

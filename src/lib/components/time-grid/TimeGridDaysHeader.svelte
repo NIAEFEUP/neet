@@ -20,8 +20,6 @@ let { days, startIndex, idPrefix }: Props = $props();
 	<div class="sticky top-0 left-0 z-30 bg-white" aria-hidden="true"></div>
 	{#each days as day, index (day.getTime())}
 		{@const today = isTodayDate(day)}
-		<!-- One line per day instead of two stacked ones: the column is labelled and
-		     the header stays shorter than the rows it describes. -->
 		<div
 			class="sticky top-0 z-20 flex items-center justify-center bg-white px-1 pb-2"
 			role="columnheader"
@@ -29,15 +27,16 @@ let { days, startIndex, idPrefix }: Props = $props();
 		>
 			<span
 				class={[
-					"flex items-baseline gap-1 rounded-lg px-2 py-0.5 text-[11px] [corner-shape:squircle]",
-					today ? "bg-gray-900 text-white" : "text-gray-400",
+					"flex items-baseline gap-1 rounded-md px-2 py-0.5 text-[11px]",
+					today ? "bg-[#0a0a0a] text-white" : "text-[#b5b5b5]",
 				]}
 			>
 				<span>{formatDayShort(day)}</span>
-				<span class={today ? "font-semibold" : "font-medium text-gray-500"}>
+				<span class={today ? "font-semibold" : "font-medium text-[#9b9b9b]"}>
 					{formatDayNumber(day)}
 				</span>
 			</span>
 		</div>
 	{/each}
 </div>
+
