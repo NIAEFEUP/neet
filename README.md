@@ -97,7 +97,7 @@ static/           # Static assets
 
 ## Deployment
 
-This project uses `@sveltejs/adapter-auto`. To deploy, install the appropriate adapter for your target environment and run `pnpm build`. See the [SvelteKit adapters docs](https://svelte.dev/docs/kit/adapters) for more info.
+This project uses `@sveltejs/adapter-node`, which produces a standalone Node server in `build/` when running `pnpm build`. The `Dockerfile` packages that server for the NIployments registry, and `.github/workflows/niployments.yaml` deploys it on pushes to `main`, `develop` and `beta`. See the [SvelteKit adapters docs](https://svelte.dev/docs/kit/adapters) for more info.
 
 ## License
 
