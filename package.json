@@ -17,7 +17,6 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.5.14",
-		"@prisma/cli-engine": "0.6.1",
 		"@sveltejs/adapter-node": "^5.5.7",
 		"@sveltejs/kit": "^2.63.0",
 		"@sveltejs/vite-plugin-svelte": "^7.1.2",
@@ -27,7 +26,6 @@
 		"@types/node": "^26.6.3",
 		"husky": "^9.1.7",
 		"lint-staged": "^17.6.0",
-		"prisma": "8.0.0-rc.17",
 		"svelte": "^5.56.1",
 		"svelte-check": "^4.6.0",
 		"tailwindcss": "^4.3.0",
@@ -36,7 +34,9 @@
 		"vite": "^8.0.16"
 	},
 	"dependencies": {
+		"@prisma/cli-engine": "0.6.1",
 		"@prisma/orm-postgres": "8.0.0-rc.12",
+		"prisma": "8.0.0-rc.17",
 		"dotenv": "^18.0.4",
 		"temporal-polyfill": "^1.0.5"
 	}
