@@ -1,41 +1,47 @@
 # syntax=docker/dockerfile:1
 
-FROM node:22.12.0-alpine AS base
+ARG NODE_VERSION=22.18.0
+
+FROM node:${NODE_VERSION}-alpine AS base
+
+RUN npm install -g pnpm@12.16.1 \
+	&& npm cache clean --force
+
+ENV HUSKY=0
 
 WORKDIR /app
 
-# Keep lifecycle scripts from trying to install git hooks in the image.
-ENV HUSKY=0
-
-RUN npm install -g pnpm@12.16.1
-
 FROM base AS deps
-
-RUN apk add --no-cache libc6-compat
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 RUN pnpm install --frozen-lockfile
 
-FROM base AS builder
+FROM deps AS builder
 
-COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN pnpm build
 
-FROM base AS prod
+FROM builder AS prod-deps
 
-ENV NODE_ENV=production
-ENV HOST=0.0.0.0
-ENV PORT=3000
+RUN pnpm deploy --prod /out
 
-RUN addgroup --system --gid 1001 nodejs \
-	&& adduser --system --uid 1001 svelte
+FROM node:${NODE_VERSION}-alpine AS prod
 
-COPY --from=builder --chown=svelte:nodejs /app/build ./build
-COPY --from=builder --chown=svelte:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=svelte:nodejs /app/package.json ./package.json
+ENV NODE_ENV=production \
+	HOST=0.0.0.0 \
+	PORT=3000
 
-USER svelte
+WORKDIR /app
+
+COPY --from=prod-deps /out/node_modules ./node_modules
+COPY --from=builder /app/build ./build
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
+COPY --from=builder /app/migrations ./migrations
+COPY --from=builder /app/src/prisma/contract.prisma ./src/prisma/contract.prisma
+COPY --from=builder /app/src/prisma/contract.json ./src/prisma/contract.json
+
+USER 1000:1000
 
 EXPOSE 3000
 
