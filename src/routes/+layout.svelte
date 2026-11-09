@@ -4,16 +4,16 @@ import { resolve } from "$app/paths";
 import { page } from "$app/state";
 import "./layout.css";
 // biome-ignore lint/correctness/noUnusedImports: used inside <svelte:head>
-import favicon from "$lib/assets/favicon.svg";
+import logo from "$lib/assets/favicon.svg";
 
 // biome-ignore lint/correctness/noUnusedVariables: rendered with {@render children()}
 let { children } = $props();
 // biome-ignore lint/correctness/noUnusedVariables: used in markup
-const isHome = $derived(page.url.pathname === "/");
+const isHome = $derived(page.route.id === "/");
 </script>
 
 <svelte:head>
-	<link rel="icon" href={favicon} />
+	<link rel="icon" href={logo} />
 </svelte:head>
 
 <a
@@ -24,6 +24,7 @@ const isHome = $derived(page.url.pathname === "/");
 </a>
 
 <!-- §7 mobile-native: safe-area-inset-top handled via padding -->
+{#if !isHome}
 <header
 	class="sticky top-0 z-40 h-12 border-b border-[#e8e8e8] bg-white/90 backdrop-blur-sm"
 	style="padding-top: env(safe-area-inset-top, 0px);"
@@ -34,18 +35,13 @@ const isHome = $derived(page.url.pathname === "/");
 			class="inline-flex items-center gap-2 rounded-md py-1 text-[#0a0a0a]"
 			aria-label="neet home"
 		>
-			<svg viewBox="0 0 24 24" class="h-5 w-5 shrink-0" aria-hidden="true">
-				<rect x="1" y="1" width="22" height="22" rx="5" fill="#166534" />
-				<path d="M8 1v22M16 1v22M1 8h22M1 16h22" stroke="#fff" stroke-opacity=".2" />
-				<rect x="8.7" y="8.7" width="6.6" height="6.6" rx="1" fill="#fff" />
-				<rect x="16.7" y="1.7" width="5.6" height="5.6" rx=".8" fill="#86efac" />
-			</svg>
+			<img src={logo} alt="" width="20" height="20" class="h-5 w-5 shrink-0" />
 			<span class="font-semibold text-[18px] leading-none tracking-[-0.05em]">neet</span>
 		</a>
 
-		{#if !isHome}
+		{#if page.route.id !== "/create"}
 			<a
-				href={resolve("/")}
+				href={resolve("/create")}
 				class="inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 font-medium text-[13px] text-[#6b6b6b] transition-colors duration-150 ease-[var(--ease-out)] hover:text-[#0a0a0a]"
 			>
 				<svg viewBox="0 0 16 16" fill="none" class="h-3.5 w-3.5" aria-hidden="true">
@@ -61,13 +57,14 @@ const isHome = $derived(page.url.pathname === "/");
 		{/if}
 	</div>
 </header>
+{/if}
 
 <!-- §3 mobile-native: 100dvh tracks visible area including browser chrome collapse -->
 <main
 	id="main-content"
 	tabindex="-1"
-	class="min-h-[calc(100dvh-3rem)]"
-	style="padding-bottom: env(safe-area-inset-bottom, 0px);"
+	class={isHome ? "home-main" : "min-h-[calc(100dvh-3rem)]"}
+	style:padding-bottom={isHome ? undefined : "env(safe-area-inset-bottom, 0px)"}
 >
 	{@render children()}
 </main>

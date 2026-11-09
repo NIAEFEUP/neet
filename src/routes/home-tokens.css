@@ -1,0 +1,40 @@
+:root {
+	--color-paper: #f8f9fb;
+	--color-paper-2: #f0f1f4;
+	--color-ink: #171b25;
+	--color-ink-2: #3d424c;
+	--color-muted: #666975;
+	--color-rule: #e0e1e6;
+	--color-accent: #660910;
+	--color-accent-ink: #fff8f8;
+	--color-accent-edge: #41050a;
+	--color-accent-hover: #790c16;
+	--color-glyph-1: #e4d5d8;
+	--color-glyph-2: #cfacb2;
+	--color-glyph-3: #ac737d;
+	--color-glyph-4: #8b3d4a;
+	--color-glyph-5: #660910;
+	--font-display: "Familjen Grotesk", sans-serif;
+	--font-body: "IBM Plex Sans", sans-serif;
+	--font-outlier: "JetBrains Mono", monospace;
+	--space-3xs: 2px;
+	--space-2xs: 4px;
+	--space-xs: 8px;
+	--space-sm: 12px;
+	--space-md: 16px;
+	--space-lg: 24px;
+	--space-xl: 40px;
+	--space-2xl: 64px;
+	--gutter: clamp(24px, 4.5vw, 64px);
+	--container: 1440px;
+	--ease-key: cubic-bezier(0.23, 1, 0.32, 1);
+	--dur-micro: 140ms;
+	--shadow-key:
+		0 3px 0 var(--color-accent-edge),
+		0 5px 7px -4px color-mix(in srgb, var(--color-accent) 35%, transparent),
+		inset 0 1px 0 color-mix(in srgb, var(--color-accent-ink) 18%, transparent);
+	--shadow-key-press:
+		0 0 0 var(--color-accent-edge),
+		inset 0 1px 2px
+		color-mix(in srgb, var(--color-accent-edge) 40%, transparent);
+}

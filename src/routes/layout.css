@@ -27,6 +27,7 @@
 
 html,
 body {
+	overflow-x: clip;
 	min-height: 100%;
 	/* §2 mobile-native: no tap flash */
 	-webkit-tap-highlight-color: transparent;
