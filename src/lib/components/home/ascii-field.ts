@@ -21,6 +21,8 @@ export function createAvailabilityField(canvas: HTMLCanvasElement) {
 	let disposed = false;
 	let pointer = { x: -1000, y: -1000 };
 	let lens = { x: -1000, y: -1000 };
+	let pointerActive = false;
+	let lensStrength = 0;
 	let palette: string[] = [];
 	let font = "";
 
@@ -45,7 +47,8 @@ export function createAvailabilityField(canvas: HTMLCanvasElement) {
 			for (let row = 0; row < rows; row++) {
 				const y = row * CELL_HEIGHT + CELL_HEIGHT / 2;
 				const lensDistance = Math.hypot(x - lens.x, y - lens.y);
-				const influence = Math.exp(-(lensDistance * lensDistance) / 9000);
+				const influence =
+					Math.exp(-(lensDistance * lensDistance) / 9000) * lensStrength;
 				const bend = (y - lens.y) * influence * 0.35;
 				let density = 0;
 				for (let lane = 0; lane < centers.length; lane++) {
@@ -88,8 +91,11 @@ export function createAvailabilityField(canvas: HTMLCanvasElement) {
 			elapsed += lastTime ? Math.min((now - lastTime) / 1000, 0.1) : 0;
 			lastTime = now;
 			previousFrame = now;
-			lens.x += (pointer.x - lens.x) * 0.18;
-			lens.y += (pointer.y - lens.y) * 0.18;
+			if (pointerActive) {
+				lens.x += (pointer.x - lens.x) * 0.18;
+				lens.y += (pointer.y - lens.y) * 0.18;
+			}
+			lensStrength += ((pointerActive ? 1 : 0) - lensStrength) * 0.18;
 			draw(elapsed);
 		}
 		frame = requestAnimationFrame(tick);
@@ -135,11 +141,15 @@ export function createAvailabilityField(canvas: HTMLCanvasElement) {
 			return;
 		const bounds = canvas.getBoundingClientRect();
 		pointer = { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
-		if (lens.x === -1000) lens = { ...pointer };
+		pointerActive = true;
+		if (lens.x === -1000) {
+			lens = { ...pointer };
+			lensStrength = 1;
+		}
 	}
 
 	function resetPointer() {
-		pointer = { x: -1000, y: -1000 };
+		pointerActive = false;
 	}
 
 	const resizeObserver = new ResizeObserver(resize);
