@@ -1,5 +1,7 @@
 <script lang="ts">
 // biome-ignore lint/correctness/noUnusedImports: used in Svelte markup
+import StarIcon from "@lucide/svelte/icons/star";
+// biome-ignore lint/correctness/noUnusedImports: used in Svelte markup
 import { resolve } from "$app/paths";
 // biome-ignore lint/correctness/noUnusedImports: used in Svelte markup
 import logo from "$lib/assets/favicon.svg";
@@ -7,6 +9,10 @@ import logo from "$lib/assets/favicon.svg";
 import nifeupLogo from "$lib/assets/nifeup.svg";
 // biome-ignore lint/correctness/noUnusedImports: used in Svelte markup
 import AsciiAvailability from "$lib/components/home/AsciiAvailability.svelte";
+// biome-ignore lint/correctness/noUnusedImports: used in Svelte markup
+import { Button } from "$lib/components/ui/button";
+// biome-ignore lint/correctness/noUnusedImports: used in Svelte markup
+import { ButtonGroup } from "$lib/components/ui/button-group";
 import type { PageProps } from "./$types";
 import "./home.css";
 
@@ -43,19 +49,30 @@ const repositoryUrl = "https://github.com/NIAEFEUP/neet";
 	<footer class="home-footer home-container">
 		<div class="github-links">
 			<a class="github-link footer-link" href={repositoryUrl} target="_blank" rel="noreferrer">GitHub</a>
-			<div class="github-stars">
-				<a class="star-link footer-link" href={repositoryUrl} target="_blank" rel="noreferrer" aria-label="Star neet on GitHub">
-					<svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
-						<path d="m8 1.5 2 4.2 4.6.6-3.3 3.2.8 4.5L8 11.8 3.9 14l.8-4.5-3.3-3.2L6 5.7 8 1.5Z" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round" />
-					</svg>
-					<span>Star</span>
-				</a>
+			<ButtonGroup>
+				<Button
+					variant="outline"
+					href={repositoryUrl}
+					target="_blank"
+					rel="noreferrer"
+					aria-label="Star neet on GitHub"
+				>
+					<StarIcon />
+					Star
+				</Button>
 				{#if data.githubStars !== null}
-					<a class="star-count footer-link" href="https://github.com/NIAEFEUP/neet/stargazers" target="_blank" rel="noreferrer" aria-label={`${data.githubStars} GitHub stars`}>
+					<Button
+						variant="outline"
+						href="https://github.com/NIAEFEUP/neet/stargazers"
+						target="_blank"
+						rel="noreferrer"
+						aria-label={`${data.githubStars} GitHub stars`}
+						class="tabular-nums"
+					>
 						{data.githubStars.toLocaleString("en")}
-					</a>
+					</Button>
 				{/if}
-			</div>
+			</ButtonGroup>
 		</div>
 		<a class="nifeup-link" href="https://nifeup.com" target="_blank" rel="noreferrer" aria-label="Visit nifeup">
 			<img src={nifeupLogo} alt="nifeup" width="60" height="19" />
