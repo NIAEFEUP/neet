@@ -432,17 +432,22 @@ const handleEnhance: SubmitFunction = () => {
 							>
 								Your name
 							</Label>
-							<Input
-								id="guest-name"
-								name="name"
-								type="text"
-								required
-								maxlength={80}
-								autocomplete="name"
-								placeholder="e.g. Ana Sousa"
-								bind:value={name}
-								oninput={markDirty}
-							/>
+							<div
+								class="-m-1 rounded-xl p-1 transition-shadow focus-within:ring-2 focus-within:ring-ring/35"
+							>
+								<Input
+									id="guest-name"
+									name="name"
+									type="text"
+									required
+									maxlength={80}
+									autocomplete="name"
+									placeholder="e.g. Ana Sousa"
+									class="focus-visible:ring-0"
+									bind:value={name}
+									oninput={markDirty}
+								/>
+							</div>
 						</div>
 
 						<div class="w-full space-y-1.5 sm:w-52">
