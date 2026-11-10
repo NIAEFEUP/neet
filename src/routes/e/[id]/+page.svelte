@@ -1,6 +1,4 @@
 <script lang="ts">
-// biome-ignore-all lint/correctness/noUnusedImports: used in Svelte markup
-// biome-ignore-all lint/correctness/noUnusedVariables: used in Svelte markup
 import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";
 import CalendarIcon from "@lucide/svelte/icons/calendar";
 import CheckIcon from "@lucide/svelte/icons/check";

@@ -4,7 +4,6 @@ import type {
 	HTMLButtonAttributes,
 } from "svelte/elements";
 import { tv, type VariantProps } from "tailwind-variants";
-// biome-ignore lint/correctness/noUnusedImports: used in Svelte markup
 import { cn, type WithElementRef } from "$lib/utils.js";
 
 export const buttonVariants = tv({

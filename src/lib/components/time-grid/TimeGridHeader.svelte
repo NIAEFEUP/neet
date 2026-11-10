@@ -1,5 +1,4 @@
 <script lang="ts">
-// biome-ignore-all lint/correctness/noUnusedVariables: used in Svelte markup
 interface Props {
 	/** The days currently on screen, e.g. 'Oct 14 – 20'. */
 	rangeLabel: string;

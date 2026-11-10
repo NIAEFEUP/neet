@@ -1,6 +1,4 @@
 <script lang="ts">
-// biome-ignore-all lint/correctness/noUnusedImports: used in Svelte markup
-// biome-ignore-all lint/correctness/noUnusedVariables: used in Svelte markup
 import { Blobatar } from "@blobatar/svelte";
 import "blobatar/motion.css";
 import {

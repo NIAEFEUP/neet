@@ -1,25 +1,16 @@
 <script lang="ts">
-// biome-ignore lint/correctness/noUnusedImports: used in Svelte markup
 import StarIcon from "@lucide/svelte/icons/star";
-// biome-ignore lint/correctness/noUnusedImports: used in Svelte markup
 import { resolve } from "$app/paths";
-// biome-ignore lint/correctness/noUnusedImports: used in Svelte markup
 import logo from "$lib/assets/favicon.svg";
-// biome-ignore lint/correctness/noUnusedImports: used in Svelte markup
 import nifeupLogo from "$lib/assets/nifeup.svg";
-// biome-ignore lint/correctness/noUnusedImports: used in Svelte markup
 import AsciiAvailability from "$lib/components/home/AsciiAvailability.svelte";
-// biome-ignore lint/correctness/noUnusedImports: used in Svelte markup
 import { Button } from "$lib/components/ui/button";
-// biome-ignore lint/correctness/noUnusedImports: used in Svelte markup
 import { ButtonGroup } from "$lib/components/ui/button-group";
 import type { PageProps } from "./$types";
 import "./home.css";
 
-// biome-ignore lint/correctness/noUnusedVariables: used in Svelte markup
 let { data }: PageProps = $props();
 
-// biome-ignore lint/correctness/noUnusedVariables: used in Svelte markup
 const repositoryUrl = "https://github.com/NIAEFEUP/neet";
 </script>
 
