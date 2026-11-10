@@ -180,15 +180,16 @@ const handleEnhance: SubmitFunction = () => {
 </svelte:head>
 
 <div class="mx-auto w-full max-w-[1240px] px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
-	<header class="rounded-xl bg-foreground px-5 py-6 text-background sm:px-7 sm:py-7">
+	<header class="px-5 pb-2 sm:px-7">
 		<div class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
 			<div class="min-w-0">
-				<h1 class="break-words font-semibold text-2xl tracking-tight sm:text-3xl">
+				<h1
+					class="break-words font-semibold text-4xl text-foreground tracking-tight sm:text-5xl"
+				>
 					{data.event.title}
 				</h1>
-
 				{#if data.event.description}
-					<p class="mt-2 max-w-2xl whitespace-pre-wrap text-background/70 text-sm leading-6">
+					<p class="mt-3 max-w-2xl whitespace-pre-wrap text-muted-foreground text-sm leading-6">
 						{data.event.description}
 					</p>
 				{/if}
@@ -198,7 +199,9 @@ const handleEnhance: SubmitFunction = () => {
 					are implemented. The participant names are deliberately hidden for now.
 				-->
 
-				<div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-background/70 text-sm">
+				<div
+					class="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-muted-foreground text-xs"
+				>
 					<span class="inline-flex items-center gap-1.5">
 						<CalendarIcon class="size-3.5" aria-hidden="true" />
 						{dateLabel}
@@ -211,7 +214,7 @@ const handleEnhance: SubmitFunction = () => {
 			</div>
 
 			<Button
-				variant="secondary"
+				variant="outline"
 				size="sm"
 				class="self-start"
 				onclick={copyLink}
@@ -517,6 +520,7 @@ const handleEnhance: SubmitFunction = () => {
 		{/if}
 	</div>
 </div>
+
 
 <style>
 	@media (hover: hover) and (pointer: fine) {
