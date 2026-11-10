@@ -42,7 +42,6 @@ let selectedResponseIds = $state<string[]>([]);
 const dates = $derived(data.event.proposedDates);
 const startHour = $derived(parseHour(data.event.startTime) ?? 0);
 const endHour = $derived(parseHour(data.event.endTime) ?? 24);
-const selectedCount = $derived(Object.keys(selected).length);
 const isolatedResponse = $derived(
 	hoveredResponseId
 		? (data.responses.find(
@@ -393,16 +392,33 @@ const handleEnhance: SubmitFunction = () => {
 							</p>
 						</div>
 
-						<Button
-							type="button"
-							variant="outline"
-							size="sm"
-							class="self-start"
-							onclick={closeAnswer}
-						>
-							<ArrowLeftIcon aria-hidden="true" />
-							Responses
-						</Button>
+						<div class="flex flex-col gap-2 self-start sm:items-end">
+							<div class="flex flex-wrap items-center gap-2">
+								<Button type="button" variant="outline" onclick={closeAnswer}>
+									<ArrowLeftIcon aria-hidden="true" />
+									Responses
+								</Button>
+								{#if dates.length > 0}
+									<Button
+										type="submit"
+										disabled={isSubmitting}
+										aria-busy={isSubmitting}
+									>
+										{#if isSubmitting}
+											<LoaderCircle class="animate-spin" aria-hidden="true" />
+											Saving…
+										{:else}
+											Save availability
+										{/if}
+									</Button>
+								{/if}
+							</div>
+							{#if form?.message}
+								<span class="text-destructive text-xs" aria-live="polite">
+									{form.message}
+								</span>
+							{/if}
+						</div>
 					</div>
 
 					<div class="mt-5 flex flex-wrap items-end gap-x-5 gap-y-4">
@@ -497,39 +513,6 @@ const handleEnhance: SubmitFunction = () => {
 				{@render responsesSidebar()}
 			</div>
 
-			{#if dates.length > 0}
-				<div
-					class="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
-				>
-					<p class="text-muted-foreground text-sm">
-						Drag to select multiple slots · Click to toggle.
-						{#if selectedCount > 0}
-							{selectedCount} slot{selectedCount === 1 ? "" : "s"} marked.
-						{/if}
-					</p>
-
-					<div class="flex items-center gap-3 self-start sm:self-auto">
-						{#if form?.message}
-							<span class="text-destructive text-xs" aria-live="polite">
-								{form.message}
-							</span>
-						{/if}
-						<Button
-							type="submit"
-							disabled={isSubmitting}
-							aria-busy={isSubmitting}
-							class="h-10 px-5"
-						>
-							{#if isSubmitting}
-								<LoaderCircle class="animate-spin" aria-hidden="true" />
-								Saving…
-							{:else}
-								Save availability
-							{/if}
-						</Button>
-					</div>
-				</div>
-			{/if}
 		</form>
 		{/if}
 	</div>
