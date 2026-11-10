@@ -35,7 +35,7 @@ let {
 		onclick={onClick}
 		disabled={!enabled}
 		aria-label={label}
-		class="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-[#9b9b9b] text-lg leading-none transition-[background-color,color,transform] duration-150 ease-[var(--ease-out)] [-webkit-touch-callout:none] enabled:hover:bg-[#f5f5f5] enabled:hover:text-[#0a0a0a] enabled:active:scale-90 disabled:cursor-not-allowed disabled:opacity-30"
+		class="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-[#9b9b9b] text-lg leading-none transition-[background-color,color,transform] duration-150 ease-[var(--ease-out)] [-webkit-touch-callout:none] enabled:hover:bg-[#f5f5f5] enabled:hover:text-[#0a0a0a] enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-30"
 	>
 		{glyph}
 	</button>

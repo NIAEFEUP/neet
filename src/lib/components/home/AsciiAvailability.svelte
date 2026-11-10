@@ -1,7 +1,6 @@
 <script lang="ts">
 import { createAvailabilityField } from "./ascii-field";
 
-// biome-ignore lint/correctness/noUnusedVariables: used by the canvas attachment in Svelte markup
 function attachField(canvas: HTMLCanvasElement) {
 	const field = createAvailabilityField(canvas);
 	return () => field.destroy();

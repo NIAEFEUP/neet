@@ -42,6 +42,7 @@
 		ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
 		"Courier New", monospace;
 	--radius: 0.875rem;
+	--ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 	--shadow-x: 0;
 	--shadow-y: 1px;
 	--shadow-blur: 3px;
@@ -162,6 +163,7 @@
 	--font-mono: var(--font-mono);
 	--font-serif: var(--font-serif);
 
+	--ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 	--radius-sm: calc(var(--radius) - 4px);
 	--radius-md: calc(var(--radius) - 2px);
 	--radius-lg: var(--radius);

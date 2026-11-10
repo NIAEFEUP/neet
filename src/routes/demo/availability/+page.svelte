@@ -1,7 +1,6 @@
 <script lang="ts">
 import { Temporal } from "temporal-polyfill";
 import type { CellMode, SelectedCells } from "$lib";
-// biome-ignore lint/correctness/noUnusedImports: used in markup
 import { TimeGrid } from "$lib";
 
 interface Scenario {
@@ -11,7 +10,6 @@ interface Scenario {
 	endHour: number;
 }
 
-// biome-ignore lint/correctness/noUnusedVariables: used in markup
 const modeLabel: Record<CellMode, string> = {
 	yes: "Yes",
 	maybe: "If need be",
@@ -30,14 +28,12 @@ const scenarios: Record<string, Scenario> = {
 };
 
 let scenarioKey = $state("week");
-// biome-ignore lint/correctness/noUnusedVariables: used in markup
 let brush = $state<CellMode>("yes");
 let selected = $state<SelectedCells>({});
 
 const scenario = $derived(scenarios[scenarioKey] ?? scenarios.week);
 
 /** Today onwards, as plain ISO dates. Computed on the client (no SSR here). */
-// biome-ignore lint/correctness/noUnusedVariables: used in markup
 const dates = $derived.by(() => {
 	const today = Temporal.Now.plainDateISO();
 
@@ -46,7 +42,6 @@ const dates = $derived.by(() => {
 	);
 });
 
-// biome-ignore lint/correctness/noUnusedVariables: used in markup
 const selectedEntries = $derived(
 	Object.entries(selected).sort(([a], [b]) => a.localeCompare(b)),
 );

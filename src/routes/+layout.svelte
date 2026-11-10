@@ -1,14 +1,10 @@
 <script lang="ts">
-// biome-ignore lint/correctness/noUnusedImports: used in markup
 import { resolve } from "$app/paths";
 import { page } from "$app/state";
 import "./layout.css";
-// biome-ignore lint/correctness/noUnusedImports: used inside <svelte:head>
 import logo from "$lib/assets/favicon.svg";
 
-// biome-ignore lint/correctness/noUnusedVariables: rendered with {@render children()}
 let { children } = $props();
-// biome-ignore lint/correctness/noUnusedVariables: used in markup
 const isHome = $derived(page.route.id === "/");
 </script>
 

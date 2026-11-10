@@ -42,8 +42,10 @@
 		"vite": "^8.0.16"
 	},
 	"dependencies": {
+		"@blobatar/svelte": "^2.7.0",
 		"@prisma/cli-engine": "0.6.1",
 		"@prisma/orm-postgres": "8.0.0-rc.12",
+		"blobatar": "^2.7.0",
 		"dotenv": "^18.0.4",
 		"prisma": "8.0.0-rc.17",
 		"temporal-polyfill": "^1.0.5"

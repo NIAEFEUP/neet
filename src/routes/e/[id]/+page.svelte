@@ -1,55 +1,98 @@
 <script lang="ts">
+import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";
+import CalendarIcon from "@lucide/svelte/icons/calendar";
+import CheckIcon from "@lucide/svelte/icons/check";
+import ClockIcon from "@lucide/svelte/icons/clock";
+import LinkIcon from "@lucide/svelte/icons/link";
+import LoaderCircle from "@lucide/svelte/icons/loader-circle";
 import type { SubmitFunction } from "@sveltejs/kit";
 import { onDestroy, untrack } from "svelte";
-import { fade, fly } from "svelte/transition";
-// biome-ignore lint/correctness/noUnusedImports: used in markup
 import { enhance } from "$app/forms";
 import { page } from "$app/state";
-import type { CellMode, SelectedCells } from "$lib";
+import type { CellMode, PublicResponse, SelectedCells } from "$lib";
 import {
-	// biome-ignore lint/correctness/noUnusedImports: used in markup
 	AvailabilityResponses,
 	normalizeDays,
 	parseHour,
 	TimeGrid,
 } from "$lib";
+import { Button } from "$lib/components/ui/button";
+import { Input } from "$lib/components/ui/input";
+import { Label } from "$lib/components/ui/label";
+import * as Select from "$lib/components/ui/select";
+import { Separator } from "$lib/components/ui/separator";
 import type { ActionData, PageData } from "./$types";
 
-// biome-ignore lint/correctness/noUnusedVariables: form is used in markup
 let { data, form } = $props<{ data: PageData; form: ActionData }>();
 
 let selected = $state<SelectedCells>(
 	untrack(() => data.participant?.selected ?? {}),
 );
-// biome-ignore lint/correctness/noUnusedVariables: used in markup
 let name = $state(untrack(() => data.participant?.name ?? ""));
-// biome-ignore lint/correctness/noUnusedVariables: used in markup
 let brush = $state<CellMode>("yes");
-// biome-ignore lint/correctness/noUnusedVariables: used in markup
 let isSubmitting = $state(false);
-// biome-ignore lint/correctness/noUnusedVariables: used in markup
 let saved = $state(false);
-// biome-ignore lint/correctness/noUnusedVariables: used in markup
 let view = $state<"responses" | "answer">("responses");
-// biome-ignore lint/correctness/noUnusedVariables: used in markup
 let copyStatus = $state<"idle" | "copied" | "error">("idle");
 let copyStatusResetTimer: ReturnType<typeof setTimeout> | undefined;
 
+let hoveredResponseId = $state<string | null>(null);
+let selectedResponseIds = $state<string[]>([]);
+
 const dates = $derived(data.event.proposedDates);
-// biome-ignore lint/correctness/noUnusedVariables: used in markup
 const startHour = $derived(parseHour(data.event.startTime) ?? 0);
-// biome-ignore lint/correctness/noUnusedVariables: used in markup
 const endHour = $derived(parseHour(data.event.endTime) ?? 24);
-// biome-ignore lint/correctness/noUnusedVariables: used in markup
-const selectedCount = $derived(Object.keys(selected).length);
-// biome-ignore lint/correctness/noUnusedVariables: used in markup
-const timeLabel = $derived(
-	data.event.startTime && data.event.endTime
-		? `${data.event.startTime} – ${data.event.endTime} (${data.event.timezone})`
-		: `All day (${data.event.timezone})`,
+const isolatedResponse = $derived(
+	hoveredResponseId
+		? (data.responses.find(
+				(response: PublicResponse) => response.id === hoveredResponseId,
+			) ?? null)
+		: null,
+);
+const selectedResponses = $derived(
+	selectedResponseIds.length > 0
+		? data.responses.filter((response: PublicResponse) =>
+				selectedResponseIds.includes(response.id),
+			)
+		: [],
+);
+const selectedResponseCount = $derived(selectedResponses.length);
+const everyoneActive = $derived(
+	selectedResponseIds.length === 0 && !hoveredResponseId,
+);
+const answerHeading = $derived(
+	data.participant ? "Update your availability" : "Add your availability",
+);
+const responsesHeading = $derived(
+	isolatedResponse
+		? `${isolatedResponse.name}'s availability`
+		: selectedResponseCount === 0
+			? "Everyone's availability"
+			: selectedResponseCount === 1
+				? `${selectedResponses[0].name}'s availability`
+				: "Selected availability",
+);
+const responsesSubtitle = $derived(
+	isolatedResponse
+		? "Showing only this participant's selected times."
+		: selectedResponseCount > 0
+			? `Showing ${selectedResponseCount} selected ${selectedResponseCount === 1 ? "person" : "people"}.`
+			: "Hover a name to preview their schedule. Check people to compare only them.",
+);
+const availabilityLabel = $derived(
+	isolatedResponse
+		? `${isolatedResponse.name}'s availability`
+		: selectedResponseCount > 0
+			? "Selected availability"
+			: "Everyone's availability",
 );
 
-// biome-ignore lint/correctness/noUnusedVariables: used in markup
+const timeLabel = $derived(
+	data.event.startTime && data.event.endTime
+		? `${data.event.startTime} – ${data.event.endTime} · ${data.event.timezone}`
+		: `All day · ${data.event.timezone}`,
+);
+
 const dateLabel = $derived.by(() => {
 	const days = normalizeDays(dates);
 	if (days.length === 0) return "";
@@ -70,23 +113,33 @@ onDestroy(() => {
 	clearTimeout(copyStatusResetTimer);
 });
 
-// biome-ignore lint/correctness/noUnusedVariables: used in markup
 function markDirty() {
 	saved = false;
 }
 
-// biome-ignore lint/correctness/noUnusedVariables: used in markup
 function openAnswer() {
 	saved = false;
+	hoveredResponseId = null;
 	view = "answer";
 }
 
-// biome-ignore lint/correctness/noUnusedVariables: used in markup
 function closeAnswer() {
+	hoveredResponseId = null;
 	view = "responses";
 }
 
-// biome-ignore lint/correctness/noUnusedVariables: used in markup
+function showEveryone() {
+	hoveredResponseId = null;
+	selectedResponseIds = [];
+}
+
+function toggleResponse(id: string) {
+	hoveredResponseId = null;
+	selectedResponseIds = selectedResponseIds.includes(id)
+		? selectedResponseIds.filter((selectedId) => selectedId !== id)
+		: [...selectedResponseIds, id];
+}
+
 async function copyLink() {
 	try {
 		await navigator.clipboard.writeText(page.url.href);
@@ -101,7 +154,6 @@ async function copyLink() {
 	}, 2400);
 }
 
-// biome-ignore lint/correctness/noUnusedVariables: used in markup
 const handleEnhance: SubmitFunction = () => {
 	isSubmitting = true;
 	saved = false;
@@ -110,6 +162,7 @@ const handleEnhance: SubmitFunction = () => {
 		await update({ reset: false });
 		isSubmitting = false;
 		if (result.type === "success") {
+			showEveryone();
 			saved = true;
 			view = "responses";
 		}
@@ -126,251 +179,370 @@ const handleEnhance: SubmitFunction = () => {
 	/>
 </svelte:head>
 
-<div class="mx-auto w-full max-w-[1120px] px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
-	<!-- Event header -->
-	<header class="pb-6 border-b border-[#f0f0f0]">
+<div class="mx-auto w-full max-w-[1240px] px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+	<header class="px-5 pb-2 sm:px-7">
 		<div class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
 			<div class="min-w-0">
-				<h1 class="break-words font-semibold text-[24px] leading-tight tracking-[-0.035em] text-[#0a0a0a] sm:text-[28px]">
+				<h1
+					class="break-words font-semibold text-4xl text-foreground tracking-tight sm:text-5xl"
+				>
 					{data.event.title}
 				</h1>
 				{#if data.event.description}
-					<p class="mt-2 whitespace-pre-wrap text-[13px] leading-5 text-[#6b6b6b]">
+					<p class="mt-3 max-w-2xl whitespace-pre-wrap text-muted-foreground text-sm leading-6">
 						{data.event.description}
 					</p>
 				{/if}
 
-				<div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5">
-					<span class="inline-flex items-center gap-1.5 text-[12px] text-[#6b6b6b]">
-						<svg viewBox="0 0 16 16" fill="none" class="h-3.5 w-3.5 text-[#9b9b9b]" aria-hidden="true">
-							<rect x="2.25" y="3.25" width="11.5" height="10.5" rx="2" stroke="currentColor" stroke-width="1.25" />
-							<path d="M5 1.75v3M11 1.75v3M2.5 6.5h11" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" />
-						</svg>
+				<!--
+					TODO(accounts): show the event creator's name(s) here once accounts
+					are implemented. The participant names are deliberately hidden for now.
+				-->
+
+				<div
+					class="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-muted-foreground text-xs"
+				>
+					<span class="inline-flex items-center gap-1.5">
+						<CalendarIcon class="size-3.5" aria-hidden="true" />
 						{dateLabel}
 					</span>
-					<span class="inline-flex items-center gap-1.5 text-[12px] text-[#6b6b6b]">
-						<svg viewBox="0 0 16 16" fill="none" class="h-3.5 w-3.5 text-[#9b9b9b]" aria-hidden="true">
-							<circle cx="8" cy="8" r="5.75" stroke="currentColor" stroke-width="1.25" />
-							<path d="M8 4.75V8l2.25 1.5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" />
-						</svg>
+					<span class="inline-flex items-center gap-1.5">
+						<ClockIcon class="size-3.5" aria-hidden="true" />
 						{timeLabel}
 					</span>
 				</div>
 			</div>
 
-			<!-- Share strip -->
-			<div class="flex shrink-0 items-center gap-2 rounded-md border border-[#e8e8e8] bg-[#fafafa] px-3 py-2 sm:max-w-72">
-				<svg viewBox="0 0 16 16" fill="none" class="h-3.5 w-3.5 shrink-0 text-[#9b9b9b]" aria-hidden="true">
-					<path d="M6.5 9.5 9.5 6.5M5.25 7.25l-1.1 1.1a2.65 2.65 0 0 0 3.75 3.75l1.1-1.1M10.75 8.75l1.1-1.1a2.65 2.65 0 0 0-3.75-3.75l-1.1 1.1" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" />
-				</svg>
-				<span class="min-w-0 flex-1 truncate text-[12px] text-[#6b6b6b]" title={page.url.href}>
-					{page.url.href}
-				</span>
-				<button
-					type="button"
-					onclick={copyLink}
-					class="shrink-0 cursor-pointer rounded-md px-2.5 py-1 font-medium text-[12px] transition-[color,background-color,transform] duration-150 ease-[var(--ease-out)] active:scale-[0.97] {copyStatus === 'copied' ? 'text-[#166534]' : 'text-[#0a0a0a] hover:bg-[#f0f0f0]'}"
-				>
-					{#if copyStatus === "copied"}
-						Copied
-					{:else}
-						{copyStatus === "error" ? "Try again" : "Copy"}
-					{/if}
-				</button>
-			</div>
+			<Button
+				variant="outline"
+				size="sm"
+				class="self-start"
+				onclick={copyLink}
+				aria-live="polite"
+			>
+				{#if copyStatus === "copied"}
+					<CheckIcon aria-hidden="true" />
+					Copied
+				{:else}
+					<LinkIcon aria-hidden="true" />
+					{copyStatus === "error" ? "Try again" : "Copy link"}
+				{/if}
+			</Button>
 		</div>
 	</header>
 
-	<!-- View switcher -->
-	{#if view === "responses"}
-		<section class="pt-7" aria-labelledby="responses-heading" in:fade={{ duration: 150 }}>
-			<div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-				<div>
-					<h2
-						id="responses-heading"
-						class="font-semibold text-[15px] tracking-[-0.015em] text-[#0a0a0a]"
-					>
-						Everyone's availability
-					</h2>
-					<p class="mt-1 text-[12px] text-[#9b9b9b]">
-						Compare responses · select a name to focus on one person
-					</p>
-				</div>
-				<div class="flex items-center gap-2">
-					{#if saved}
-						<span class="flex items-center gap-1.5 text-[12px] text-[#166534]" aria-live="polite">
-							<svg viewBox="0 0 16 16" fill="none" class="h-3.5 w-3.5" aria-hidden="true">
-								<path d="m3.5 8.25 2.75 2.75 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-							</svg>
-							Saved
-						</span>
-					{/if}
+	{#snippet responsesSidebar()}
+		<aside
+			aria-labelledby="participants-heading"
+			class="border-border border-t pt-5 xl:border-t-0 xl:border-l xl:pt-0 xl:pl-6"
+		>
+			<h2 id="participants-heading" class="font-semibold text-base">
+				Responses
+			</h2>
+			<p class="mt-0.5 text-muted-foreground text-xs">
+				{data.responses.length} participant{data.responses.length === 1 ? "" : "s"}
+			</p>
+
+			{#if data.responses.length === 0}
+				<p class="mt-3 text-muted-foreground text-xs">No responses yet.</p>
+			{:else}
+				<div
+					role="group"
+					aria-label="Participant filters"
+					class="mt-2.5 flex flex-col gap-0.5"
+					onmouseleave={() => (hoveredResponseId = null)}
+				>
 					<button
 						type="button"
-						onclick={openAnswer}
-						class="inline-flex h-8 shrink-0 cursor-pointer items-center justify-center rounded-md bg-[#0a0a0a] px-3.5 font-medium text-[13px] text-white transition-[background-color,transform] duration-150 ease-[var(--ease-out)] hover:bg-[#1a1a1a] active:scale-[0.97]"
+						aria-pressed={everyoneActive}
+						onmouseenter={() => (hoveredResponseId = null)}
+						onclick={showEveryone}
+						class={[
+							"w-full cursor-pointer rounded-md px-2 py-1.5 text-left font-medium text-sm transition-colors duration-150",
+							everyoneActive
+								? "bg-muted text-foreground"
+								: "text-foreground hover:bg-muted/60",
+						]}
 					>
-						{data.participant ? "Update availability" : "Add availability"}
+						Everyone
 					</button>
-				</div>
-			</div>
 
-			<div class="mt-7">
-				<AvailabilityResponses
-					{dates}
-					{startHour}
-					{endHour}
-					responses={data.responses}
-					counts={data.heat}
-				/>
-			</div>
-		</section>
-	{:else}
-		<section class="pt-7" aria-labelledby="answer-heading" in:fade={{ duration: 150 }}>
-			<div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-				<div>
-					<h2
-						id="answer-heading"
-						class="font-semibold text-[15px] tracking-[-0.015em] text-[#0a0a0a]"
-					>
-						{data.participant ? "Update your availability" : "Add your availability"}
-					</h2>
-					<p class="mt-1 text-[12px] text-[#9b9b9b]">
-						Drag to mark · on mobile, tap or hold and drag
-					</p>
-				</div>
-				<button
-					type="button"
-					onclick={closeAnswer}
-					class="inline-flex h-8 shrink-0 cursor-pointer items-center justify-center gap-1.5 self-start rounded-md border border-[#e2e2e2] px-3 font-medium text-[13px] text-[#6b6b6b] transition-[color,border-color,transform] duration-150 ease-[var(--ease-out)] hover:border-[#d0d0d0] hover:text-[#0a0a0a] active:scale-[0.97] sm:self-auto"
-				>
-					<svg viewBox="0 0 16 16" fill="none" class="h-3.5 w-3.5" aria-hidden="true">
-						<path d="m6.5 3.5-4 4.5 4 4.5M2.75 8h10.5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" />
-					</svg>
-					Responses
-				</button>
-			</div>
-
-			{#if dates.length > 0}
-				<form method="POST" use:enhance={handleEnhance} class="mt-7">
-					<input type="hidden" name="selected" value={JSON.stringify(selected)} />
-
-					<!-- Name + brush toolbar -->
-					<div class="flex flex-wrap items-end gap-x-6 gap-y-4">
-						<div>
-							<label for="guest-name" class="mb-1.5 block font-medium text-[13px] text-[#0a0a0a]">
-								Your name
-							</label>
+					{#each data.responses as response (response.id)}
+						{@const checked = selectedResponseIds.includes(response.id)}
+						<label
+							class={[
+								"participant-row group relative flex w-full cursor-pointer items-center overflow-hidden rounded-md py-1.5 pr-2 font-medium text-sm transition-colors duration-150",
+								checked ? "bg-muted/60" : "hover:bg-muted/60",
+							]}
+							onmouseenter={() => (hoveredResponseId = response.id)}
+						>
 							<input
+								type="checkbox"
+								class="sr-only"
+								checked={checked}
+								onchange={() => toggleResponse(response.id)}
+								onfocus={() => (hoveredResponseId = response.id)}
+								onblur={() => (hoveredResponseId = null)}
+							/>
+							<span
+								class={[
+									"participant-checkbox pointer-events-none absolute top-1/2 left-2 flex size-4 -translate-y-1/2 items-center justify-center rounded-[5px] border shadow-xs transition-[opacity,scale] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] group-focus-within:ring-2 group-focus-within:ring-ring/50",
+									checked
+										? "scale-100 border-primary bg-primary text-primary-foreground opacity-100"
+										: "scale-90 border-input bg-background opacity-0 group-focus-within:scale-100 group-focus-within:opacity-100",
+								]}
+								aria-hidden="true"
+							>
+								<CheckIcon
+									class={`size-3 transition-opacity duration-100 ${checked ? "opacity-100" : "opacity-0"}`}
+								/>
+							</span>
+							<span
+								class={`participant-name min-w-0 flex-1 truncate pr-6 pl-2 transition-[translate] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] ${
+									checked ? "translate-x-6" : "group-focus-within:translate-x-6"
+								}`}
+							>
+								{response.name}
+							</span>
+						</label>
+					{/each}
+				</div>
+			{/if}
+
+			<Separator class="my-4" />
+
+			<section aria-labelledby="best-time-heading">
+				<h2 id="best-time-heading" class="font-semibold text-base">
+					Best time
+				</h2>
+				<p class="mt-1.5 font-semibold text-sm">No best time yet</p>
+				<p class="mt-1 text-muted-foreground text-xs leading-4">
+					A suggested time will appear once availability has been compared.
+				</p>
+			</section>
+		</aside>
+	{/snippet}
+
+	<div class="mt-8 px-5 sm:px-7">
+		{#if view === "responses"}
+			<div class="grid gap-8 xl:grid-cols-[minmax(0,1fr)_12rem] xl:gap-8">
+			<section aria-labelledby="responses-heading" class="min-w-0">
+				<div
+					class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+				>
+					<div>
+						<h2
+							id="responses-heading"
+							class="font-semibold text-2xl tracking-tight"
+						>
+							{responsesHeading}
+						</h2>
+						<p class="mt-1 text-muted-foreground text-sm">
+							{responsesSubtitle}
+						</p>
+					</div>
+
+					<div class="flex items-center gap-3 self-start">
+						{#if saved}
+							<span
+								class="flex items-center gap-1.5 text-green-700 text-xs dark:text-green-500"
+								aria-live="polite"
+							>
+								<CheckIcon class="size-3.5" aria-hidden="true" />
+								Saved
+							</span>
+						{/if}
+						<Button onclick={openAnswer}>
+							{data.participant ? "Update availability" : "Add availability"}
+						</Button>
+					</div>
+				</div>
+
+				<div class="mt-6">
+					<AvailabilityResponses
+						{dates}
+						{startHour}
+						{endHour}
+						responses={data.responses}
+						counts={data.heat}
+						activeId={hoveredResponseId}
+						selectedIds={selectedResponseIds}
+						label={availabilityLabel}
+					/>
+				</div>
+			</section>
+
+			{@render responsesSidebar()}
+		</div>
+	{:else}
+		<form method="POST" use:enhance={handleEnhance}>
+			<input type="hidden" name="selected" value={JSON.stringify(selected)} />
+
+			<div class="grid gap-8 xl:grid-cols-[minmax(0,1fr)_12rem] xl:gap-8">
+				<section aria-labelledby="availability-heading" class="min-w-0">
+					<div
+						class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+					>
+						<div>
+							<h2
+								id="availability-heading"
+								class="font-semibold text-2xl tracking-tight"
+							>
+								{answerHeading}
+							</h2>
+							<p class="mt-1 text-muted-foreground text-sm">
+								Click and drag to mark your available times.
+							</p>
+						</div>
+
+						<div class="flex flex-col gap-2 self-start sm:items-end">
+							<div class="flex flex-wrap items-center gap-2">
+								<Button type="button" variant="outline" onclick={closeAnswer}>
+									<ArrowLeftIcon aria-hidden="true" />
+									Responses
+								</Button>
+								{#if dates.length > 0}
+									<Button
+										type="submit"
+										disabled={isSubmitting}
+										aria-busy={isSubmitting}
+									>
+										{#if isSubmitting}
+											<LoaderCircle class="animate-spin" aria-hidden="true" />
+											Saving…
+										{:else}
+											Save availability
+										{/if}
+									</Button>
+								{/if}
+							</div>
+							{#if form?.message}
+								<span class="text-destructive text-xs" aria-live="polite">
+									{form.message}
+								</span>
+							{/if}
+						</div>
+					</div>
+
+					<div class="mt-5 flex flex-wrap items-end gap-x-5 gap-y-4">
+						<div class="w-full space-y-1.5 sm:w-52">
+							<Label
+								for="guest-name"
+								class="font-medium text-[11px] text-muted-foreground uppercase tracking-wide"
+							>
+								Your name
+							</Label>
+							<Input
 								id="guest-name"
 								name="name"
 								type="text"
 								required
-								maxlength="80"
+								maxlength={80}
 								autocomplete="name"
-								placeholder="e.g. Alice Silva"
+								placeholder="e.g. Ana Sousa"
+								data-protonpass-ignore="true"
 								bind:value={name}
 								oninput={markDirty}
-								class="block h-9 w-full rounded-md border border-[#e2e2e2] bg-white px-3 text-[13px] text-[#0a0a0a] placeholder:text-[#b5b5b5] focus:border-[#166534] focus:ring-1 focus:ring-[#166534] sm:w-56"
 							/>
 						</div>
 
-						<div>
-							<span class="mb-1.5 block font-medium text-[13px] text-[#0a0a0a]" id="brush-label">
-								Marking as
-							</span>
-							<div
-								class="inline-flex items-center rounded-md border border-[#e2e2e2] bg-[#f5f5f5] p-0.5"
-								role="group"
-								aria-labelledby="brush-label"
+						<div class="w-full space-y-1.5 sm:w-52">
+							<Label
+								for="timezone"
+								class="font-medium text-[11px] text-muted-foreground uppercase tracking-wide"
 							>
-								<button
-									type="button"
-									aria-pressed={brush === "yes"}
-									onclick={() => (brush = "yes")}
-									class={[
-										"inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-[5px] px-3 font-medium text-[12px] transition-[background-color,color,box-shadow,transform] duration-150 ease-[var(--ease-out)] active:scale-[0.97]",
-										brush === "yes"
-											? "bg-white text-[#0a0a0a] shadow-sm"
-											: "text-[#6b6b6b] hover:text-[#0a0a0a]",
-									]}
-								>
-									<span class="h-2 w-2 rounded-[2px] bg-[#166534]" aria-hidden="true"></span>
-									Yes
-								</button>
-								<button
-									type="button"
-									aria-pressed={brush === "maybe"}
-									onclick={() => (brush = "maybe")}
-									class={[
-										"inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-[5px] px-3 font-medium text-[12px] transition-[background-color,color,box-shadow,transform] duration-150 ease-[var(--ease-out)] active:scale-[0.97]",
-										brush === "maybe"
-											? "bg-white text-[#0a0a0a] shadow-sm"
-											: "text-[#6b6b6b] hover:text-[#0a0a0a]",
-									]}
-								>
-									<span class="h-2 w-2 rounded-[2px] bg-amber-500" aria-hidden="true"></span>
-									If need be
-								</button>
-							</div>
+								Timezone
+							</Label>
+							<Select.Root type="single" value={data.event.timezone}>
+								<Select.Trigger id="timezone" class="w-full" aria-label="Timezone">
+									<Select.Value placeholder="Select a timezone" />
+								</Select.Trigger>
+								<Select.Content>
+									<Select.Item value={data.event.timezone} label={data.event.timezone}>
+										{data.event.timezone}
+									</Select.Item>
+								</Select.Content>
+							</Select.Root>
+						</div>
+
+						<div
+							class="flex items-center gap-1 self-end pb-0.5"
+							role="group"
+							aria-label="Marking as"
+						>
+							<Button
+								type="button"
+								size="sm"
+								variant={brush === "yes" ? "secondary" : "ghost"}
+								aria-pressed={brush === "yes"}
+								onclick={() => (brush = "yes")}
+								class="gap-2"
+							>
+								<span class="size-2 rounded-[2px] bg-green-700" aria-hidden="true"></span>
+								Yes
+							</Button>
+							<Button
+								type="button"
+								size="sm"
+								variant={brush === "maybe" ? "secondary" : "ghost"}
+								aria-pressed={brush === "maybe"}
+								onclick={() => (brush = "maybe")}
+								class="gap-2"
+							>
+								<span class="size-2 rounded-[2px] bg-yellow-600" aria-hidden="true"></span>
+								If need be
+							</Button>
 						</div>
 					</div>
 
-					<div class="mt-6 flex justify-center">
-						<TimeGrid
-							{dates}
-							{startHour}
-							{endHour}
-							mode={brush}
-							bind:selected
-							onchange={markDirty}
-							label="Your availability for {data.event.title}"
-						/>
-					</div>
-
-					<div class="mt-6 flex flex-col gap-3 border-t border-[#f0f0f0] pt-4 sm:flex-row sm:items-center sm:justify-between">
-						<p class="text-[12px] text-[#9b9b9b]">
-							Times in {data.event.timezone}.
-							{#if selectedCount > 0}
-								{selectedCount} slot{selectedCount === 1 ? "" : "s"} marked.
-							{/if}
+					{#if dates.length > 0}
+						<div class="-mx-4 mt-4">
+							<TimeGrid
+								{dates}
+								{startHour}
+								{endHour}
+								mode={brush}
+								bind:selected
+								onchange={markDirty}
+								label="Your availability for {data.event.title}"
+							/>
+						</div>
+					{:else}
+						<p class="mt-6 text-muted-foreground text-sm">
+							This event has no proposed dates yet.
 						</p>
+					{/if}
+				</section>
 
-						<div class="flex items-center gap-3">
-							{#if form?.message}
-								<span class="text-[12px] text-red-600" aria-live="polite">{form.message}</span>
-							{:else if saved}
-								<span class="flex items-center gap-1.5 text-[12px] text-[#166534]" aria-live="polite">
-									<svg viewBox="0 0 16 16" fill="none" class="h-3.5 w-3.5" aria-hidden="true">
-										<path d="m3.5 8.25 2.75 2.75 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-									</svg>
-									Saved
-								</span>
-							{/if}
-							<button
-								type="submit"
-								disabled={isSubmitting}
-								aria-busy={isSubmitting}
-								class="inline-flex h-9 shrink-0 cursor-pointer items-center justify-center gap-2 self-start rounded-md bg-[#0a0a0a] px-5 font-medium text-[13px] text-white transition-[background-color,transform] duration-150 ease-[var(--ease-out)] hover:bg-[#1a1a1a] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 sm:self-auto"
-							>
-								{#if isSubmitting}
-									<svg class="h-3.5 w-3.5 animate-spin" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-										<circle cx="8" cy="8" r="6" stroke="currentColor" stroke-opacity=".3" stroke-width="2" />
-										<path d="M14 8a6 6 0 0 0-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-									</svg>
-									Saving…
-								{:else}
-									{data.participant ? "Update" : "Save availability"}
-								{/if}
-							</button>
-						</div>
-					</div>
-				</form>
-			{:else}
-				<p class="mt-6 text-[13px] text-[#9b9b9b]">
-					This event has no proposed dates yet.
-				</p>
-			{/if}
-		</section>
-	{/if}
+				{@render responsesSidebar()}
+			</div>
+
+		</form>
+		{/if}
+	</div>
 </div>
+
+
+<style>
+	@media (hover: hover) and (pointer: fine) {
+		.participant-row:hover .participant-checkbox {
+			opacity: 1;
+			scale: 1;
+		}
+
+		.participant-row:hover .participant-name {
+			translate: 1.5rem 0;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.participant-checkbox {
+			scale: 1;
+			transition-property: opacity;
+		}
+
+		.participant-name {
+			transition: none;
+		}
+	}
+</style>
