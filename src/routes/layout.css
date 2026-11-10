@@ -1,34 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@plugin "@tailwindcss/forms";
-@plugin "@tailwindcss/typography";
-
 @custom-variant dark (&:is(.dark *));
 
-:root {
-	/* Type */
-	font-family:
-		-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
-		sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
-
-	/* Rendering */
-	font-synthesis: none;
-	text-rendering: optimizeLegibility;
-	-webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
-	-webkit-text-size-adjust: 100%;
-
-	/* Colors */
-	color: #0a0a0a;
-	background: #ffffff;
-	accent-color: #166534;
-
-	/* Easing tokens — Emil Kowalski */
-	--ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-	--ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
-}
-
-/* shadcn-svelte design tokens */
 :root {
 	--radius: 0.625rem;
 	--background: oklch(1 0 0);
@@ -146,75 +119,5 @@
 
 	body {
 		@apply bg-background text-foreground;
-	}
-}
-
-html,
-body {
-	overflow-x: clip;
-	min-height: 100%;
-	/* §2 mobile-native: no tap flash */
-	-webkit-tap-highlight-color: transparent;
-	/* §6 mobile-native: tool, not a document — no pull-to-refresh */
-	overscroll-behavior: none;
-}
-
-body {
-	margin: 0;
-	background: #ffffff;
-	font-size: 14px;
-	line-height: 1.5;
-}
-
-/* §1 mobile-native: hover only on real hover devices */
-@media (hover: hover) and (pointer: fine) {
-	/* Hover variants live here via Tailwind's hover: prefix — this comment is a
-	   reminder that ungated :hover rules don't belong anywhere in this file. */
-}
-
-/* §4 mobile-native: prevent iOS zoom on focus */
-input,
-textarea,
-select {
-	font-size: 16px;
-}
-
-/* §5 mobile-native: no 300ms delay, no long-press text selection on controls */
-button,
-a,
-[role="button"] {
-	touch-action: manipulation;
-	user-select: none;
-	-webkit-user-select: none;
-	-webkit-touch-callout: none;
-}
-
-::selection {
-	color: #123c31;
-	background: #dcece5;
-}
-
-:where(a, button, input, select, textarea, [tabindex]):focus-visible {
-	outline: 2px solid #166534;
-	outline-offset: 2px;
-	border-radius: 4px;
-}
-
-main:focus-visible {
-	outline: none;
-}
-
-@media (prefers-reduced-motion: reduce) {
-	*,
-	*::before,
-	*::after {
-		/* biome-ignore lint/complexity/noImportantStyles: reduced motion must override component styles */
-		scroll-behavior: auto !important;
-		/* biome-ignore lint/complexity/noImportantStyles: reduced motion must override component styles */
-		animation-duration: 0.01ms !important;
-		/* biome-ignore lint/complexity/noImportantStyles: reduced motion must override component styles */
-		animation-iteration-count: 1 !important;
-		/* biome-ignore lint/complexity/noImportantStyles: reduced motion must override component styles */
-		transition-duration: 0.01ms !important;
 	}
 }

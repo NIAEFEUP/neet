@@ -1,22 +1,105 @@
 <script lang="ts">
+// biome-ignore-all lint/correctness/noUnusedImports: used in Svelte markup
+// biome-ignore-all lint/correctness/noUnusedVariables: used in Svelte markup
+import {
+	type DateValue,
+	getLocalTimeZone,
+	parseDate,
+	today,
+} from "@internationalized/date";
+import { LoaderCircle } from "@lucide/svelte";
 import type { SubmitFunction } from "@sveltejs/kit";
-// biome-ignore lint/correctness/noUnusedImports: used in markup
+import { onMount } from "svelte";
 import { enhance } from "$app/forms";
+import { Button } from "$lib/components/ui/button";
+import { Input } from "$lib/components/ui/input";
+import { Label } from "$lib/components/ui/label";
+import { RangeCalendar } from "$lib/components/ui/range-calendar";
+import * as Select from "$lib/components/ui/select";
+import { Textarea } from "$lib/components/ui/textarea";
 import type { ActionData } from "./$types";
 
-// biome-ignore lint/correctness/noUnusedVariables: used in markup
 let { form } = $props<{ form: ActionData }>();
 
-// biome-ignore lint/correctness/noUnusedVariables: used in markup
-const timezones = Intl.supportedValuesOf("timeZone");
-// biome-ignore lint/correctness/noUnusedVariables: used in markup
-let selectedTimezone = $state("Europe/Lisbon");
+type DateRange = {
+	start: DateValue | undefined;
+	end: DateValue | undefined;
+};
 
-// biome-ignore lint/correctness/noUnusedVariables: used in markup
+function parseISODate(value: string | null | undefined): DateValue | undefined {
+	if (!value) return undefined;
+
+	try {
+		return parseDate(value);
+	} catch {
+		return undefined;
+	}
+}
+
+function initialTimezone() {
+	return form?.timezone ?? "Europe/Lisbon";
+}
+
+function initialRange(): DateRange {
+	return {
+		start: parseISODate(form?.startDate),
+		end: parseISODate(form?.endDate),
+	};
+}
+
+function initialStartHour() {
+	return form?.startHour ?? "";
+}
+
+function initialStartPeriod() {
+	return form?.startPeriod ?? "AM";
+}
+
+function initialEndHour() {
+	return form?.endHour ?? "";
+}
+
+function initialEndPeriod() {
+	return form?.endPeriod ?? "AM";
+}
+
+let timezones = $state(Intl.supportedValuesOf("timeZone"));
+let selectedTimezone = $state(initialTimezone());
+let startHour = $state(initialStartHour());
+let startPeriod = $state(initialStartPeriod());
+let endHour = $state(initialEndHour());
+let endPeriod = $state(initialEndPeriod());
+
 let isSubmitting = $state(false);
+let dateError = $state("");
+let range = $state<DateRange>(initialRange());
 
-// biome-ignore lint/correctness/noUnusedVariables: used in markup
-const handleEnhance: SubmitFunction = () => {
+const minDate = today(getLocalTimeZone());
+const hours = Array.from({ length: 12 }, (_, i) => i + 1);
+
+onMount(() => {
+	if (form?.timezone) return;
+
+	const localTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+	if (!timezones.includes(localTimezone)) {
+		timezones = [localTimezone, ...timezones];
+	}
+
+	selectedTimezone = localTimezone;
+});
+
+function handleRangeChange(next: DateRange) {
+	if (next.start && next.end) dateError = "";
+}
+
+const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
+	if (!formData.get("startDate") || !formData.get("endDate")) {
+		cancel();
+		dateError = "Select both a start and an end date.";
+		return;
+	}
+
 	isSubmitting = true;
 	return async ({ update }) => {
 		await update();
@@ -33,212 +116,172 @@ const handleEnhance: SubmitFunction = () => {
 	/>
 </svelte:head>
 
-<div class="mx-auto w-full max-w-[560px] px-4 py-12 sm:px-6 sm:py-16">
-	<header class="mb-10">
-		<h1 class="font-semibold text-[26px] leading-tight tracking-[-0.04em] text-[#0a0a0a]">
-			Create an event
-		</h1>
-		<p class="mt-1.5 text-[13px] text-[#6b6b6b]">
+<div class="mx-auto w-full max-w-xl px-4 py-10 sm:px-6">
+	<header class="mb-8">
+		<h1 class="text-2xl font-semibold tracking-tight">Create an event</h1>
+		<p class="mt-1 text-sm text-muted-foreground">
 			Choose dates, set hours, and share one link.
 		</p>
 	</header>
 
 	{#if form?.message}
-		<div class="mb-8 rounded-md border border-red-200 bg-red-50 px-3 py-2.5" role="alert">
-			<p class="text-[13px] text-red-700">{form.message}</p>
-		</div>
+		<p class="mb-6 text-sm text-destructive" role="alert">{form.message}</p>
 	{/if}
 
-	<form method="POST" use:enhance={handleEnhance}>
-		<section aria-labelledby="details-heading">
-			<h2
-				id="details-heading"
-				class="mb-4 font-medium text-[11px] uppercase tracking-[0.08em] text-[#9b9b9b]"
-			>
+	<form method="POST" use:enhance={handleEnhance} class="space-y-6">
+		<input type="hidden" name="startDate" value={range.start?.toString() ?? ""} />
+		<input type="hidden" name="endDate" value={range.end?.toString() ?? ""} />
+
+		<section aria-labelledby="details-heading" class="space-y-4">
+			<h2 id="details-heading" class="text-sm font-medium text-muted-foreground">
 				Event details
 			</h2>
 
-			<div class="space-y-4">
-				<div>
-					<label for="title" class="mb-1.5 block font-medium text-[13px] text-[#0a0a0a]">
-						Event title
-					</label>
-					<input
-						type="text"
-						name="title"
-						id="title"
-						required
-						value={form?.title ?? ""}
-						placeholder="e.g. Project kickoff"
-						class="block h-9 w-full rounded-md border border-[#e2e2e2] bg-white px-3 text-[13px] text-[#0a0a0a] placeholder:text-[#b5b5b5] focus:border-[#166534] focus:ring-1 focus:ring-[#166534]"
-					/>
-				</div>
+			<div class="space-y-2">
+				<Label for="title">Event title</Label>
+				<Input
+					type="text"
+					name="title"
+					id="title"
+					required
+					value={form?.title ?? ""}
+					placeholder="e.g. Project kickoff"
+				/>
+			</div>
 
-				<div>
-					<div class="mb-1.5 flex items-baseline justify-between">
-						<label for="description" class="font-medium text-[13px] text-[#0a0a0a]">
-							Description
-						</label>
-						<span class="text-[12px] text-[#b5b5b5]">Optional</span>
-					</div>
-					<textarea
-						name="description"
-						id="description"
-						rows="3"
-						value={form?.description ?? ""}
-						placeholder="Context, location, or a meeting link"
-						class="block min-h-[84px] w-full resize-y rounded-md border border-[#e2e2e2] bg-white px-3 py-2 text-[13px] text-[#0a0a0a] placeholder:text-[#b5b5b5] focus:border-[#166534] focus:ring-1 focus:ring-[#166534]"
-					></textarea>
+			<div class="space-y-2">
+				<div class="flex items-center justify-between gap-2">
+					<Label for="description">Description</Label>
+					<span class="text-sm text-muted-foreground">Optional</span>
 				</div>
+				<Textarea
+					name="description"
+					id="description"
+					rows={3}
+					value={form?.description ?? ""}
+					placeholder="Context, location, or a meeting link"
+				/>
 			</div>
 		</section>
 
-		<div class="my-8 border-t border-[#f0f0f0]"></div>
-
-		<section aria-labelledby="schedule-heading">
-			<h2
-				id="schedule-heading"
-				class="mb-4 font-medium text-[11px] uppercase tracking-[0.08em] text-[#9b9b9b]"
-			>
+		<section aria-labelledby="schedule-heading" class="space-y-4">
+			<h2 id="schedule-heading" class="text-sm font-medium text-muted-foreground">
 				Schedule
 			</h2>
 
-			<div class="space-y-4">
-				<div class="grid gap-3 sm:grid-cols-2">
-					<div>
-						<label for="startDate" class="mb-1.5 block font-medium text-[13px] text-[#0a0a0a]">
-							Start date
-						</label>
-						<input
-							type="date"
-							name="startDate"
-							id="startDate"
-							required
-							value={form?.startDate ?? ""}
-							class="block h-9 w-full rounded-md border border-[#e2e2e2] bg-white px-3 text-[13px] text-[#0a0a0a] focus:border-[#166534] focus:ring-1 focus:ring-[#166534]"
-						/>
+			<div class="space-y-2 align">
+				<p class="text-sm font-medium">Dates</p>
+				<RangeCalendar
+					bind:value={range}
+					onValueChange={handleRangeChange}
+					minValue={minDate}
+					maxDays={30}
+					calendarLabel="Event dates"
+					class="mx-auto w-fit"
+				/>
+				{#if dateError}
+					<p class="text-sm text-destructive" role="alert">{dateError}</p>
+				{/if}
+			</div>
+
+			<div class="grid gap-4 sm:grid-cols-2">
+				<div class="space-y-2">
+					<div class="flex items-center justify-between gap-2">
+						<Label for="startHour">Daily start</Label>
+						<span class="text-sm text-muted-foreground">Optional</span>
 					</div>
-					<div>
-						<label for="endDate" class="mb-1.5 block font-medium text-[13px] text-[#0a0a0a]">
-							End date
-						</label>
-						<input
-							type="date"
-							name="endDate"
-							id="endDate"
-							required
-							value={form?.endDate ?? ""}
-							class="block h-9 w-full rounded-md border border-[#e2e2e2] bg-white px-3 text-[13px] text-[#0a0a0a] focus:border-[#166534] focus:ring-1 focus:ring-[#166534]"
-						/>
+					<div class="flex gap-2">
+						<Select.Root type="single" name="startHour" bind:value={startHour}>
+							<Select.Trigger id="startHour" class="w-full" aria-label="Daily start hour">
+								<Select.Value placeholder="Any time" />
+							</Select.Trigger>
+							<Select.Content>
+								<Select.Item value="" label="Any time">Any time</Select.Item>
+								{#each hours as hour (hour)}
+									<Select.Item value={hour.toString()} label={`${hour}:00`}>
+										{hour}:00
+									</Select.Item>
+								{/each}
+							</Select.Content>
+						</Select.Root>
+
+						<Select.Root type="single" name="startPeriod" bind:value={startPeriod}>
+							<Select.Trigger class="w-20" aria-label="Daily start period">
+								<Select.Value />
+							</Select.Trigger>
+							<Select.Content>
+								<Select.Item value="AM" label="AM">AM</Select.Item>
+								<Select.Item value="PM" label="PM">PM</Select.Item>
+							</Select.Content>
+						</Select.Root>
 					</div>
 				</div>
 
-				<div class="grid gap-3 sm:grid-cols-2">
-					<div>
-						<div class="mb-1.5 flex items-baseline justify-between">
-							<label for="startHour" class="font-medium text-[13px] text-[#0a0a0a]">
-								Daily start
-							</label>
-							<span class="text-[12px] text-[#b5b5b5]">Optional</span>
-						</div>
-						<div class="flex gap-2">
-							<select
-								name="startHour"
-								id="startHour"
-								value={form?.startHour ?? ""}
-								class="block h-9 w-full min-w-0 rounded-md border border-[#e2e2e2] bg-white px-3 text-[13px] text-[#0a0a0a] focus:border-[#166534] focus:ring-1 focus:ring-[#166534]"
-							>
-								<option value="">Any time</option>
-								{#each Array.from({ length: 12 }, (_, i) => i + 1) as hour (hour)}
-									<option value={hour.toString()}>{hour}:00</option>
-								{/each}
-							</select>
-							<select
-								name="startPeriod"
-								aria-label="Daily start period"
-								value={form?.startPeriod ?? "AM"}
-								class="block h-9 w-[70px] shrink-0 rounded-md border border-[#e2e2e2] bg-white px-2.5 text-[13px] text-[#0a0a0a] focus:border-[#166534] focus:ring-1 focus:ring-[#166534]"
-							>
-								<option value="AM">AM</option>
-								<option value="PM">PM</option>
-							</select>
-						</div>
+				<div class="space-y-2">
+					<div class="flex items-center justify-between gap-2">
+						<Label for="endHour">Daily end</Label>
+						<span class="text-sm text-muted-foreground">Optional</span>
 					</div>
-
-					<div>
-						<div class="mb-1.5 flex items-baseline justify-between">
-							<label for="endHour" class="font-medium text-[13px] text-[#0a0a0a]">
-								Daily end
-							</label>
-							<span class="text-[12px] text-[#b5b5b5]">Optional</span>
-						</div>
-						<div class="flex gap-2">
-							<select
-								name="endHour"
-								id="endHour"
-								value={form?.endHour ?? ""}
-								class="block h-9 w-full min-w-0 rounded-md border border-[#e2e2e2] bg-white px-3 text-[13px] text-[#0a0a0a] focus:border-[#166534] focus:ring-1 focus:ring-[#166534]"
-							>
-								<option value="">Any time</option>
-								{#each Array.from({ length: 12 }, (_, i) => i + 1) as hour (hour)}
-									<option value={hour.toString()}>{hour}:00</option>
+					<div class="flex gap-2">
+						<Select.Root type="single" name="endHour" bind:value={endHour}>
+							<Select.Trigger id="endHour" class="w-full" aria-label="Daily end hour">
+								<Select.Value placeholder="Any time" />
+							</Select.Trigger>
+							<Select.Content>
+								<Select.Item value="" label="Any time">Any time</Select.Item>
+								{#each hours as hour (hour)}
+									<Select.Item value={hour.toString()} label={`${hour}:00`}>
+										{hour}:00
+									</Select.Item>
 								{/each}
-							</select>
-							<select
-								name="endPeriod"
-								aria-label="Daily end period"
-								value={form?.endPeriod ?? "AM"}
-								class="block h-9 w-[70px] shrink-0 rounded-md border border-[#e2e2e2] bg-white px-2.5 text-[13px] text-[#0a0a0a] focus:border-[#166534] focus:ring-1 focus:ring-[#166534]"
-							>
-								<option value="AM">AM</option>
-								<option value="PM">PM</option>
-							</select>
-						</div>
+							</Select.Content>
+						</Select.Root>
+
+						<Select.Root type="single" name="endPeriod" bind:value={endPeriod}>
+							<Select.Trigger class="w-20" aria-label="Daily end period">
+								<Select.Value />
+							</Select.Trigger>
+							<Select.Content>
+								<Select.Item value="AM" label="AM">AM</Select.Item>
+								<Select.Item value="PM" label="PM">PM</Select.Item>
+							</Select.Content>
+						</Select.Root>
 					</div>
 				</div>
+			</div>
 
-				<div>
-					<label for="timezone" class="mb-1.5 block font-medium text-[13px] text-[#0a0a0a]">
-						Timezone
-					</label>
-					<select
-						name="timezone"
-						id="timezone"
-						required
-						{@attach () => {
-							selectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-						}}
-						bind:value={selectedTimezone}
-						class="block h-9 w-full rounded-md border border-[#e2e2e2] bg-white px-3 text-[13px] text-[#0a0a0a] focus:border-[#166534] focus:ring-1 focus:ring-[#166534]"
-					>
+			<div class="space-y-2">
+				<Label for="timezone">Timezone</Label>
+				<Select.Root
+					type="single"
+					name="timezone"
+					bind:value={selectedTimezone}
+					required
+				>
+					<Select.Trigger id="timezone" class="w-full">
+						<Select.Value placeholder="Select a timezone" />
+					</Select.Trigger>
+					<Select.Content>
 						{#each timezones as timezone (timezone)}
-							<option value={timezone}>{timezone}</option>
+							<Select.Item value={timezone} label={timezone}>{timezone}</Select.Item>
 						{/each}
-					</select>
-				</div>
+					</Select.Content>
+				</Select.Root>
 			</div>
 		</section>
 
-		<div class="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-			<p class="text-[12px] text-[#9b9b9b] sm:mr-auto">
+		<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+			<p class="text-sm text-muted-foreground sm:mr-auto">
 				Your link will be ready to share once the event is created.
 			</p>
-			<button
-				type="submit"
-				disabled={isSubmitting}
-				aria-busy={isSubmitting}
-				class="inline-flex h-9 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-md bg-[#0a0a0a] px-5 font-medium text-[13px] text-white transition-[background-color,transform] duration-150 ease-[var(--ease-out)] hover:bg-[#1a1a1a] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
-			>
+			<Button type="submit" disabled={isSubmitting} aria-busy={isSubmitting}>
 				{#if isSubmitting}
-					<svg class="h-3.5 w-3.5 animate-spin" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-						<circle cx="8" cy="8" r="6" stroke="currentColor" stroke-opacity=".3" stroke-width="2" />
-						<path d="M14 8a6 6 0 0 0-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-					</svg>
+					<LoaderCircle class="animate-spin" aria-hidden="true" />
 					Creating…
 				{:else}
 					Create event
 				{/if}
-			</button>
+			</Button>
 		</div>
 	</form>
 </div>
