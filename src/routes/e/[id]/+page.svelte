@@ -202,19 +202,23 @@ const handleEnhance: SubmitFunction = () => {
 	<header
 		class={headerHasColor
 			? "rounded-xl px-5 py-6 sm:px-7 sm:py-7"
-			: "rounded-xl border border-border bg-card px-5 py-6 text-foreground sm:px-7 sm:py-7"}
+			: "px-5 pb-2 sm:px-7"}
 		style:background-color={headerHasColor ? eventColor : undefined}
 	>
 		<div class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
 			<div class="min-w-0">
 				<h1
-					class={`break-words font-semibold text-2xl tracking-tight sm:text-3xl ${headerTitleClass}`}
+					class={headerHasColor
+						? `break-words font-semibold text-2xl tracking-tight sm:text-3xl ${headerTitleClass}`
+						: "break-words font-semibold text-4xl text-foreground tracking-tight sm:text-5xl"}
 				>
 					{data.event.title}
 				</h1>
 				{#if data.event.description}
 					<p
-						class={`mt-2 max-w-2xl whitespace-pre-wrap text-sm leading-6 ${headerMutedClass}`}
+						class={headerHasColor
+							? `mt-2 max-w-2xl whitespace-pre-wrap text-sm leading-6 ${headerMutedClass}`
+							: "mt-3 max-w-2xl whitespace-pre-wrap text-muted-foreground text-sm leading-6"}
 					>
 						{data.event.description}
 					</p>
@@ -226,7 +230,9 @@ const handleEnhance: SubmitFunction = () => {
 				-->
 
 				<div
-					class={`mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm ${headerMutedClass}`}
+					class={headerHasColor
+						? `mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm ${headerMutedClass}`
+						: "mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-muted-foreground text-xs"}
 				>
 					<span class="inline-flex items-center gap-1.5">
 						<CalendarIcon class="size-3.5" aria-hidden="true" />
@@ -240,7 +246,11 @@ const handleEnhance: SubmitFunction = () => {
 			</div>
 
 			<Button
-				variant={headerIsLight ? "outline" : "secondary"}
+				variant={headerHasColor
+					? headerIsLight
+						? "outline"
+						: "secondary"
+					: "outline"}
 				size="sm"
 				class="self-start"
 				onclick={copyLink}
