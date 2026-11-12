@@ -10,7 +10,6 @@ import CalendarIcon from "@lucide/svelte/icons/calendar";
 import ClockIcon from "@lucide/svelte/icons/clock";
 import PenIcon from "@lucide/svelte/icons/pen";
 import PlusIcon from "@lucide/svelte/icons/plus";
-import XIcon from "@lucide/svelte/icons/x";
 import type { SubmitFunction } from "@sveltejs/kit";
 import { onMount, untrack } from "svelte";
 import { enhance } from "$app/forms";
@@ -92,7 +91,7 @@ function to24Hour(hour: string, period: string): string {
 
 function handleColorInput(event: Event) {
 	const input = event.currentTarget as HTMLInputElement | null;
-	if (input) eventColor = input.value;
+	if (input) setEventColor(input.value);
 }
 
 let timezones = $state(Intl.supportedValuesOf("timeZone"));
@@ -102,6 +101,14 @@ let startPeriod = $state(initialStartPeriod());
 let endHour = $state(initialEndHour());
 let endPeriod = $state(initialEndPeriod());
 let eventColor = $state(initialEventColor());
+
+let lastEventColor = $state(initialEventColor());
+
+function setEventColor(next: string) {
+	eventColor = next;
+	if (next) lastEventColor = next;
+}
+
 let eventTitle = $state(untrack(() => form?.title ?? ""));
 let eventDescription = $state(untrack(() => form?.description ?? ""));
 
@@ -114,6 +121,8 @@ const hours = Array.from({ length: 12 }, (_, i) => i + 1);
 
 const hasColor = $derived(eventColor !== "");
 const previewIsLight = $derived(!hasColor || isLightColor(eventColor));
+const swatchColor = $derived(eventColor || lastEventColor);
+const swatchIsLight = $derived(isLightColor(swatchColor));
 const previewTitleClass = $derived(
 	previewIsLight ? "text-foreground" : "text-background",
 );
@@ -199,7 +208,7 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 		<input type="hidden" name="endDate" value={range.end?.toString() ?? ""} />
 
 		<div
-			class={`relative rounded-xl px-5 py-6 transition-[background-color,border-color] duration-300 sm:px-7 sm:py-7 ${hasColor ? "" : "border border-border bg-card"}`}
+			class={`relative rounded-xl border bg-card px-5 py-6 transition-[background-color,border-color] duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)] sm:px-7 sm:py-7 ${hasColor ? "border-transparent" : "border-border"}`}
 			style:background-color={hasColor ? eventColor : undefined}
 		>
 			<div class="min-w-0 pr-8">
@@ -211,7 +220,7 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 					required
 					bind:value={eventTitle}
 					placeholder="Your event title"
-					class={`h-auto rounded-none border-b border-transparent bg-transparent px-0 py-0 font-semibold text-2xl tracking-tight shadow-none focus-visible:border-current focus-visible:ring-0 sm:text-3xl md:text-3xl ${previewTitleClass} ${previewIsLight ? "placeholder:text-foreground/40" : "placeholder:text-background/40"}`}
+					class={`block-field h-auto rounded-none border-b border-transparent bg-transparent px-0 py-0 font-semibold text-2xl tracking-tight shadow-none duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)] focus-visible:border-current focus-visible:ring-0 sm:text-3xl md:text-3xl ${previewTitleClass} ${previewIsLight ? "placeholder:text-foreground/40" : "placeholder:text-background/40"}`}
 				/>
 
 				<Label for="description" class="sr-only">Description</Label>
@@ -221,11 +230,11 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 					rows={2}
 					bind:value={eventDescription}
 					placeholder="Context, location, or a meeting link"
-					class={`mt-2 min-h-0 resize-none rounded-none border-b border-transparent bg-transparent px-0 py-0 text-sm leading-6 shadow-none field-sizing-content focus-visible:border-current focus-visible:ring-0 ${previewMutedClass} ${previewIsLight ? "placeholder:text-foreground/40" : "placeholder:text-background/40"}`}
+					class={`block-field mt-2 min-h-0 resize-none rounded-none border-b border-transparent bg-transparent px-0 py-0 text-sm leading-6 shadow-none field-sizing-content duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)] focus-visible:border-current focus-visible:ring-0 ${previewMutedClass} ${previewIsLight ? "placeholder:text-foreground/40" : "placeholder:text-background/40"}`}
 				/>
 
 				<div
-					class={`mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm ${previewMutedClass}`}
+					class={`mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm transition-colors duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)] ${previewMutedClass}`}
 				>
 					<span class="inline-flex items-center gap-1.5">
 						<CalendarIcon class="size-3.5" aria-hidden="true" />
@@ -241,43 +250,22 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 			<div class="absolute -top-4 -right-4 size-9">
 				<div
 					class={[
-						"color-plus absolute inset-0",
-						hasColor
-							? "pointer-events-none scale-90 opacity-0"
-							: "pointer-events-auto scale-100 opacity-100",
-					]}
-					data-hidden={hasColor}
-					inert={hasColor}
-				>
-					<button
-						type="button"
-						title="Add block color"
-						onclick={() => (eventColor = DEFAULT_EVENT_COLOR)}
-						class="flex size-9 cursor-pointer items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-md ring-1 ring-foreground/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
-					>
-						<span class="sr-only">Add block color</span>
-						<PlusIcon class="size-4" aria-hidden="true" />
-					</button>
-				</div>
-
-				<div
-					class={[
 						"bubble absolute top-0 right-6",
 						hasColor
 							? "pointer-events-auto translate-x-0 translate-y-0 scale-100 opacity-100 blur-0"
-							: "pointer-events-none translate-x-6 translate-y-0 scale-90 opacity-0 blur-[2px]",
+							: "pointer-events-none translate-x-6 translate-y-0 scale-50 opacity-0 blur-[2px]",
 					]}
 					data-hidden={!hasColor}
 					inert={!hasColor}
 				>
 					<label
 						class="grid size-9 cursor-pointer place-items-center rounded-full border-2 border-background shadow-md ring-1 ring-foreground/10 focus-within:ring-2 focus-within:ring-ring/50"
-						style:background-color={eventColor}
+						style:background-color={swatchColor}
 						title="Change block color"
 					>
 						<span class="sr-only">Change block color</span>
 						<PenIcon
-							class={`size-4 ${previewIsLight ? "text-foreground" : "text-background"}`}
+							class={`size-4 ${swatchIsLight ? "text-foreground" : "text-background"}`}
 							aria-hidden="true"
 						/>
 						<input
@@ -291,18 +279,24 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 
 				<button
 					type="button"
-					aria-label="Remove block color"
-					onclick={() => (eventColor = "")}
-					inert={!hasColor}
+					aria-label={hasColor ? "Remove block color" : "Add block color"}
+					title={hasColor ? "Remove block color" : "Add block color"}
+					onclick={() => setEventColor(hasColor ? "" : DEFAULT_EVENT_COLOR)}
+					data-has-color={hasColor}
 					class={[
-						"bubble absolute top-8 right-1 z-10 grid size-6 cursor-pointer place-items-center rounded-full border border-border bg-background text-muted-foreground shadow-sm hover:text-foreground",
+						"corner-action absolute inset-0 z-10 grid size-9 cursor-pointer place-items-center rounded-full border border-border bg-background text-muted-foreground shadow-md ring-1 ring-foreground/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50",
 						hasColor
-							? "pointer-events-auto translate-x-0 translate-y-0 scale-100 opacity-100"
-							: "pointer-events-none -translate-x-0.5 -translate-y-[26px] scale-75 opacity-0 blur-[2px]",
+							? "translate-x-[2px] translate-y-[26px] scale-[0.6667]"
+							: "translate-x-0 translate-y-0 scale-100",
 					]}
-					data-hidden={!hasColor}
 				>
-					<XIcon class="size-3.5" aria-hidden="true" />
+					<PlusIcon
+						class={[
+							"corner-icon size-4",
+							hasColor ? "rotate-45 scale-[1.3125]" : "rotate-0 scale-100",
+						]}
+						aria-hidden="true"
+					/>
 				</button>
 			</div>
 		</div>
@@ -432,7 +426,7 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 <style>
 	.bubble {
 		--bubble-in: cubic-bezier(0.34, 1.56, 0.64, 1);
-		--bubble-out: cubic-bezier(0.65, 0, 0.35, 1);
+		--bubble-out: cubic-bezier(0.77, 0, 0.175, 1);
 		transition:
 			translate 300ms var(--bubble-in),
 			scale 300ms var(--bubble-in),
@@ -445,28 +439,50 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 	   are nearly home, and the plus arrives after they start moving. */
 	.bubble[data-hidden="true"] {
 		transition:
-			translate 280ms var(--bubble-out),
-			scale 280ms var(--bubble-out),
-			opacity 120ms ease-in 150ms,
-			filter 280ms var(--bubble-out),
+			translate 220ms var(--bubble-out),
+			scale 220ms var(--bubble-out),
+			opacity 80ms cubic-bezier(0.23, 1, 0.32, 1) 140ms,
+			filter 220ms var(--bubble-out),
 			color 150ms ease;
 	}
 
-	.color-plus {
+	.corner-action {
+		--corner-in: cubic-bezier(0.34, 1.56, 0.64, 1);
+		--corner-out: cubic-bezier(0.77, 0, 0.175, 1);
 		transition:
-			scale 200ms cubic-bezier(0.23, 1, 0.32, 1),
-			opacity 200ms cubic-bezier(0.23, 1, 0.32, 1);
+			translate 300ms var(--corner-in),
+			scale 300ms var(--corner-in);
 	}
 
-	.color-plus[data-hidden="false"] {
-		transition-delay: 160ms;
+	.corner-action[data-has-color="false"] {
+		transition:
+			translate 260ms var(--corner-out),
+			scale 260ms var(--corner-out);
+	}
+
+	:global(.corner-icon) {
+		transition:
+			rotate 300ms var(--corner-in),
+			scale 300ms var(--corner-in);
+	}
+
+	.corner-action[data-has-color="false"] :global(.corner-icon) {
+		transition:
+			rotate 260ms var(--corner-out),
+			scale 260ms var(--corner-out);
+	}
+
+	:global(.block-field)::placeholder {
+		transition: color 220ms cubic-bezier(0.4, 0, 0.2, 1);
 	}
 
 	@media (prefers-reduced-motion: reduce) {
 		.bubble,
 		.bubble[data-hidden="true"],
-		.color-plus,
-		.color-plus[data-hidden="false"] {
+		.corner-action,
+		.corner-action[data-has-color="false"],
+		:global(.corner-icon),
+		.corner-action[data-has-color="false"] :global(.corner-icon) {
 			transition: opacity 150ms ease;
 			transition-delay: 0ms;
 		}
