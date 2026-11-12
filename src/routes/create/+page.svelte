@@ -284,7 +284,7 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 					onclick={() => setEventColor(hasColor ? "" : DEFAULT_EVENT_COLOR)}
 					data-has-color={hasColor}
 					class={[
-						"corner-action absolute inset-0 z-10 grid size-9 cursor-pointer place-items-center rounded-full border border-border bg-background text-muted-foreground shadow-md ring-1 ring-foreground/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50",
+						"corner-action absolute inset-0 z-10 grid size-9 cursor-pointer place-items-center rounded-full border border-border bg-background text-muted-foreground shadow-md ring-1 ring-foreground/10 hover:inset-shadow-[0_2px_5px_rgb(0_0_0_/_0.10)] focus-visible:ring-2 focus-visible:ring-ring/50",
 						hasColor
 							? "translate-x-[2px] translate-y-[26px] scale-[0.6667]"
 							: "translate-x-0 translate-y-0 scale-100",
@@ -451,13 +451,15 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 		--corner-out: cubic-bezier(0.77, 0, 0.175, 1);
 		transition:
 			translate 300ms var(--corner-in),
-			scale 300ms var(--corner-in);
+			scale 300ms var(--corner-in),
+			box-shadow 200ms cubic-bezier(0.23, 1, 0.32, 1);
 	}
 
 	.corner-action[data-has-color="false"] {
 		transition:
 			translate 260ms var(--corner-out),
-			scale 260ms var(--corner-out);
+			scale 260ms var(--corner-out),
+			box-shadow 200ms cubic-bezier(0.23, 1, 0.32, 1);
 	}
 
 	:global(.corner-icon) {
