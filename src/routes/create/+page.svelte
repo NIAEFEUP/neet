@@ -8,6 +8,7 @@ import {
 import { LoaderCircle } from "@lucide/svelte";
 import CalendarIcon from "@lucide/svelte/icons/calendar";
 import ClockIcon from "@lucide/svelte/icons/clock";
+import PenIcon from "@lucide/svelte/icons/pen";
 import PlusIcon from "@lucide/svelte/icons/plus";
 import XIcon from "@lucide/svelte/icons/x";
 import type { SubmitFunction } from "@sveltejs/kit";
@@ -68,6 +69,9 @@ function initialEndPeriod() {
 function initialEventColor() {
 	return form?.eventColor ?? "";
 }
+
+/** Matches the form's primary button color (--primary). */
+const DEFAULT_EVENT_COLOR = "#660910";
 
 function isLightColor(hex: string): boolean {
 	const value = hex.replace("#", "");
@@ -244,19 +248,15 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 					]}
 					inert={hasColor}
 				>
-					<label
-						class="flex size-9 cursor-pointer items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-md ring-1 ring-foreground/10 hover:text-foreground focus-within:ring-2 focus-within:ring-ring/50"
+					<button
+						type="button"
 						title="Add block color"
+						onclick={() => (eventColor = DEFAULT_EVENT_COLOR)}
+						class="flex size-9 cursor-pointer items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-md ring-1 ring-foreground/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
 					>
 						<span class="sr-only">Add block color</span>
 						<PlusIcon class="size-4" aria-hidden="true" />
-						<input
-							type="color"
-							value={eventColor || "#0a0a0a"}
-							onchange={handleColorInput}
-							class="sr-only"
-						/>
-					</label>
+					</button>
 				</div>
 
 				<div
@@ -264,19 +264,23 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 						"absolute top-0 right-6 transition-[translate,scale,opacity,filter] duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] motion-reduce:transition-[opacity]",
 						hasColor
 							? "pointer-events-auto translate-x-0 translate-y-0 scale-100 opacity-100 blur-0"
-							: "pointer-events-none translate-x-6 translate-y-1 scale-90 opacity-0 blur-[2px]",
+							: "pointer-events-none translate-x-6 translate-y-0 scale-90 opacity-0 blur-[2px]",
 					]}
 					inert={!hasColor}
 				>
 					<label
-						class="block size-9 cursor-pointer rounded-full border-2 border-background shadow-md ring-1 ring-foreground/10 focus-within:ring-2 focus-within:ring-ring/50"
+						class="grid size-9 cursor-pointer place-items-center rounded-full border-2 border-background shadow-md ring-1 ring-foreground/10 focus-within:ring-2 focus-within:ring-ring/50"
 						style:background-color={eventColor}
 						title="Change block color"
 					>
 						<span class="sr-only">Change block color</span>
+						<PenIcon
+							class={`size-4 ${previewIsLight ? "text-foreground" : "text-background"}`}
+							aria-hidden="true"
+						/>
 						<input
 							type="color"
-							value={eventColor || "#0a0a0a"}
+							value={eventColor || DEFAULT_EVENT_COLOR}
 							onchange={handleColorInput}
 							class="sr-only"
 						/>
@@ -289,10 +293,10 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 					onclick={() => (eventColor = "")}
 					inert={!hasColor}
 					class={[
-						"absolute top-6 right-0 z-10 flex size-6 cursor-pointer items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm transition-[translate,scale,opacity] duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:text-foreground motion-reduce:transition-[opacity]",
+						"absolute top-8 right-1 z-10 grid size-6 cursor-pointer place-items-center rounded-full border border-border bg-background text-muted-foreground shadow-sm transition-[translate,scale,opacity] duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:text-foreground motion-reduce:transition-[opacity]",
 						hasColor
 							? "pointer-events-auto translate-x-0 translate-y-0 scale-100 opacity-100"
-							: "pointer-events-none -translate-x-1.5 -translate-y-[18px] scale-75 opacity-0",
+							: "pointer-events-none -translate-x-0.5 -translate-y-[26px] scale-75 opacity-0",
 					]}
 				>
 					<XIcon class="size-3.5" aria-hidden="true" />
