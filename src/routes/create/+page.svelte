@@ -66,7 +66,7 @@ function initialEndPeriod() {
 }
 
 function initialEventColor() {
-	return form?.eventColor ?? "#0a0a0a";
+	return form?.eventColor ?? "";
 }
 
 function isLightColor(hex: string): boolean {
@@ -195,7 +195,7 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 		<input type="hidden" name="endDate" value={range.end?.toString() ?? ""} />
 
 		<div
-			class={`relative rounded-xl px-5 py-6 sm:px-7 sm:py-7 ${hasColor ? "" : "border border-border bg-card"}`}
+			class={`relative rounded-xl px-5 py-6 transition-[background-color,border-color] duration-300 sm:px-7 sm:py-7 ${hasColor ? "" : "border border-border bg-card"}`}
 			style:background-color={hasColor ? eventColor : undefined}
 		>
 			<div class="min-w-0 pr-8">
@@ -234,31 +234,16 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 				</div>
 			</div>
 
-			<div class="absolute -top-4 -right-4">
-				{#if hasColor}
-					<button
-						type="button"
-						aria-label="Remove block color"
-						onclick={() => (eventColor = "")}
-						class="absolute -top-2 -left-2 z-10 flex size-6 cursor-pointer items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm transition-colors hover:text-foreground"
-					>
-						<XIcon class="size-3.5" aria-hidden="true" />
-					</button>
-
-					<label
-						class="block size-9 cursor-pointer rounded-full border-2 border-background shadow-md ring-1 ring-foreground/10 focus-within:ring-2 focus-within:ring-ring/50"
-						style:background-color={eventColor}
-						title="Change block color"
-					>
-						<span class="sr-only">Change block color</span>
-						<input
-							type="color"
-							value={eventColor || "#0a0a0a"}
-							oninput={handleColorInput}
-							class="sr-only"
-						/>
-					</label>
-				{:else}
+			<div class="absolute -top-4 -right-4 size-9">
+				<div
+					class={[
+						"absolute inset-0 transition-[transform,opacity] duration-200 ease-out motion-reduce:transition-[opacity]",
+						hasColor
+							? "pointer-events-none scale-90 opacity-0"
+							: "pointer-events-auto scale-100 opacity-100",
+					]}
+					inert={hasColor}
+				>
 					<label
 						class="flex size-9 cursor-pointer items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-md ring-1 ring-foreground/10 hover:text-foreground focus-within:ring-2 focus-within:ring-ring/50"
 						title="Add block color"
@@ -272,7 +257,46 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 							class="sr-only"
 						/>
 					</label>
-				{/if}
+				</div>
+
+				<div
+					class={[
+						"absolute top-8 right-0 transition-[transform,opacity,filter] duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] motion-reduce:transition-[opacity]",
+						hasColor
+							? "pointer-events-auto translate-y-0 scale-100 opacity-100 blur-0"
+							: "pointer-events-none -translate-y-8 scale-90 opacity-0 blur-[2px]",
+					]}
+					inert={!hasColor}
+				>
+					<label
+						class="block size-9 cursor-pointer rounded-full border-2 border-background shadow-md ring-1 ring-foreground/10 focus-within:ring-2 focus-within:ring-ring/50"
+						style:background-color={eventColor}
+						title="Change block color"
+					>
+						<span class="sr-only">Change block color</span>
+						<input
+							type="color"
+							value={eventColor || "#0a0a0a"}
+							oninput={handleColorInput}
+							class="sr-only"
+						/>
+					</label>
+				</div>
+
+				<button
+					type="button"
+					aria-label="Remove block color"
+					onclick={() => (eventColor = "")}
+					inert={!hasColor}
+					class={[
+						"absolute top-0 right-8 z-10 flex size-6 cursor-pointer items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:text-foreground motion-reduce:transition-[opacity]",
+						hasColor
+							? "pointer-events-auto translate-x-0 scale-100 opacity-100"
+							: "pointer-events-none translate-x-8 scale-75 opacity-0",
+					]}
+				>
+					<XIcon class="size-3.5" aria-hidden="true" />
+				</button>
 			</div>
 		</div>
 
