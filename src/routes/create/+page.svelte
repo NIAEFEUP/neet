@@ -185,57 +185,60 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 		<input type="hidden" name="startDate" value={range.start?.toString() ?? ""} />
 		<input type="hidden" name="endDate" value={range.end?.toString() ?? ""} />
 
-		<div class="rounded-xl px-5 py-6 sm:px-7 sm:py-7" style:background-color={eventColor}>
-			<div class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-				<div class="min-w-0 flex-1">
-					<Label for="title" class="sr-only">Event title</Label>
-					<Input
-						type="text"
-						name="title"
-						id="title"
-						required
-						bind:value={eventTitle}
-						placeholder="Your event title"
-						class={`h-auto rounded-none border-b border-transparent bg-transparent px-0 py-0 font-semibold text-2xl tracking-tight shadow-none focus-visible:border-current focus-visible:ring-0 sm:text-3xl md:text-3xl ${previewTitleClass} ${previewIsLight ? "placeholder:text-foreground/40" : "placeholder:text-background/40"}`}
-					/>
+		<div
+			class="relative rounded-xl px-5 py-6 sm:px-7 sm:py-7"
+			style:background-color={eventColor}
+		>
+			<div class="min-w-0 pr-8">
+				<Label for="title" class="sr-only">Event title</Label>
+				<Input
+					type="text"
+					name="title"
+					id="title"
+					required
+					bind:value={eventTitle}
+					placeholder="Your event title"
+					class={`h-auto rounded-none border-b border-transparent bg-transparent px-0 py-0 font-semibold text-2xl tracking-tight shadow-none focus-visible:border-current focus-visible:ring-0 sm:text-3xl md:text-3xl ${previewTitleClass} ${previewIsLight ? "placeholder:text-foreground/40" : "placeholder:text-background/40"}`}
+				/>
 
-					<Label for="description" class="sr-only">Description</Label>
-					<Textarea
-						name="description"
-						id="description"
-						rows={2}
-						bind:value={eventDescription}
-						placeholder="Context, location, or a meeting link"
-						class={`mt-2 min-h-0 resize-none rounded-none border-b border-transparent bg-transparent px-0 py-0 text-sm leading-6 shadow-none field-sizing-content focus-visible:border-current focus-visible:ring-0 ${previewMutedClass} ${previewIsLight ? "placeholder:text-foreground/40" : "placeholder:text-background/40"}`}
-					/>
+				<Label for="description" class="sr-only">Description</Label>
+				<Textarea
+					name="description"
+					id="description"
+					rows={2}
+					bind:value={eventDescription}
+					placeholder="Context, location, or a meeting link"
+					class={`mt-2 min-h-0 resize-none rounded-none border-b border-transparent bg-transparent px-0 py-0 text-sm leading-6 shadow-none field-sizing-content focus-visible:border-current focus-visible:ring-0 ${previewMutedClass} ${previewIsLight ? "placeholder:text-foreground/40" : "placeholder:text-background/40"}`}
+				/>
 
-					<div
-						class={`mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm ${previewMutedClass}`}
-					>
-						<span class="inline-flex items-center gap-1.5">
-							<CalendarIcon class="size-3.5" aria-hidden="true" />
-							{previewDateLabel}
-						</span>
-						<span class="inline-flex items-center gap-1.5">
-							<ClockIcon class="size-3.5" aria-hidden="true" />
-							{previewTimeLabel}
-						</span>
-					</div>
-				</div>
-
-				<div class="flex items-center gap-2 self-start">
-					<Label for="eventColor" class={`text-xs ${previewMutedClass}`}>
-						Color
-					</Label>
-					<input
-						id="eventColor"
-						name="eventColor"
-						type="color"
-						bind:value={eventColor}
-						class={`h-8 w-10 cursor-pointer rounded-md border bg-background p-1 ${previewIsLight ? "border-foreground/30" : "border-background/30"}`}
-					/>
+				<div
+					class={`mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm ${previewMutedClass}`}
+				>
+					<span class="inline-flex items-center gap-1.5">
+						<CalendarIcon class="size-3.5" aria-hidden="true" />
+						{previewDateLabel}
+					</span>
+					<span class="inline-flex items-center gap-1.5">
+						<ClockIcon class="size-3.5" aria-hidden="true" />
+						{previewTimeLabel}
+					</span>
 				</div>
 			</div>
+
+			<label
+				class="absolute -top-4 -right-4 block size-9 cursor-pointer rounded-full border-2 border-background shadow-md ring-1 ring-foreground/10 focus-within:ring-2 focus-within:ring-ring/50"
+				style:background-color={eventColor}
+				title="Choose block color"
+			>
+				<span class="sr-only">Choose event block color</span>
+				<input
+					id="eventColor"
+					name="eventColor"
+					type="color"
+					bind:value={eventColor}
+					class="sr-only"
+				/>
+			</label>
 		</div>
 
 		<section aria-labelledby="schedule-heading" class="space-y-4">
