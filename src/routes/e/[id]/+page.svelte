@@ -41,7 +41,8 @@ let selectedResponseIds = $state<string[]>([]);
 
 const dates = $derived(data.event.proposedDates);
 const eventColor = $derived(data.event.color);
-const headerIsLight = $derived(isLightColor(eventColor));
+const headerHasColor = $derived(eventColor !== "");
+const headerIsLight = $derived(!headerHasColor || isLightColor(eventColor));
 const headerTitleClass = $derived(
 	headerIsLight ? "text-foreground" : "text-background",
 );
@@ -199,8 +200,10 @@ const handleEnhance: SubmitFunction = () => {
 
 <div class="mx-auto w-full max-w-[1240px] px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
 	<header
-		class="rounded-xl px-5 py-6 sm:px-7 sm:py-7"
-		style:background-color={eventColor}
+		class={headerHasColor
+			? "rounded-xl px-5 py-6 sm:px-7 sm:py-7"
+			: "rounded-xl border border-border bg-card px-5 py-6 text-foreground sm:px-7 sm:py-7"}
+		style:background-color={headerHasColor ? eventColor : undefined}
 	>
 		<div class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
 			<div class="min-w-0">

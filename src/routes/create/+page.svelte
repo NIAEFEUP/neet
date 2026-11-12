@@ -8,6 +8,8 @@ import {
 import { LoaderCircle } from "@lucide/svelte";
 import CalendarIcon from "@lucide/svelte/icons/calendar";
 import ClockIcon from "@lucide/svelte/icons/clock";
+import PlusIcon from "@lucide/svelte/icons/plus";
+import XIcon from "@lucide/svelte/icons/x";
 import type { SubmitFunction } from "@sveltejs/kit";
 import { onMount, untrack } from "svelte";
 import { enhance } from "$app/forms";
@@ -84,6 +86,11 @@ function to24Hour(hour: string, period: string): string {
 	return `${h.toString().padStart(2, "0")}:00`;
 }
 
+function handleColorInput(event: Event) {
+	const input = event.currentTarget as HTMLInputElement | null;
+	if (input) eventColor = input.value;
+}
+
 let timezones = $state(Intl.supportedValuesOf("timeZone"));
 let selectedTimezone = $state(initialTimezone());
 let startHour = $state(initialStartHour());
@@ -101,7 +108,8 @@ let range = $state<DateRange>(initialRange());
 const minDate = today(getLocalTimeZone());
 const hours = Array.from({ length: 12 }, (_, i) => i + 1);
 
-const previewIsLight = $derived(isLightColor(eventColor));
+const hasColor = $derived(eventColor !== "");
+const previewIsLight = $derived(!hasColor || isLightColor(eventColor));
 const previewTitleClass = $derived(
 	previewIsLight ? "text-foreground" : "text-background",
 );
@@ -182,12 +190,13 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 	{/if}
 
 	<form method="POST" use:enhance={handleEnhance} class="space-y-6">
+		<input type="hidden" name="eventColor" value={eventColor} />
 		<input type="hidden" name="startDate" value={range.start?.toString() ?? ""} />
 		<input type="hidden" name="endDate" value={range.end?.toString() ?? ""} />
 
 		<div
-			class="relative rounded-xl px-5 py-6 sm:px-7 sm:py-7"
-			style:background-color={eventColor}
+			class={`relative rounded-xl px-5 py-6 sm:px-7 sm:py-7 ${hasColor ? "" : "border border-border bg-card"}`}
+			style:background-color={hasColor ? eventColor : undefined}
 		>
 			<div class="min-w-0 pr-8">
 				<Label for="title" class="sr-only">Event title</Label>
@@ -225,20 +234,46 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 				</div>
 			</div>
 
-			<label
-				class="absolute -top-4 -right-4 block size-9 cursor-pointer rounded-full border-2 border-background shadow-md ring-1 ring-foreground/10 focus-within:ring-2 focus-within:ring-ring/50"
-				style:background-color={eventColor}
-				title="Choose block color"
-			>
-				<span class="sr-only">Choose event block color</span>
-				<input
-					id="eventColor"
-					name="eventColor"
-					type="color"
-					bind:value={eventColor}
-					class="sr-only"
-				/>
-			</label>
+			<div class="absolute -top-4 -right-4">
+				{#if hasColor}
+					<button
+						type="button"
+						aria-label="Remove block color"
+						onclick={() => (eventColor = "")}
+						class="absolute -top-2 -left-2 z-10 flex size-6 cursor-pointer items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm transition-colors hover:text-foreground"
+					>
+						<XIcon class="size-3.5" aria-hidden="true" />
+					</button>
+
+					<label
+						class="block size-9 cursor-pointer rounded-full border-2 border-background shadow-md ring-1 ring-foreground/10 focus-within:ring-2 focus-within:ring-ring/50"
+						style:background-color={eventColor}
+						title="Change block color"
+					>
+						<span class="sr-only">Change block color</span>
+						<input
+							type="color"
+							value={eventColor || "#0a0a0a"}
+							oninput={handleColorInput}
+							class="sr-only"
+						/>
+					</label>
+				{:else}
+					<label
+						class="flex size-9 cursor-pointer items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-md ring-1 ring-foreground/10 hover:text-foreground focus-within:ring-2 focus-within:ring-ring/50"
+						title="Add block color"
+					>
+						<span class="sr-only">Add block color</span>
+						<PlusIcon class="size-4" aria-hidden="true" />
+						<input
+							type="color"
+							value={eventColor || "#0a0a0a"}
+							oninput={handleColorInput}
+							class="sr-only"
+						/>
+					</label>
+				{/if}
+			</div>
 		</div>
 
 		<section aria-labelledby="schedule-heading" class="space-y-4">
