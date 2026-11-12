@@ -6,8 +6,10 @@ import {
 	today,
 } from "@internationalized/date";
 import { LoaderCircle } from "@lucide/svelte";
+import CalendarIcon from "@lucide/svelte/icons/calendar";
+import ClockIcon from "@lucide/svelte/icons/clock";
 import type { SubmitFunction } from "@sveltejs/kit";
-import { onMount } from "svelte";
+import { onMount, untrack } from "svelte";
 import { enhance } from "$app/forms";
 import { Button } from "$lib/components/ui/button";
 import { Input } from "$lib/components/ui/input";
@@ -65,6 +67,23 @@ function initialEventColor() {
 	return form?.eventColor ?? "#0a0a0a";
 }
 
+function isLightColor(hex: string): boolean {
+	const value = hex.replace("#", "");
+	if (!/^[0-9a-f]{6}$/i.test(value)) return false;
+
+	const r = Number.parseInt(value.slice(0, 2), 16);
+	const g = Number.parseInt(value.slice(2, 4), 16);
+	const b = Number.parseInt(value.slice(4, 6), 16);
+	return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.62;
+}
+
+function to24Hour(hour: string, period: string): string {
+	let h = Number.parseInt(hour, 10);
+	if (period === "PM" && h < 12) h += 12;
+	if (period === "AM" && h === 12) h = 0;
+	return `${h.toString().padStart(2, "0")}:00`;
+}
+
 let timezones = $state(Intl.supportedValuesOf("timeZone"));
 let selectedTimezone = $state(initialTimezone());
 let startHour = $state(initialStartHour());
@@ -72,6 +91,8 @@ let startPeriod = $state(initialStartPeriod());
 let endHour = $state(initialEndHour());
 let endPeriod = $state(initialEndPeriod());
 let eventColor = $state(initialEventColor());
+let eventTitle = $state(untrack(() => form?.title ?? ""));
+let eventDescription = $state(untrack(() => form?.description ?? ""));
 
 let isSubmitting = $state(false);
 let dateError = $state("");
@@ -79,6 +100,35 @@ let range = $state<DateRange>(initialRange());
 
 const minDate = today(getLocalTimeZone());
 const hours = Array.from({ length: 12 }, (_, i) => i + 1);
+
+const previewIsLight = $derived(isLightColor(eventColor));
+const previewTitleClass = $derived(
+	previewIsLight ? "text-foreground" : "text-background",
+);
+const previewMutedClass = $derived(
+	previewIsLight ? "text-foreground/70" : "text-background/70",
+);
+
+const previewDateLabel = $derived.by(() => {
+	if (!range.start || !range.end) return "Select dates";
+
+	const format = (date: DateValue) =>
+		new Date(`${date.toString()}T00:00:00`).toLocaleDateString("en-US", {
+			month: "short",
+			day: "numeric",
+			year: "numeric",
+		});
+
+	const first = format(range.start);
+	const last = format(range.end);
+	return first === last ? first : `${first} – ${last}`;
+});
+
+const previewTimeLabel = $derived.by(() => {
+	if (!startHour || !endHour) return `Any time · ${selectedTimezone}`;
+
+	return `${to24Hour(startHour, startPeriod)} – ${to24Hour(endHour, endPeriod)} · ${selectedTimezone}`;
+});
 
 onMount(() => {
 	if (form?.timezone) return;
@@ -135,54 +185,58 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 		<input type="hidden" name="startDate" value={range.start?.toString() ?? ""} />
 		<input type="hidden" name="endDate" value={range.end?.toString() ?? ""} />
 
-		<section aria-labelledby="details-heading" class="space-y-4">
-			<h2 id="details-heading" class="text-sm font-medium text-muted-foreground">
-				Event details
-			</h2>
+		<div class="rounded-xl px-5 py-6 sm:px-7 sm:py-7" style:background-color={eventColor}>
+			<div class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+				<div class="min-w-0 flex-1">
+					<Label for="title" class="sr-only">Event title</Label>
+					<Input
+						type="text"
+						name="title"
+						id="title"
+						required
+						bind:value={eventTitle}
+						placeholder="Your event title"
+						class={`h-auto rounded-none border-b border-transparent bg-transparent px-0 py-0 font-semibold text-2xl tracking-tight shadow-none focus-visible:border-current focus-visible:ring-0 sm:text-3xl md:text-3xl ${previewTitleClass} ${previewIsLight ? "placeholder:text-foreground/40" : "placeholder:text-background/40"}`}
+					/>
 
-			<div class="space-y-2">
-				<Label for="title">Event title</Label>
-				<Input
-					type="text"
-					name="title"
-					id="title"
-					required
-					value={form?.title ?? ""}
-					placeholder="e.g. Project kickoff"
-				/>
-			</div>
+					<Label for="description" class="sr-only">Description</Label>
+					<Textarea
+						name="description"
+						id="description"
+						rows={2}
+						bind:value={eventDescription}
+						placeholder="Context, location, or a meeting link"
+						class={`mt-2 min-h-0 resize-none rounded-none border-b border-transparent bg-transparent px-0 py-0 text-sm leading-6 shadow-none field-sizing-content focus-visible:border-current focus-visible:ring-0 ${previewMutedClass} ${previewIsLight ? "placeholder:text-foreground/40" : "placeholder:text-background/40"}`}
+					/>
 
-			<div class="space-y-2">
-				<div class="flex items-center justify-between gap-2">
-					<Label for="description">Description</Label>
-					<span class="text-sm text-muted-foreground">Optional</span>
+					<div
+						class={`mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm ${previewMutedClass}`}
+					>
+						<span class="inline-flex items-center gap-1.5">
+							<CalendarIcon class="size-3.5" aria-hidden="true" />
+							{previewDateLabel}
+						</span>
+						<span class="inline-flex items-center gap-1.5">
+							<ClockIcon class="size-3.5" aria-hidden="true" />
+							{previewTimeLabel}
+						</span>
+					</div>
 				</div>
-				<Textarea
-					name="description"
-					id="description"
-					rows={3}
-					value={form?.description ?? ""}
-					placeholder="Context, location, or a meeting link"
-				/>
-			</div>
 
-			<div class="space-y-2">
-				<div class="flex items-center justify-between gap-2">
-					<Label for="eventColor">Block color</Label>
-					<span class="text-sm text-muted-foreground">Used on the event page</span>
-				</div>
-				<div class="flex items-center gap-3">
+				<div class="flex items-center gap-2 self-start">
+					<Label for="eventColor" class={`text-xs ${previewMutedClass}`}>
+						Color
+					</Label>
 					<input
 						id="eventColor"
 						name="eventColor"
 						type="color"
 						bind:value={eventColor}
-						class="h-9 w-16 cursor-pointer rounded-md border border-input bg-background p-1"
+						class={`h-8 w-10 cursor-pointer rounded-md border bg-background p-1 ${previewIsLight ? "border-foreground/30" : "border-background/30"}`}
 					/>
-					<span class="font-mono text-muted-foreground text-sm">{eventColor}</span>
 				</div>
 			</div>
-		</section>
+		</div>
 
 		<section aria-labelledby="schedule-heading" class="space-y-4">
 			<h2 id="schedule-heading" class="text-sm font-medium text-muted-foreground">
