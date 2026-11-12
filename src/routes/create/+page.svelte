@@ -284,7 +284,7 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 					onclick={() => setEventColor(hasColor ? "" : DEFAULT_EVENT_COLOR)}
 					data-has-color={hasColor}
 					class={[
-						"corner-action absolute inset-0 z-10 grid size-9 cursor-pointer place-items-center rounded-full border border-border bg-background text-muted-foreground shadow-md ring-1 ring-foreground/10 hover:inset-shadow-[0_2px_5px_rgb(0_0_0_/_0.10)] focus-visible:ring-2 focus-visible:ring-ring/50",
+						"corner-action absolute inset-0 z-10 grid size-9 cursor-pointer place-items-center rounded-full border border-border bg-background text-muted-foreground shadow-md ring-1 ring-foreground/10 focus-visible:ring-2 focus-visible:ring-ring/50",
 						hasColor
 							? "translate-x-[2px] translate-y-[26px] scale-[0.6667]"
 							: "translate-x-0 translate-y-0 scale-100",
@@ -292,7 +292,7 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 				>
 					<PlusIcon
 						class={[
-							"corner-icon size-4",
+							"corner-icon size-4 relative z-10",
 							hasColor ? "rotate-45 scale-[1.3125]" : "rotate-0 scale-100",
 						]}
 						aria-hidden="true"
@@ -451,15 +451,39 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 		--corner-out: cubic-bezier(0.77, 0, 0.175, 1);
 		transition:
 			translate 300ms var(--corner-in),
-			scale 300ms var(--corner-in),
-			box-shadow 200ms cubic-bezier(0.23, 1, 0.32, 1);
+			scale 300ms var(--corner-in);
 	}
 
 	.corner-action[data-has-color="false"] {
 		transition:
 			translate 260ms var(--corner-out),
-			scale 260ms var(--corner-out),
-			box-shadow 200ms cubic-bezier(0.23, 1, 0.32, 1);
+			scale 260ms var(--corner-out);
+	}
+
+	.corner-action::before {
+		content: "";
+		position: absolute;
+		inset: 0;
+		border-radius: 9999px;
+		box-shadow:
+			inset 0 1px 2px rgb(0 0 0 / 0.06),
+			inset 0 -1px 1px rgb(255 255 255 / 0.7);
+		pointer-events: none;
+	}
+
+	.corner-action::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		border-radius: 9999px;
+		box-shadow: inset 0 2px 5px rgb(0 0 0 / 0.1);
+		opacity: 0;
+		pointer-events: none;
+		transition: opacity 200ms cubic-bezier(0.23, 1, 0.32, 1);
+	}
+
+	.corner-action:hover::after {
+		opacity: 1;
 	}
 
 	:global(.corner-icon) {
