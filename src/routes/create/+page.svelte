@@ -241,11 +241,12 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 			<div class="absolute -top-4 -right-4 size-9">
 				<div
 					class={[
-						"absolute inset-0 transition-[scale,opacity] duration-200 ease-out motion-reduce:transition-[opacity]",
+						"color-plus absolute inset-0",
 						hasColor
 							? "pointer-events-none scale-90 opacity-0"
 							: "pointer-events-auto scale-100 opacity-100",
 					]}
+					data-hidden={hasColor}
 					inert={hasColor}
 				>
 					<button
@@ -261,11 +262,12 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 
 				<div
 					class={[
-						"absolute top-0 right-6 transition-[translate,scale,opacity,filter] duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] motion-reduce:transition-[opacity]",
+						"bubble absolute top-0 right-6",
 						hasColor
 							? "pointer-events-auto translate-x-0 translate-y-0 scale-100 opacity-100 blur-0"
 							: "pointer-events-none translate-x-6 translate-y-0 scale-90 opacity-0 blur-[2px]",
 					]}
+					data-hidden={!hasColor}
 					inert={!hasColor}
 				>
 					<label
@@ -293,11 +295,12 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 					onclick={() => (eventColor = "")}
 					inert={!hasColor}
 					class={[
-						"absolute top-8 right-1 z-10 grid size-6 cursor-pointer place-items-center rounded-full border border-border bg-background text-muted-foreground shadow-sm transition-[translate,scale,opacity] duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:text-foreground motion-reduce:transition-[opacity]",
+						"bubble absolute top-8 right-1 z-10 grid size-6 cursor-pointer place-items-center rounded-full border border-border bg-background text-muted-foreground shadow-sm hover:text-foreground",
 						hasColor
 							? "pointer-events-auto translate-x-0 translate-y-0 scale-100 opacity-100"
-							: "pointer-events-none -translate-x-0.5 -translate-y-[26px] scale-75 opacity-0",
+							: "pointer-events-none -translate-x-0.5 -translate-y-[26px] scale-75 opacity-0 blur-[2px]",
 					]}
+					data-hidden={!hasColor}
 				>
 					<XIcon class="size-3.5" aria-hidden="true" />
 				</button>
@@ -425,3 +428,47 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 		</div>
 	</form>
 </div>
+
+<style>
+	.bubble {
+		--bubble-in: cubic-bezier(0.34, 1.56, 0.64, 1);
+		--bubble-out: cubic-bezier(0.65, 0, 0.35, 1);
+		transition:
+			translate 300ms var(--bubble-in),
+			scale 300ms var(--bubble-in),
+			opacity 160ms ease-out,
+			filter 300ms var(--bubble-in),
+			color 150ms ease;
+	}
+
+	/* Merging back: travel is visible, the fade waits until the bubbles
+	   are nearly home, and the plus arrives after they start moving. */
+	.bubble[data-hidden="true"] {
+		transition:
+			translate 280ms var(--bubble-out),
+			scale 280ms var(--bubble-out),
+			opacity 120ms ease-in 150ms,
+			filter 280ms var(--bubble-out),
+			color 150ms ease;
+	}
+
+	.color-plus {
+		transition:
+			scale 200ms cubic-bezier(0.23, 1, 0.32, 1),
+			opacity 200ms cubic-bezier(0.23, 1, 0.32, 1);
+	}
+
+	.color-plus[data-hidden="false"] {
+		transition-delay: 160ms;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.bubble,
+		.bubble[data-hidden="true"],
+		.color-plus,
+		.color-plus[data-hidden="false"] {
+			transition: opacity 150ms ease;
+			transition-delay: 0ms;
+		}
+	}
+</style>
