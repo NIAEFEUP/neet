@@ -20,7 +20,7 @@ function participantCookie(eventId: string): string {
 	return `neet_participant_${eventId}`;
 }
 
-export const load: PageServerLoad = async ({ params, cookies }) => {
+export const load: PageServerLoad = async ({ params, cookies, url }) => {
 	const event = await db.orm.public.Event.where({ id: params.id }).first();
 
 	if (!event) {
@@ -29,6 +29,8 @@ export const load: PageServerLoad = async ({ params, cookies }) => {
 
 	const dates = event.proposedDates.map((date) => date.toString());
 	const cookieId = cookies.get(participantCookie(event.id));
+	const colorParam = url.searchParams.get("color") ?? "";
+	const color = /^#[0-9a-f]{6}$/i.test(colorParam) ? colorParam : "#0a0a0a";
 
 	// Every response is public, so load them all in one pass: one participant
 	// query and one availability query, then group the ranges by participant.
@@ -81,6 +83,7 @@ export const load: PageServerLoad = async ({ params, cookies }) => {
 			proposedDates: dates,
 			startTime: event.startTime,
 			endTime: event.endTime,
+			color,
 		},
 		participant: current
 			? { name: current.name, selected: current.selected }

@@ -61,12 +61,17 @@ function initialEndPeriod() {
 	return form?.endPeriod ?? "AM";
 }
 
+function initialEventColor() {
+	return form?.eventColor ?? "#0a0a0a";
+}
+
 let timezones = $state(Intl.supportedValuesOf("timeZone"));
 let selectedTimezone = $state(initialTimezone());
 let startHour = $state(initialStartHour());
 let startPeriod = $state(initialStartPeriod());
 let endHour = $state(initialEndHour());
 let endPeriod = $state(initialEndPeriod());
+let eventColor = $state(initialEventColor());
 
 let isSubmitting = $state(false);
 let dateError = $state("");
@@ -159,6 +164,23 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 					value={form?.description ?? ""}
 					placeholder="Context, location, or a meeting link"
 				/>
+			</div>
+
+			<div class="space-y-2">
+				<div class="flex items-center justify-between gap-2">
+					<Label for="eventColor">Block color</Label>
+					<span class="text-sm text-muted-foreground">Used on the event page</span>
+				</div>
+				<div class="flex items-center gap-3">
+					<input
+						id="eventColor"
+						name="eventColor"
+						type="color"
+						bind:value={eventColor}
+						class="h-9 w-16 cursor-pointer rounded-md border border-input bg-background p-1"
+					/>
+					<span class="font-mono text-muted-foreground text-sm">{eventColor}</span>
+				</div>
 			</div>
 		</section>
 

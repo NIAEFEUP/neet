@@ -40,6 +40,14 @@ let hoveredResponseId = $state<string | null>(null);
 let selectedResponseIds = $state<string[]>([]);
 
 const dates = $derived(data.event.proposedDates);
+const eventColor = $derived(data.event.color);
+const headerIsLight = $derived(isLightColor(eventColor));
+const headerTitleClass = $derived(
+	headerIsLight ? "text-foreground" : "text-background",
+);
+const headerMutedClass = $derived(
+	headerIsLight ? "text-foreground/70" : "text-background/70",
+);
 const startHour = $derived(parseHour(data.event.startTime) ?? 0);
 const endHour = $derived(parseHour(data.event.endTime) ?? 24);
 const isolatedResponse = $derived(
@@ -113,6 +121,16 @@ onDestroy(() => {
 	clearTimeout(copyStatusResetTimer);
 });
 
+function isLightColor(hex: string): boolean {
+	const value = hex.replace("#", "");
+	if (!/^[0-9a-f]{6}$/i.test(value)) return false;
+
+	const r = Number.parseInt(value.slice(0, 2), 16);
+	const g = Number.parseInt(value.slice(2, 4), 16);
+	const b = Number.parseInt(value.slice(4, 6), 16);
+	return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.62;
+}
+
 function markDirty() {
 	saved = false;
 }
@@ -180,16 +198,21 @@ const handleEnhance: SubmitFunction = () => {
 </svelte:head>
 
 <div class="mx-auto w-full max-w-[1240px] px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
-	<header class="px-5 pb-2 sm:px-7">
+	<header
+		class="rounded-xl px-5 py-6 sm:px-7 sm:py-7"
+		style:background-color={eventColor}
+	>
 		<div class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
 			<div class="min-w-0">
 				<h1
-					class="break-words font-semibold text-4xl text-foreground tracking-tight sm:text-5xl"
+					class={`break-words font-semibold text-2xl tracking-tight sm:text-3xl ${headerTitleClass}`}
 				>
 					{data.event.title}
 				</h1>
 				{#if data.event.description}
-					<p class="mt-3 max-w-2xl whitespace-pre-wrap text-muted-foreground text-sm leading-6">
+					<p
+						class={`mt-2 max-w-2xl whitespace-pre-wrap text-sm leading-6 ${headerMutedClass}`}
+					>
 						{data.event.description}
 					</p>
 				{/if}
@@ -200,7 +223,7 @@ const handleEnhance: SubmitFunction = () => {
 				-->
 
 				<div
-					class="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-muted-foreground text-xs"
+					class={`mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm ${headerMutedClass}`}
 				>
 					<span class="inline-flex items-center gap-1.5">
 						<CalendarIcon class="size-3.5" aria-hidden="true" />
@@ -214,7 +237,7 @@ const handleEnhance: SubmitFunction = () => {
 			</div>
 
 			<Button
-				variant="outline"
+				variant={headerIsLight ? "outline" : "secondary"}
 				size="sm"
 				class="self-start"
 				onclick={copyLink}

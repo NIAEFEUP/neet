@@ -11,6 +11,11 @@ export const actions = {
 		const endDateStr = data.get("endDate")?.toString().trim() ?? "";
 		const timezoneStr = data.get("timezone")?.toString().trim() ?? "";
 		const descriptionStr = data.get("description")?.toString().trim() ?? "";
+		const eventColorStr =
+			data.get("eventColor")?.toString().trim() ?? "#0a0a0a";
+		const eventColor = /^#[0-9a-f]{6}$/i.test(eventColorStr)
+			? eventColorStr
+			: "#0a0a0a";
 		const startHourStr = data.get("startHour")?.toString().trim() || null;
 		const startPeriodStr = data.get("startPeriod")?.toString().trim() || "AM";
 		const endHourStr = data.get("endHour")?.toString().trim() || null;
@@ -35,6 +40,7 @@ export const actions = {
 		const formData = {
 			title: titleStr,
 			description: descriptionStr,
+			eventColor,
 			startDate: startDateStr,
 			endDate: endDateStr,
 			startHour: startHourStr,
@@ -171,6 +177,6 @@ export const actions = {
 			});
 		}
 
-		redirect(303, `/e/${id}`);
+		redirect(303, `/e/${id}?color=${encodeURIComponent(eventColor)}`);
 	},
 } satisfies Actions;
