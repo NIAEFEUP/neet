@@ -237,7 +237,7 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 			<div class="absolute -top-4 -right-4 size-9">
 				<div
 					class={[
-						"absolute inset-0 transition-[transform,opacity] duration-200 ease-out motion-reduce:transition-[opacity]",
+						"absolute inset-0 transition-[scale,opacity] duration-200 ease-out motion-reduce:transition-[opacity]",
 						hasColor
 							? "pointer-events-none scale-90 opacity-0"
 							: "pointer-events-auto scale-100 opacity-100",
@@ -253,7 +253,7 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 						<input
 							type="color"
 							value={eventColor || "#0a0a0a"}
-							oninput={handleColorInput}
+							onchange={handleColorInput}
 							class="sr-only"
 						/>
 					</label>
@@ -261,10 +261,10 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 
 				<div
 					class={[
-						"absolute top-0 right-5 transition-[transform,opacity,filter] duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] motion-reduce:transition-[opacity]",
+						"absolute top-0 right-6 transition-[translate,scale,opacity,filter] duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] motion-reduce:transition-[opacity]",
 						hasColor
 							? "pointer-events-auto translate-x-0 translate-y-0 scale-100 opacity-100 blur-0"
-							: "pointer-events-none translate-x-5 translate-y-1 scale-90 opacity-0 blur-[2px]",
+							: "pointer-events-none translate-x-6 translate-y-1 scale-90 opacity-0 blur-[2px]",
 					]}
 					inert={!hasColor}
 				>
@@ -277,7 +277,7 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 						<input
 							type="color"
 							value={eventColor || "#0a0a0a"}
-							oninput={handleColorInput}
+							onchange={handleColorInput}
 							class="sr-only"
 						/>
 					</label>
@@ -289,10 +289,10 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 					onclick={() => (eventColor = "")}
 					inert={!hasColor}
 					class={[
-						"absolute top-5 right-0 z-10 flex size-6 cursor-pointer items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:text-foreground motion-reduce:transition-[opacity]",
+						"absolute top-6 right-0 z-10 flex size-6 cursor-pointer items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm transition-[translate,scale,opacity] duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:text-foreground motion-reduce:transition-[opacity]",
 						hasColor
 							? "pointer-events-auto translate-x-0 translate-y-0 scale-100 opacity-100"
-							: "pointer-events-none -translate-x-1.5 -translate-y-3.5 scale-75 opacity-0",
+							: "pointer-events-none -translate-x-1.5 -translate-y-[18px] scale-75 opacity-0",
 					]}
 				>
 					<XIcon class="size-3.5" aria-hidden="true" />
