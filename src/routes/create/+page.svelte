@@ -109,6 +109,13 @@ function setEventColor(next: string) {
 	if (next) lastEventColor = next;
 }
 
+let suppressHoverShadow = $state(false);
+
+function handleCornerAction() {
+	suppressHoverShadow = true;
+	setEventColor(hasColor ? "" : DEFAULT_EVENT_COLOR);
+}
+
 let eventTitle = $state(untrack(() => form?.title ?? ""));
 let eventDescription = $state(untrack(() => form?.description ?? ""));
 
@@ -281,8 +288,10 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 					type="button"
 					aria-label={hasColor ? "Remove block color" : "Add block color"}
 					title={hasColor ? "Remove block color" : "Add block color"}
-					onclick={() => setEventColor(hasColor ? "" : DEFAULT_EVENT_COLOR)}
+					onclick={handleCornerAction}
+					onpointerleave={() => (suppressHoverShadow = false)}
 					data-has-color={hasColor}
+					data-hover-shadow={suppressHoverShadow ? "off" : "on"}
 					class={[
 						"corner-action absolute inset-0 z-10 grid size-9 cursor-pointer place-items-center rounded-full border border-border bg-background text-muted-foreground shadow-md ring-1 ring-foreground/10 focus-visible:ring-2 focus-visible:ring-ring/50",
 						hasColor
@@ -463,7 +472,7 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 	.corner-action::after {
 		content: "";
 		position: absolute;
-		inset: 2px;
+		inset: 0;
 		border-radius: 9999px;
 		box-shadow: inset 0 0 8px rgb(0 0 0 / 0.08);
 		opacity: 0;
@@ -473,6 +482,10 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 
 	.corner-action:hover::after {
 		opacity: 1;
+	}
+
+	.corner-action[data-hover-shadow="off"]::after {
+		opacity: 0;
 	}
 
 	:global(.corner-icon) {
