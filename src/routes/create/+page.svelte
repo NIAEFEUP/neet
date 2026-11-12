@@ -460,26 +460,15 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 			scale 260ms var(--corner-out);
 	}
 
-	.corner-action::before {
-		content: "";
-		position: absolute;
-		inset: 0;
-		border-radius: 9999px;
-		box-shadow:
-			inset 0 1px 2px rgb(0 0 0 / 0.06),
-			inset 0 -1px 1px rgb(255 255 255 / 0.7);
-		pointer-events: none;
-	}
-
 	.corner-action::after {
 		content: "";
 		position: absolute;
-		inset: 0;
+		inset: 2px;
 		border-radius: 9999px;
-		box-shadow: inset 0 2px 5px rgb(0 0 0 / 0.1);
+		box-shadow: inset 0 0 8px rgb(0 0 0 / 0.08);
 		opacity: 0;
 		pointer-events: none;
-		transition: opacity 200ms cubic-bezier(0.23, 1, 0.32, 1);
+		transition: opacity 280ms cubic-bezier(0.4, 0, 0.2, 1);
 	}
 
 	.corner-action:hover::after {
