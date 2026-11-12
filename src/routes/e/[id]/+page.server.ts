@@ -29,13 +29,8 @@ export const load: PageServerLoad = async ({ params, cookies, url }) => {
 
 	const dates = event.proposedDates.map((date) => date.toString());
 	const cookieId = cookies.get(participantCookie(event.id));
-	const colorParam = url.searchParams.get("color");
-	const color =
-		colorParam === null
-			? "#0a0a0a"
-			: /^#[0-9a-f]{6}$/i.test(colorParam)
-				? colorParam
-				: "";
+	const colorParam = url.searchParams.get("color") ?? "";
+	const color = /^#[0-9a-f]{6}$/i.test(colorParam) ? colorParam : "";
 
 	// Every response is public, so load them all in one pass: one participant
 	// query and one availability query, then group the ranges by participant.

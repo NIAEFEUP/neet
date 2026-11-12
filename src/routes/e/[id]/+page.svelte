@@ -209,8 +209,8 @@ const handleEnhance: SubmitFunction = () => {
 			<div class="min-w-0">
 				<h1
 					class={headerHasColor
-						? `break-words font-semibold text-2xl tracking-tight sm:text-3xl ${headerTitleClass}`
-						: "break-words font-semibold text-4xl text-foreground tracking-tight sm:text-5xl"}
+						? `-ml-[0.04em] break-words font-semibold text-2xl tracking-tight sm:text-3xl ${headerTitleClass}`
+						: "-ml-[0.04em] break-words font-semibold text-4xl text-foreground tracking-tight sm:text-5xl"}
 				>
 					{data.event.title}
 				</h1>
