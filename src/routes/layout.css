@@ -2,6 +2,15 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * bits-ui exposes orientation as `data-orientation`, while the shadcn
+ * utilities for separators and button groups are written for
+ * `data-horizontal` / `data-vertical`. Map the two so those components lay
+ * out correctly.
+ */
+@custom-variant data-horizontal (&[data-orientation="horizontal"]);
+@custom-variant data-vertical (&[data-orientation="vertical"]);
+
 :root {
 	--background: oklch(1 0 0);
 	--foreground: oklch(0.1452 0.0082 325.9918);

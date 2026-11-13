@@ -3,6 +3,11 @@ import { Temporal } from "temporal-polyfill";
 import { db } from "../../prisma/db";
 import type { Actions } from "./$types";
 
+/** A daily window starts on an hour between 00:00 and 23:00. */
+const START_TIME_PATTERN = /^([01]\d|2[0-3]):00$/;
+/** The end boundary is exclusive, so 24:00 means midnight at the end of the day. */
+const END_TIME_PATTERN = /^([01]\d|2[0-3]|24):00$/;
+
 export const actions = {
 	default: async ({ request }) => {
 		const data = await request.formData();
@@ -16,26 +21,8 @@ export const actions = {
 			eventColorStr === "" || /^#[0-9a-f]{6}$/i.test(eventColorStr)
 				? eventColorStr
 				: "";
-		const startHourStr = data.get("startHour")?.toString().trim() || null;
-		const startPeriodStr = data.get("startPeriod")?.toString().trim() || "AM";
-		const endHourStr = data.get("endHour")?.toString().trim() || null;
-		const endPeriodStr = data.get("endPeriod")?.toString().trim() || "AM";
-
-		let startTimeStr: string | null = null;
-		if (startHourStr) {
-			let h = Number.parseInt(startHourStr, 10);
-			if (startPeriodStr === "PM" && h < 12) h += 12;
-			if (startPeriodStr === "AM" && h === 12) h = 0;
-			startTimeStr = `${h.toString().padStart(2, "0")}:00`;
-		}
-
-		let endTimeStr: string | null = null;
-		if (endHourStr) {
-			let h = Number.parseInt(endHourStr, 10);
-			if (endPeriodStr === "PM" && h < 12) h += 12;
-			if (endPeriodStr === "AM" && h === 12) h = 0;
-			endTimeStr = `${h.toString().padStart(2, "0")}:00`;
-		}
+		const startTimeStr = data.get("startTime")?.toString().trim() || null;
+		const endTimeStr = data.get("endTime")?.toString().trim() || null;
 
 		const formData = {
 			title: titleStr,
@@ -43,10 +30,8 @@ export const actions = {
 			eventColor,
 			startDate: startDateStr,
 			endDate: endDateStr,
-			startHour: startHourStr,
-			startPeriod: startPeriodStr,
-			endHour: endHourStr,
-			endPeriod: endPeriodStr,
+			startTime: startTimeStr,
+			endTime: endTimeStr,
 			timezone: timezoneStr,
 		};
 
@@ -105,8 +90,8 @@ export const actions = {
 		}
 
 		if (
-			(startTimeStr && !startTimeStr.endsWith(":00")) ||
-			(endTimeStr && !endTimeStr.endsWith(":00"))
+			(startTimeStr && !START_TIME_PATTERN.test(startTimeStr)) ||
+			(endTimeStr && !END_TIME_PATTERN.test(endTimeStr))
 		) {
 			return fail(400, {
 				...formData,
