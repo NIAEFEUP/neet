@@ -276,7 +276,9 @@ function moveBlockDrag(event: PointerEvent) {
 		}
 
 		preview = { start: shown, end: current.endHour };
-		setWindow(rawStart, current.endHour, true);
+		// Keep the opposite edge fixed: an overdragged start must not push the
+		// committed end forward and turn the gesture into a range shift.
+		setWindow(Math.min(rawStart, current.endHour - 1), current.endHour, true);
 	} else {
 		const rawEnd = current.endHour + deltaHours;
 		const minEnd = current.startHour + 1;
@@ -289,7 +291,8 @@ function moveBlockDrag(event: PointerEvent) {
 		}
 
 		preview = { start: current.startHour, end: shown };
-		setWindow(current.startHour, rawEnd, true);
+		// Same for the end edge: clamp against the start instead of moving it.
+		setWindow(current.startHour, Math.max(rawEnd, current.startHour + 1), true);
 	}
 }
 
