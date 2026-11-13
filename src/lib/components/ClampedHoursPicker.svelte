@@ -24,7 +24,7 @@ const MAX_HOUR = 24;
 const TRACK_INSET = 6;
 const EDGE_PX = 30;
 /** Below this width the block splits into two halves: resize start / resize end. */
-const SMALL_BLOCK_PX = 24;
+const SMALL_BLOCK_PX = 20;
 const AXIS_LABELS = [0, 6, 12, 18, 24];
 
 const MOVE_PINCH_WIDTH = 64;
@@ -56,6 +56,7 @@ let shownDuration = $derived(shownEnd - shownStart);
 let shownIsWholeDay = $derived(
 	shownStart <= 0.001 && shownEnd >= MAX_HOUR - 0.001,
 );
+let isTightWindow = $derived(shownDuration <= 2);
 
 let trackEl = $state<HTMLElement | null>(null);
 let blockEl = $state<HTMLElement | null>(null);
@@ -465,7 +466,8 @@ function reset() {
 			<!-- The grips are the keyboard surface for the two ends. They sit inside
 			     the block so the visible handle and the accessible handle are one. -->
 			<span
-				class="grip-bar-start absolute top-1/2 left-[min(3px,20%)] z-10 h-4 w-[3px] -translate-y-1/2 cursor-ew-resize touch-pan-y rounded-full bg-background/35 transition-[width,height,background-color,box-shadow] duration-150 hover:w-[4px] hover:bg-background/60 focus-visible:w-[4px] focus-visible:bg-background/80 focus-visible:ring-2 focus-visible:ring-background/40 focus-visible:outline-none"
+				class="grip-bar-start absolute top-1/2 left-[min(3px,20%)] z-10 h-4 w-[3px] -translate-y-1/2 cursor-ew-resize touch-pan-y rounded-full bg-background/35 transition-[left,right,translate,width,height,background-color] duration-150 hover:w-[4px] hover:bg-background/60 focus-visible:w-[4px] focus-visible:bg-background/80 focus-visible:ring-2 focus-visible:ring-background/40 focus-visible:outline-none"
+				data-tight={isTightWindow ? "true" : undefined}
 				role="slider"
 				tabindex="0"
 				aria-label="Daily start time"
@@ -477,7 +479,8 @@ function reset() {
 				onkeydown={(event) => handleGripKeyDown(event, "start")}
 			></span>
 			<span
-				class="grip-bar-end absolute top-1/2 right-[min(3px,20%)] z-10 h-4 w-[3px] -translate-y-1/2 cursor-ew-resize touch-pan-y rounded-full bg-background/35 transition-[width,height,background-color,box-shadow] duration-150 hover:w-[4px] hover:bg-background/60 focus-visible:w-[4px] focus-visible:bg-background/80 focus-visible:ring-2 focus-visible:ring-background/40 focus-visible:outline-none"
+				class="grip-bar-end absolute top-1/2 right-[min(3px,20%)] z-10 h-4 w-[3px] -translate-y-1/2 cursor-ew-resize touch-pan-y rounded-full bg-background/35 transition-[left,right,translate,width,height,background-color] duration-150 hover:w-[4px] hover:bg-background/60 focus-visible:w-[4px] focus-visible:bg-background/80 focus-visible:ring-2 focus-visible:ring-background/40 focus-visible:outline-none"
+				data-tight={isTightWindow ? "true" : undefined}
 				role="slider"
 				tabindex="0"
 				aria-label="Daily end time"
@@ -555,6 +558,25 @@ function reset() {
 		scale: 0.985 0.92;
 		will-change: left, width, scale;
 		transition: scale 150ms var(--ease-out);
+	}
+
+	/* At one or two hours the handles sit half over the edge. The full
+	   background plus a hairline outline keeps them legible on both the dark
+	   block and the light track. */
+	.grip-bar-start[data-tight="true"] {
+		left: 0;
+		width: 5px;
+		translate: -50% -50%;
+		background-color: var(--background);
+		outline: 1px solid color-mix(in oklab, var(--foreground) 20%, transparent);
+	}
+
+	.grip-bar-end[data-tight="true"] {
+		right: 0;
+		width: 5px;
+		translate: 50% -50%;
+		background-color: var(--background);
+		outline: 1px solid color-mix(in oklab, var(--foreground) 20%, transparent);
 	}
 
 	.clamped-block[data-mode="start"] .grip-bar-start,
