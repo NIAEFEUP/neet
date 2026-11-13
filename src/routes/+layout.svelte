@@ -22,8 +22,8 @@ const isHome = $derived(page.route.id === "/");
 <!-- §7 mobile-native: safe-area-inset-top handled via padding -->
 {#if !isHome}
 <header
-	class="sticky top-0 z-40 h-12 border-b border-[#e8e8e8] bg-white/90 backdrop-blur-sm"
-	style="padding-top: env(safe-area-inset-top, 0px);"
+	class="sticky top-0 z-40 border-b border-[#e8e8e8] bg-white/90 backdrop-blur-sm"
+	style="height: calc(3rem + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px);"
 >
 	<div class="mx-auto flex h-full w-full max-w-[1200px] items-center justify-between px-4 sm:px-6">
 		<a
@@ -59,7 +59,10 @@ const isHome = $derived(page.route.id === "/");
 <main
 	id="main-content"
 	tabindex="-1"
-	class={isHome ? "home-main" : "min-h-[calc(100dvh-3rem)]"}
+	class={isHome ? "home-main" : undefined}
+	style:min-height={isHome
+		? undefined
+		: "calc(100dvh - 3rem - env(safe-area-inset-top, 0px))"}
 	style:padding-bottom={isHome ? undefined : "env(safe-area-inset-bottom, 0px)"}
 >
 	{@render children()}
