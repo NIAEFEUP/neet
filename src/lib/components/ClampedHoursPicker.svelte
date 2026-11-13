@@ -23,6 +23,9 @@ const TRACK_INSET = 6;
 const EDGE_PX = 30;
 const AXIS_LABELS = [0, 6, 12, 18, 24];
 
+const MOVE_PINCH_WIDTH = 64;
+const MOVE_PINCH_DEPTH = 2;
+
 /** How far a drag may stretch past a bound, in hours, before it stops. */
 const MOVE_OVERSHOOT = 0.4;
 const RESIZE_OVERSHOOT = 0.8;
@@ -120,6 +123,10 @@ type Drag = {
 let drag = $state<Drag | null>(null);
 /** The point the block pinches toward while pressed. */
 let squeezeOrigin = $state("50% 50%");
+/** The whole-window pinch follows the point where the block was picked up. */
+let pinchLeft = $state("50%");
+let pinchWidth = $state(MOVE_PINCH_WIDTH);
+let pinchDepth = $state(MOVE_PINCH_DEPTH);
 
 function usableWidth() {
 	const track = trackEl;
@@ -156,6 +163,12 @@ function beginBlockDrag(event: PointerEvent) {
 	const mode: Mode =
 		x <= edge ? "start" : x >= rect.width - edge ? "end" : "move";
 	const grabPercent = clamp((x / rect.width) * 100, 0, 100);
+
+	if (mode === "move") {
+		pinchLeft = `${grabPercent}%`;
+		pinchWidth = Math.min(MOVE_PINCH_WIDTH, 2 * Math.min(x, rect.width - x));
+		pinchDepth = MOVE_PINCH_DEPTH;
+	}
 
 	squeezeOrigin =
 		mode === "start"
@@ -358,7 +371,7 @@ function reset() {
 		<div
 			{@attach blockAttachment}
 			class={[
-				"clamped-block absolute top-[5px] bottom-[5px] flex items-center overflow-hidden rounded-[16px] bg-foreground text-background shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] [corner-shape:squircle]",
+				"clamped-block absolute top-[5px] bottom-[5px] flex items-center rounded-[16px] bg-foreground text-background shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] [corner-shape:squircle]",
 				{ "is-dragging": drag !== null },
 			]}
 			style:left={blockLeft}
@@ -381,6 +394,43 @@ function reset() {
 				class="absolute inset-y-0 right-0 z-0 w-[min(30px,33%)] cursor-ew-resize touch-pan-y"
 				aria-hidden="true"
 			></span>
+
+			<!-- Two rounded indents for a whole-window drag, painted in the
+			     track colour. They follow the point where the block was picked up. -->
+			<span
+				class={["pinch pinch-top", { "is-active": drag?.mode === "move" }]}
+				style:left={pinchLeft}
+				style:top={`${-pinchDepth}px`}
+				style:width={`${pinchWidth}px`}
+				style:height={`${pinchDepth * 2}px`}
+				aria-hidden="true"
+			>
+				<svg
+					viewBox="0 0 100 10"
+					preserveAspectRatio="none"
+					class="size-full"
+					aria-hidden="true"
+				>
+					<path d="M0 0H100V5C83 5 67 10 50 10C33 10 17 5 0 5Z" fill="currentColor" />
+				</svg>
+			</span>
+			<span
+				class={["pinch pinch-bottom", { "is-active": drag?.mode === "move" }]}
+				style:left={pinchLeft}
+				style:bottom={`${-pinchDepth}px`}
+				style:width={`${pinchWidth}px`}
+				style:height={`${pinchDepth * 2}px`}
+				aria-hidden="true"
+			>
+				<svg
+					viewBox="0 0 100 10"
+					preserveAspectRatio="none"
+					class="size-full rotate-180"
+					aria-hidden="true"
+				>
+					<path d="M0 0H100V5C83 5 67 10 50 10C33 10 17 5 0 5Z" fill="currentColor" />
+				</svg>
+			</span>
 
 			{#if shownIsWholeDay}
 				<span
@@ -478,7 +528,7 @@ function reset() {
 		transition:
 			left 200ms var(--ease-out),
 			width 200ms var(--ease-out),
-			scale 180ms var(--ease-out);
+			scale 150ms var(--ease-out);
 	}
 
 	.clamped-block[data-mode="start"],
@@ -493,7 +543,7 @@ function reset() {
 	.clamped-block.is-dragging {
 		scale: 0.985 0.92;
 		will-change: left, width, scale;
-		transition: scale 140ms var(--ease-out);
+		transition: scale 150ms var(--ease-out);
 	}
 
 	.clamped-block[data-mode="start"] .grip-bar-start,
@@ -503,9 +553,28 @@ function reset() {
 		background-color: color-mix(in oklab, var(--background) 80%, transparent);
 	}
 
+	.pinch {
+		position: absolute;
+		z-index: 0;
+		translate: -50% 0;
+		color: var(--muted);
+		pointer-events: none;
+		opacity: 0;
+		scale: 0.55 0.4;
+		transition:
+			opacity 150ms var(--ease-out),
+			scale 150ms var(--ease-out);
+	}
+
+	.pinch.is-active {
+		opacity: 1;
+		scale: 1 1;
+	}
+
 	@media (prefers-reduced-motion: reduce) {
 		.clamped-block,
-		.clamped-block.is-dragging {
+		.clamped-block.is-dragging,
+		.pinch {
 			transition: none;
 		}
 	}
