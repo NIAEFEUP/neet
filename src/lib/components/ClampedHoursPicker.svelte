@@ -14,7 +14,7 @@ interface Props {
 }
 
 let {
-	value = $bindable([0, 24]),
+	value = $bindable([9, 17]),
 	showHeader = true,
 	submit = true,
 	class: className,
@@ -23,6 +23,8 @@ let {
 const MAX_HOUR = 24;
 const TRACK_INSET = 6;
 const EDGE_PX = 30;
+/** Below this width the block splits into two halves: resize start / resize end. */
+const SMALL_BLOCK_PX = 20;
 const AXIS_LABELS = [0, 6, 12, 18, 24];
 
 const MOVE_PINCH_WIDTH = 64;
@@ -54,7 +56,7 @@ let shownDuration = $derived(shownEnd - shownStart);
 let shownIsWholeDay = $derived(
 	shownStart <= 0.001 && shownEnd >= MAX_HOUR - 0.001,
 );
-let showValues = $derived(!shownIsWholeDay && shownDuration >= 5);
+let isTightWindow = $derived(shownDuration <= 2);
 
 let trackEl = $state<HTMLElement | null>(null);
 let blockEl = $state<HTMLElement | null>(null);
@@ -163,7 +165,10 @@ function beginBlockDrag(event: PointerEvent) {
 
 	const rect = block.getBoundingClientRect();
 	const x = event.clientX - rect.left;
-	const edge = Math.min(EDGE_PX, rect.width / 3);
+	const edge =
+		rect.width < SMALL_BLOCK_PX
+			? rect.width / 2
+			: Math.min(EDGE_PX, rect.width / 3);
 	const mode: Mode =
 		x <= edge ? "start" : x >= rect.width - edge ? "end" : "move";
 	const grabPercent = clamp((x / rect.width) * 100, 0, 100);
@@ -192,6 +197,13 @@ function beginBlockDrag(event: PointerEvent) {
 		usableWidth: width,
 		moved: false,
 	};
+
+	if (mode !== "move") {
+		const grip = block.querySelector<HTMLElement>(
+			mode === "start" ? ".grip-bar-start" : ".grip-bar-end",
+		);
+		grip?.focus({ preventScroll: true });
+	}
 
 	try {
 		block.setPointerCapture(event.pointerId);
@@ -338,7 +350,7 @@ function reset() {
 
 <div class={cn("space-y-2.5", className)}>
 	{#if showHeader}
-		<div class="flex min-h-5 items-center justify-between gap-3">
+		<div class="flex min-h-6 items-center justify-between gap-3">
 			<p class="text-sm font-medium">Daily hours</p>
 			{#if !isWholeDay}
 				<div class="flex items-center gap-2.5">
@@ -438,19 +450,13 @@ function reset() {
 				</span>
 			{:else}
 				<span
-					class={[
-						"pointer-events-none absolute inset-y-0 left-4 flex items-center text-[11px] font-medium tabular-nums transition-opacity duration-150",
-						{ "opacity-0": !showValues },
-					]}
+					class="pointer-events-none block-label absolute inset-y-0 left-4 flex items-center text-[11px] font-medium tabular-nums transition-opacity duration-150"
 					aria-hidden="true"
 				>
 					{formatHour(start)}
 				</span>
 				<span
-					class={[
-						"pointer-events-none absolute inset-y-0 right-4 flex items-center text-[11px] font-medium tabular-nums transition-opacity duration-150",
-						{ "opacity-0": !showValues },
-					]}
+					class="pointer-events-none block-label absolute inset-y-0 right-4 flex items-center text-[11px] font-medium tabular-nums transition-opacity duration-150"
 					aria-hidden="true"
 				>
 					{formatHour(end)}
@@ -460,7 +466,8 @@ function reset() {
 			<!-- The grips are the keyboard surface for the two ends. They sit inside
 			     the block so the visible handle and the accessible handle are one. -->
 			<span
-				class="group/start absolute inset-y-0 left-0 z-10 flex w-6 cursor-ew-resize touch-pan-y items-center pl-1 focus-visible:outline-none"
+				class="grip-bar-start absolute top-1/2 left-[min(3px,20%)] z-10 h-4 w-[3px] -translate-y-1/2 cursor-ew-resize touch-pan-y rounded-full bg-background/35 transition-[left,right,translate,width,height,background-color] duration-150 hover:w-[4px] hover:bg-background/60 focus-visible:w-[4px] focus-visible:bg-background/80 focus-visible:ring-2 focus-visible:ring-background/40 focus-visible:outline-none"
+				data-tight={isTightWindow ? "true" : undefined}
 				role="slider"
 				tabindex="0"
 				aria-label="Daily start time"
@@ -470,14 +477,10 @@ function reset() {
 				aria-valuenow={start}
 				aria-valuetext={formatHour(start)}
 				onkeydown={(event) => handleGripKeyDown(event, "start")}
-			>
-				<span
-					class="grip-bar-start h-4 w-[3px] rounded-full bg-background/35 transition-[width,height,background-color,box-shadow] duration-150 group-hover/start:w-[4px] group-hover/start:bg-background/60 group-focus-visible/start:w-[4px] group-focus-visible/start:bg-background/80 group-focus-visible/start:ring-2 group-focus-visible/start:ring-background/40"
-					aria-hidden="true"
-				></span>
-			</span>
+			></span>
 			<span
-				class="group/end absolute inset-y-0 right-0 z-10 flex w-6 cursor-ew-resize touch-pan-y items-center justify-end pr-1 focus-visible:outline-none"
+				class="grip-bar-end absolute top-1/2 right-[min(3px,20%)] z-10 h-4 w-[3px] -translate-y-1/2 cursor-ew-resize touch-pan-y rounded-full bg-background/35 transition-[left,right,translate,width,height,background-color] duration-150 hover:w-[4px] hover:bg-background/60 focus-visible:w-[4px] focus-visible:bg-background/80 focus-visible:ring-2 focus-visible:ring-background/40 focus-visible:outline-none"
+				data-tight={isTightWindow ? "true" : undefined}
 				role="slider"
 				tabindex="0"
 				aria-label="Daily end time"
@@ -487,12 +490,7 @@ function reset() {
 				aria-valuenow={end}
 				aria-valuetext={formatHour(end)}
 				onkeydown={(event) => handleGripKeyDown(event, "end")}
-			>
-				<span
-					class="grip-bar-end h-4 w-[3px] rounded-full bg-background/35 transition-[width,height,background-color,box-shadow] duration-150 group-hover/end:w-[4px] group-hover/end:bg-background/60 group-focus-visible/end:w-[4px] group-focus-visible/end:bg-background/80 group-focus-visible/end:ring-2 group-focus-visible/end:ring-background/40"
-					aria-hidden="true"
-				></span>
-			</span>
+			></span>
 		</div>
 	</div>
 
@@ -521,12 +519,30 @@ function reset() {
 
 <style>
 	.clamped-block {
+		container-type: inline-size;
 		touch-action: pan-y;
 		cursor: grab;
 		transition:
 			left 200ms var(--ease-out),
 			width 200ms var(--ease-out),
 			scale 150ms var(--ease-out);
+	}
+
+	/* A small window still needs a comfortable grab area. The visual block
+	   stays true to the time scale; this only enlarges the hit surface. */
+	.clamped-block::before {
+		position: absolute;
+		content: "";
+		inset: -4px -12px;
+		touch-action: pan-y;
+	}
+
+	.grip-bar-start::before,
+	.grip-bar-end::before {
+		position: absolute;
+		content: "";
+		inset: -6px -10px;
+		touch-action: pan-y;
 	}
 
 	.clamped-block[data-mode="start"],
@@ -542,6 +558,25 @@ function reset() {
 		scale: 0.985 0.92;
 		will-change: left, width, scale;
 		transition: scale 150ms var(--ease-out);
+	}
+
+	/* At one or two hours the handles sit half over the edge. The full
+	   background plus a hairline outline keeps them legible on both the dark
+	   block and the light track. */
+	.grip-bar-start[data-tight="true"] {
+		left: 0;
+		width: 5px;
+		translate: -50% -50%;
+		background-color: var(--background);
+		outline: 1px solid color-mix(in oklab, var(--foreground) 20%, transparent);
+	}
+
+	.grip-bar-end[data-tight="true"] {
+		right: 0;
+		width: 5px;
+		translate: 50% -50%;
+		background-color: var(--background);
+		outline: 1px solid color-mix(in oklab, var(--foreground) 20%, transparent);
 	}
 
 	.clamped-block[data-mode="start"] .grip-bar-start,
@@ -567,6 +602,15 @@ function reset() {
 	.pinch.is-active {
 		opacity: 1;
 		scale: 1 1;
+	}
+
+	/* Hide the edge labels as soon as the window is too narrow for them,
+	   regardless of device width. This is a width query, not a duration guess. */
+	@container (max-width: 104px) {
+		.block-label {
+			opacity: 0;
+			transition: none;
+		}
 	}
 
 	@media (prefers-reduced-motion: reduce) {

@@ -58,7 +58,9 @@ function initialTimeWindow(): number[] {
 		return [start, end];
 	}
 
-	return [0, 24];
+	// A fresh form starts at the working-day default. A failed submission
+	// with empty times was deliberately "Any time", so preserve that.
+	return form ? [0, 24] : [9, 17];
 }
 
 function initialEventColor() {
