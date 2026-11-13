@@ -124,15 +124,15 @@ let blockWidth = $derived(
 	`calc((100% - ${TRACK_INSET * 2}px) * ${shownDuration / MAX_HOUR})`,
 );
 /**
- * The rail stays put until the pill fills its resting inset, then follows the
- * pill 1:1. The pill can never escape the track, and the rail only grows by the
- * part of the overshoot that would have crossed its edge.
+ * The rail follows the pill's full overshoot so the pill keeps its resting
+ * inset on every side. The extension uses the same rubber-band preview as the
+ * pill, so it also eases to a stop instead of hitting a wall.
  */
 let railLeft = $derived(
-	`calc(min(0px, ${TRACK_INSET}px - (100% - ${TRACK_INSET * 2}px) * ${Math.max(0, -shownStart) / MAX_HOUR}))`,
+	`calc(0px - (100% - ${TRACK_INSET * 2}px) * ${Math.max(0, -shownStart) / MAX_HOUR})`,
 );
 let railRight = $derived(
-	`calc(min(0px, ${TRACK_INSET}px - (100% - ${TRACK_INSET * 2}px) * ${Math.max(0, shownEnd - MAX_HOUR) / MAX_HOUR}))`,
+	`calc(0px - (100% - ${TRACK_INSET * 2}px) * ${Math.max(0, shownEnd - MAX_HOUR) / MAX_HOUR})`,
 );
 
 type Mode = "move" | "start" | "end";
@@ -155,6 +155,43 @@ let squeezeOrigin = $state("50% 50%");
 let pinchLeft = $state("50%");
 let pinchWidth = $state(MOVE_PINCH_WIDTH);
 let pinchDepth = $state(MOVE_PINCH_DEPTH);
+
+/**
+ * 0 while the drag is free, approaching 1 as the rubber band saturates.
+ * The pressed scale eases back to its resting size with it, so the pill looks
+ * like it does at rest once it can no longer move.
+ */
+let dragResistance = $derived.by(() => {
+	const current = drag;
+	if (!current || !preview) return 0;
+
+	let overshoot = 0;
+	let limit = 1;
+
+	if (current.mode === "move") {
+		const maxStart = MAX_HOUR - (current.endHour - current.startHour);
+		overshoot = Math.max(0, -shownStart, shownStart - maxStart);
+		limit = MOVE_RUBBER_BAND;
+	} else if (current.mode === "start") {
+		const outer = Math.max(0, -shownStart);
+		const inner = Math.max(0, shownStart - (current.endHour - 1));
+		overshoot = Math.max(outer, inner);
+		limit = outer > 0 ? RESIZE_RUBBER_BAND : INNER_RUBBER_BAND;
+	} else {
+		const outer = Math.max(0, shownEnd - MAX_HOUR);
+		const inner = Math.max(0, current.startHour + 1 - shownEnd);
+		overshoot = Math.max(outer, inner);
+		limit = outer > 0 ? RESIZE_RUBBER_BAND : INNER_RUBBER_BAND;
+	}
+
+	return clamp(overshoot / limit, 0, 1);
+});
+
+let dragScale = $derived(
+	drag
+		? `${0.985 + 0.015 * dragResistance} ${0.92 + 0.08 * dragResistance}`
+		: undefined,
+);
 
 function usableWidth() {
 	const track = trackEl;
@@ -429,6 +466,7 @@ function reset() {
 			]}
 			style:left={blockLeft}
 			style:width={blockWidth}
+			style:scale={dragScale}
 			style:transform-origin={squeezeOrigin}
 			data-mode={drag?.mode}
 			role="presentation"
@@ -608,7 +646,6 @@ function reset() {
 	}
 
 	.clamped-block.is-dragging {
-		scale: 0.985 0.92;
 		will-change: left, width, scale;
 		transition: scale 150ms var(--ease-out);
 	}
