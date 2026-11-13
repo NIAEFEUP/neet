@@ -14,7 +14,7 @@ interface Props {
 }
 
 let {
-	value = $bindable([0, 24]),
+	value = $bindable([9, 17]),
 	showHeader = true,
 	submit = true,
 	class: className,
