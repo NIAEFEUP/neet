@@ -202,7 +202,18 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 		<p class="mb-6 text-sm text-destructive" role="alert">{form.message}</p>
 	{/if}
 
-	<form method="POST" use:enhance={handleEnhance} class="space-y-8">
+	<form
+		method="POST"
+		use:enhance={handleEnhance}
+		class="space-y-8"
+		style:--primary={hasColor ? eventColor : undefined}
+		style:--primary-foreground={hasColor
+			? previewIsLight
+				? "var(--foreground)"
+				: "var(--background)"
+			: undefined}
+		style:--accent="color-mix(in oklab, var(--primary) 18%, var(--background))"
+	>
 		<input type="hidden" name="eventColor" value={eventColor} />
 		<input type="hidden" name="startDate" value={range.start?.toString() ?? ""} />
 		<input type="hidden" name="endDate" value={range.end?.toString() ?? ""} />
