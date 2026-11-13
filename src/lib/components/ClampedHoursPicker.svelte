@@ -1,4 +1,5 @@
 <script lang="ts">
+import { Button } from "$lib/components/ui/button";
 import { hapticTap, hapticTick } from "$lib/haptics";
 import { cn } from "$lib/utils.js";
 import { formatHour } from "./time-grid/date-utils";
@@ -344,13 +345,15 @@ function reset() {
 					<span class="tabular-nums text-sm font-medium text-foreground">
 						{formatHour(start)} – {formatHour(end)}
 					</span>
-					<button
+					<Button
 						type="button"
+						variant="ghost"
+						size="xs"
 						onclick={reset}
-						class="cursor-pointer rounded-md px-1.5 py-0.5 text-xs font-medium text-muted-foreground transition-[background-color,color,transform] duration-150 ease-[var(--ease-out)] hover:bg-muted hover:text-foreground active:scale-95"
+						class="text-muted-foreground"
 					>
 						Reset
-					</button>
+					</Button>
 				</div>
 			{/if}
 		</div>
