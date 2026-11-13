@@ -21,7 +21,7 @@ let {
 }: Props = $props();
 
 const MAX_HOUR = 24;
-const TRACK_INSET = 16;
+const TRACK_INSET = 6;
 const EDGE_PX = 30;
 /** Below this width the block splits into two halves: resize start / resize end. */
 const SMALL_BLOCK_PX = 20;
@@ -122,6 +122,17 @@ let blockLeft = $derived(
 );
 let blockWidth = $derived(
 	`calc((100% - ${TRACK_INSET * 2}px) * ${shownDuration / MAX_HOUR})`,
+);
+/**
+ * The rail stays put until the pill fills its resting inset, then follows the
+ * pill 1:1. The pill can never escape the track, and the rail only grows by the
+ * part of the overshoot that would have crossed its edge.
+ */
+let railLeft = $derived(
+	`calc(min(0px, ${TRACK_INSET}px - (100% - ${TRACK_INSET * 2}px) * ${Math.max(0, -shownStart) / MAX_HOUR}))`,
+);
+let railRight = $derived(
+	`calc(min(0px, ${TRACK_INSET}px - (100% - ${TRACK_INSET * 2}px) * ${Math.max(0, shownEnd - MAX_HOUR) / MAX_HOUR}))`,
 );
 
 type Mode = "move" | "start" | "end";
@@ -396,11 +407,20 @@ function reset() {
 
 	<div
 		{@attach trackAttachment}
-		class="relative h-12 w-full cursor-pointer select-none overflow-hidden rounded-[21px] bg-muted ring-1 ring-foreground/5 [corner-shape:squircle]"
+		class="relative h-12 w-full cursor-pointer select-none"
 		role="group"
 		aria-label="Daily hours"
 		onpointerdown={handleTrackPointerDown}
 	>
+		<div
+			class={[
+				"rail pointer-events-none absolute inset-y-0 rounded-[21px] bg-muted ring-1 ring-foreground/5 [corner-shape:squircle]",
+				{ "is-dragging": drag !== null },
+			]}
+			style:left={railLeft}
+			style:right={railRight}
+			aria-hidden="true"
+		></div>
 		<div
 			{@attach blockAttachment}
 			class={[
@@ -518,7 +538,7 @@ function reset() {
 	</div>
 
 	<div
-		class="flex justify-between px-4 text-[10px] tabular-nums text-muted-foreground/70"
+		class="flex justify-between px-1 text-[10px] tabular-nums text-muted-foreground/70"
 		aria-hidden="true"
 	>
 		{#each AXIS_LABELS as hour (hour)}
@@ -541,6 +561,16 @@ function reset() {
 </div>
 
 <style>
+	.rail {
+		transition:
+			left 200ms var(--ease-out),
+			right 200ms var(--ease-out);
+	}
+
+	.rail.is-dragging {
+		transition: none;
+	}
+
 	.clamped-block {
 		container-type: inline-size;
 		touch-action: pan-y;
@@ -637,6 +667,7 @@ function reset() {
 	}
 
 	@media (prefers-reduced-motion: reduce) {
+		.rail,
 		.clamped-block,
 		.clamped-block.is-dragging,
 		.pinch {
