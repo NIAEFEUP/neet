@@ -21,7 +21,7 @@ let {
 }: Props = $props();
 
 const MAX_HOUR = 24;
-const TRACK_INSET = 6;
+const TRACK_INSET = 16;
 const EDGE_PX = 30;
 /** Below this width the block splits into two halves: resize start / resize end. */
 const SMALL_BLOCK_PX = 20;
@@ -396,7 +396,7 @@ function reset() {
 
 	<div
 		{@attach trackAttachment}
-		class="relative h-12 w-full cursor-pointer select-none rounded-[21px] bg-muted ring-1 ring-foreground/5 [corner-shape:squircle]"
+		class="relative h-12 w-full cursor-pointer select-none overflow-hidden rounded-[21px] bg-muted ring-1 ring-foreground/5 [corner-shape:squircle]"
 		role="group"
 		aria-label="Daily hours"
 		onpointerdown={handleTrackPointerDown}
@@ -518,7 +518,7 @@ function reset() {
 	</div>
 
 	<div
-		class="flex justify-between px-1 text-[10px] tabular-nums text-muted-foreground/70"
+		class="flex justify-between px-4 text-[10px] tabular-nums text-muted-foreground/70"
 		aria-hidden="true"
 	>
 		{#each AXIS_LABELS as hour (hour)}
