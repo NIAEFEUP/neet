@@ -30,12 +30,16 @@ const AXIS_LABELS = [0, 6, 12, 18, 24];
 const MOVE_PINCH_WIDTH = 64;
 const MOVE_PINCH_DEPTH = 2;
 
-/** How far a drag may stretch past a bound, in hours, before it stops. */
-const MOVE_OVERSHOOT = 0.4;
-const RESIZE_OVERSHOOT = 0.8;
-const EDGE_RESISTANCE = 0.25;
-/** Keep a resized edge from collapsing into the other one while it stretches. */
-const MIN_PREVIEW_DURATION = 0.2;
+/**
+ * Asymptotic visual overshoot, in hours. The preview approaches these limits
+ * but never reaches them, so a drag never hits a hard wall.
+ */
+const MOVE_RUBBER_BAND = 0.6;
+const RESIZE_RUBBER_BAND = 0.8;
+/** How far a 1h window can visibly compress while the committed min stays 1h. */
+const INNER_RUBBER_BAND = 0.5;
+/** Initial fraction of the pointer's overshoot that the preview follows. */
+const RUBBER_BAND_FACTOR = 0.55;
 
 let start = $derived(value[0] ?? 0);
 let end = $derived(value[1] ?? MAX_HOUR);
@@ -80,19 +84,27 @@ function clamp(hour: number, min: number, max: number) {
 }
 
 /**
- * A drag past a bound keeps moving, but increasingly slowly. Released, it
- * springs back to the bound.
+ * Apple's rubber-band curve: the preview follows the pointer at first, then
+ * approaches `limit` asymptotically. It never returns a hard edge, so a drag
+ * past a bound can always give a little more.
  */
-function resist(hour: number, min: number, max: number, overshoot: number) {
-	if (hour < min) {
-		return min - Math.min((min - hour) * EDGE_RESISTANCE, overshoot);
-	}
+function rubberBand(overshoot: number, limit: number) {
+	const distance = Math.max(0, overshoot);
+	return (
+		(distance * limit * RUBBER_BAND_FACTOR) /
+		(limit + RUBBER_BAND_FACTOR * distance)
+	);
+}
 
-	if (hour > max) {
-		return max + Math.min((hour - max) * EDGE_RESISTANCE, overshoot);
-	}
-
-	return hour;
+function rubberBandClamp(
+	value: number,
+	min: number,
+	max: number,
+	limit: number,
+) {
+	if (value < min) return min - rubberBand(min - value, limit);
+	if (value > max) return max + rubberBand(value - max, limit);
+	return value;
 }
 
 function setWindow(nextStart: number, nextEnd: number, withHaptic = false) {
@@ -239,8 +251,12 @@ function moveBlockDrag(event: PointerEvent) {
 		if (width >= MAX_HOUR) return;
 
 		const rawStart = current.startHour + deltaHours;
-		const overshoot = Math.min(MOVE_OVERSHOOT, width * 0.35);
-		const shown = resist(rawStart, 0, MAX_HOUR - width, overshoot);
+		const shown = rubberBandClamp(
+			rawStart,
+			0,
+			MAX_HOUR - width,
+			MOVE_RUBBER_BAND,
+		);
 
 		preview = { start: shown, end: shown + width };
 
@@ -251,22 +267,26 @@ function moveBlockDrag(event: PointerEvent) {
 	} else if (current.mode === "start") {
 		const rawStart = current.startHour + deltaHours;
 		const maxStart = current.endHour - 1;
-		const shown = clamp(
-			resist(rawStart, 0, maxStart, RESIZE_OVERSHOOT),
-			-RESIZE_OVERSHOOT,
-			current.endHour - MIN_PREVIEW_DURATION,
-		);
+		let shown = rawStart;
+
+		if (rawStart < 0) {
+			shown = -rubberBand(-rawStart, RESIZE_RUBBER_BAND);
+		} else if (rawStart > maxStart) {
+			shown = maxStart + rubberBand(rawStart - maxStart, INNER_RUBBER_BAND);
+		}
 
 		preview = { start: shown, end: current.endHour };
 		setWindow(rawStart, current.endHour, true);
 	} else {
 		const rawEnd = current.endHour + deltaHours;
 		const minEnd = current.startHour + 1;
-		const shown = clamp(
-			resist(rawEnd, minEnd, MAX_HOUR, RESIZE_OVERSHOOT),
-			current.startHour + MIN_PREVIEW_DURATION,
-			MAX_HOUR + RESIZE_OVERSHOOT,
-		);
+		let shown = rawEnd;
+
+		if (rawEnd > MAX_HOUR) {
+			shown = MAX_HOUR + rubberBand(rawEnd - MAX_HOUR, RESIZE_RUBBER_BAND);
+		} else if (rawEnd < minEnd) {
+			shown = minEnd - rubberBand(minEnd - rawEnd, INNER_RUBBER_BAND);
+		}
 
 		preview = { start: current.startHour, end: shown };
 		setWindow(current.startHour, rawEnd, true);
@@ -373,7 +393,7 @@ function reset() {
 
 	<div
 		{@attach trackAttachment}
-		class="relative h-12 w-full cursor-pointer select-none overflow-hidden rounded-[21px] bg-muted ring-1 ring-foreground/5 [corner-shape:squircle]"
+		class="relative h-12 w-full cursor-pointer select-none rounded-[21px] bg-muted ring-1 ring-foreground/5 [corner-shape:squircle]"
 		role="group"
 		aria-label="Daily hours"
 		onpointerdown={handleTrackPointerDown}
