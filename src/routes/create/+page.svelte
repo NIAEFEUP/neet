@@ -186,10 +186,10 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 	/>
 </svelte:head>
 
-<div class="mx-auto w-full max-w-xl px-4 py-10 sm:px-6">
-	<header class="mb-8">
+<div class="mx-auto w-full max-w-xl px-5 pt-10 pb-14 sm:px-6 sm:py-12">
+	<header class="mb-9 sm:mb-10">
 		<h1 class="text-2xl font-semibold tracking-tight">Create an event</h1>
-		<p class="mt-1 text-sm text-muted-foreground">
+		<p class="mt-2 text-sm text-muted-foreground">
 			Choose dates, set hours, and share one link.
 		</p>
 	</header>
@@ -198,16 +198,16 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 		<p class="mb-6 text-sm text-destructive" role="alert">{form.message}</p>
 	{/if}
 
-	<form method="POST" use:enhance={handleEnhance} class="space-y-6">
+	<form method="POST" use:enhance={handleEnhance} class="space-y-8">
 		<input type="hidden" name="eventColor" value={eventColor} />
 		<input type="hidden" name="startDate" value={range.start?.toString() ?? ""} />
 		<input type="hidden" name="endDate" value={range.end?.toString() ?? ""} />
 
 		<div
-			class={`relative rounded-xl border bg-card px-5 py-6 transition-[background-color,border-color] duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)] sm:px-7 sm:py-7 ${hasColor ? "border-transparent" : "border-border"}`}
+			class={`relative rounded-xl border bg-card px-5 py-7 transition-[background-color,border-color] duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)] sm:px-7 sm:py-8 ${hasColor ? "border-transparent" : "border-border"}`}
 			style:background-color={hasColor ? eventColor : undefined}
 		>
-			<div class="min-w-0 pr-8">
+			<div class="min-w-0 pr-7 sm:pr-8">
 				<Label for="title" class="sr-only">Event title</Label>
 				<Input
 					type="text"
@@ -226,11 +226,11 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 					rows={2}
 					bind:value={eventDescription}
 					placeholder="Context, location, or a meeting link"
-					class={`block-field mt-2 min-h-0 resize-none rounded-none border-b border-transparent bg-transparent px-0 py-0 text-sm leading-6 shadow-none field-sizing-content duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)] focus-visible:border-current focus-visible:ring-0 ${previewMutedClass} ${previewIsLight ? "placeholder:text-foreground/40" : "placeholder:text-background/40"}`}
+					class={`block-field mt-2 min-h-0 resize-none rounded-none border-b border-transparent bg-transparent px-0 py-0 leading-6 shadow-none field-sizing-content duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)] focus-visible:border-current focus-visible:ring-0 ${previewMutedClass} ${previewIsLight ? "placeholder:text-foreground/40" : "placeholder:text-background/40"}`}
 				/>
 
 				<div
-					class={`mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm transition-colors duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)] ${previewMutedClass}`}
+					class={`mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm transition-colors duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)] ${previewMutedClass}`}
 				>
 					<span class="inline-flex items-center gap-1.5">
 						<CalendarIcon class="size-3.5" aria-hidden="true" />
@@ -243,7 +243,7 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 				</div>
 			</div>
 
-			<div class="absolute -top-4 -right-4 size-9">
+			<div class="absolute -top-4 -right-3 size-9 sm:-right-4">
 				<div
 					class={[
 						"bubble absolute top-0 right-6",
@@ -299,12 +299,12 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 			</div>
 		</div>
 
-		<section aria-labelledby="schedule-heading" class="space-y-4">
+		<section aria-labelledby="schedule-heading" class="space-y-5">
 			<h2 id="schedule-heading" class="text-sm font-medium text-muted-foreground">
 				Schedule
 			</h2>
 
-			<div class="space-y-2 align">
+			<div class="space-y-2.5 align">
 				<p class="text-sm font-medium">Dates</p>
 				<RangeCalendar
 					bind:value={range}
@@ -321,7 +321,7 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 
 			<ClampedHoursPicker bind:value={timeWindow} />
 
-			<div class="space-y-2">
+			<div class="space-y-2.5">
 				<Label for="timezone">Timezone</Label>
 				<Select.Root
 					type="single"
@@ -329,7 +329,10 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 					bind:value={selectedTimezone}
 					required
 				>
-					<Select.Trigger id="timezone" class="w-full">
+					<Select.Trigger
+						id="timezone"
+						class="w-full pl-3.5 pr-3 data-[size=default]:h-11 sm:data-[size=default]:h-9"
+					>
 						<Select.Value placeholder="Select a timezone" />
 					</Select.Trigger>
 					<Select.Content>
@@ -341,11 +344,16 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 			</div>
 		</section>
 
-		<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+		<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-end sm:gap-3">
 			<p class="text-sm text-muted-foreground sm:mr-auto">
 				Your link will be ready to share once the event is created.
 			</p>
-			<Button type="submit" disabled={isSubmitting} aria-busy={isSubmitting}>
+			<Button
+				type="submit"
+				disabled={isSubmitting}
+				aria-busy={isSubmitting}
+				class="h-11 w-full text-base sm:h-9 sm:w-auto sm:text-sm"
+			>
 				{#if isSubmitting}
 					<LoaderCircle class="animate-spin" aria-hidden="true" />
 					Creating…
@@ -405,8 +413,10 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 		transition: opacity 280ms cubic-bezier(0.4, 0, 0.2, 1);
 	}
 
-	.corner-action:hover::after {
-		opacity: 1;
+	@media (hover: hover) and (pointer: fine) {
+		.corner-action:hover::after {
+			opacity: 1;
+		}
 	}
 
 	.corner-action[data-hover-shadow="off"]::after {

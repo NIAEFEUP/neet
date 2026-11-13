@@ -419,7 +419,7 @@ function reset() {
 }
 </script>
 
-<div class={cn("space-y-2.5", className)}>
+<div class={cn("space-y-3", className)}>
 	{#if showHeader}
 		<div class="flex min-h-6 items-center justify-between gap-3">
 			<p class="text-sm font-medium">Daily hours</p>
@@ -433,7 +433,7 @@ function reset() {
 						variant="ghost"
 						size="xs"
 						onclick={reset}
-						class="text-muted-foreground"
+						class="h-8 text-muted-foreground sm:h-6"
 					>
 						Reset
 					</Button>
@@ -576,7 +576,7 @@ function reset() {
 	</div>
 
 	<div
-		class="flex justify-between px-1 text-[10px] tabular-nums text-muted-foreground/70"
+		class="flex justify-between px-1.5 text-[10px] tabular-nums text-muted-foreground/70"
 		aria-hidden="true"
 	>
 		{#each AXIS_LABELS as hour (hour)}
