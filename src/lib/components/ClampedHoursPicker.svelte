@@ -1,4 +1,5 @@
 <script lang="ts">
+import { hapticTap, hapticTick } from "$lib/haptics";
 import { cn } from "$lib/utils.js";
 import { formatHour } from "./time-grid/date-utils";
 
@@ -91,12 +92,13 @@ function resist(hour: number, min: number, max: number, overshoot: number) {
 	return hour;
 }
 
-function setWindow(nextStart: number, nextEnd: number) {
+function setWindow(nextStart: number, nextEnd: number, withHaptic = false) {
 	const safeStart = clamp(Math.round(nextStart), 0, MAX_HOUR - 1);
 	const safeEnd = clamp(Math.round(nextEnd), safeStart + 1, MAX_HOUR);
 
 	if (safeStart !== start || safeEnd !== end) {
 		value = [safeStart, safeEnd];
+		if (withHaptic) hapticTick();
 	}
 }
 
@@ -156,6 +158,7 @@ function beginBlockDrag(event: PointerEvent) {
 	// The block sits on top of the track: its gesture must not also count as
 	// a track click.
 	event.stopPropagation();
+	hapticTap();
 
 	const rect = block.getBoundingClientRect();
 	const x = event.clientX - rect.left;
@@ -231,7 +234,7 @@ function moveBlockDrag(event: PointerEvent) {
 		// Keep the window's length while it is clamped: clamping the rounded
 		// start and adding the original width avoids shrinking it against an edge.
 		const nextStart = clamp(Math.round(rawStart), 0, MAX_HOUR - width);
-		setWindow(nextStart, nextStart + width);
+		setWindow(nextStart, nextStart + width, true);
 	} else if (current.mode === "start") {
 		const rawStart = current.startHour + deltaHours;
 		const maxStart = current.endHour - 1;
@@ -242,7 +245,7 @@ function moveBlockDrag(event: PointerEvent) {
 		);
 
 		preview = { start: shown, end: current.endHour };
-		setWindow(rawStart, current.endHour);
+		setWindow(rawStart, current.endHour, true);
 	} else {
 		const rawEnd = current.endHour + deltaHours;
 		const minEnd = current.startHour + 1;
@@ -253,7 +256,7 @@ function moveBlockDrag(event: PointerEvent) {
 		);
 
 		preview = { start: current.startHour, end: shown };
-		setWindow(current.startHour, rawEnd);
+		setWindow(current.startHour, rawEnd, true);
 	}
 }
 
@@ -285,9 +288,9 @@ function handleTrackPointerDown(event: PointerEvent) {
 	const midpoint = (start + end) / 2;
 
 	if (hour < midpoint) {
-		setWindow(Math.min(hour, end - 1), end);
+		setWindow(Math.min(hour, end - 1), end, true);
 	} else {
-		setWindow(start, Math.max(hour, start + 1));
+		setWindow(start, Math.max(hour, start + 1), true);
 	}
 }
 
@@ -326,6 +329,7 @@ function handleGripKeyDown(event: KeyboardEvent, edge: "start" | "end") {
 }
 
 function reset() {
+	hapticTap();
 	preview = null;
 	value = [0, MAX_HOUR];
 }
