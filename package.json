@@ -42,6 +42,7 @@
 		"vite": "^8.0.16"
 	},
 	"dependencies": {
+		"@ark-ui/svelte": "^5.25.1",
 		"@blobatar/svelte": "^2.7.0",
 		"@prisma/cli-engine": "0.6.1",
 		"@prisma/orm-postgres": "8.0.0-rc.12",
