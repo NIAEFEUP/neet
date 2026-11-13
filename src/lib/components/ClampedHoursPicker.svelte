@@ -30,12 +30,16 @@ const AXIS_LABELS = [0, 6, 12, 18, 24];
 const MOVE_PINCH_WIDTH = 64;
 const MOVE_PINCH_DEPTH = 2;
 
-/** How far a drag may stretch past a bound, in hours, before it stops. */
-const MOVE_OVERSHOOT = 0.4;
-const RESIZE_OVERSHOOT = 0.8;
-const EDGE_RESISTANCE = 0.25;
-/** Keep a resized edge from collapsing into the other one while it stretches. */
-const MIN_PREVIEW_DURATION = 0.2;
+/**
+ * Asymptotic visual overshoot, in hours. The preview approaches these limits
+ * but never reaches them, so a drag never hits a hard wall.
+ */
+const MOVE_RUBBER_BAND = 0.6;
+const RESIZE_RUBBER_BAND = 0.8;
+/** How far a 1h window can visibly compress while the committed min stays 1h. */
+const INNER_RUBBER_BAND = 0.5;
+/** Initial fraction of the pointer's overshoot that the preview follows. */
+const RUBBER_BAND_FACTOR = 0.55;
 
 let start = $derived(value[0] ?? 0);
 let end = $derived(value[1] ?? MAX_HOUR);
@@ -80,19 +84,27 @@ function clamp(hour: number, min: number, max: number) {
 }
 
 /**
- * A drag past a bound keeps moving, but increasingly slowly. Released, it
- * springs back to the bound.
+ * Apple's rubber-band curve: the preview follows the pointer at first, then
+ * approaches `limit` asymptotically. It never returns a hard edge, so a drag
+ * past a bound can always give a little more.
  */
-function resist(hour: number, min: number, max: number, overshoot: number) {
-	if (hour < min) {
-		return min - Math.min((min - hour) * EDGE_RESISTANCE, overshoot);
-	}
+function rubberBand(overshoot: number, limit: number) {
+	const distance = Math.max(0, overshoot);
+	return (
+		(distance * limit * RUBBER_BAND_FACTOR) /
+		(limit + RUBBER_BAND_FACTOR * distance)
+	);
+}
 
-	if (hour > max) {
-		return max + Math.min((hour - max) * EDGE_RESISTANCE, overshoot);
-	}
-
-	return hour;
+function rubberBandClamp(
+	value: number,
+	min: number,
+	max: number,
+	limit: number,
+) {
+	if (value < min) return min - rubberBand(min - value, limit);
+	if (value > max) return max + rubberBand(value - max, limit);
+	return value;
 }
 
 function setWindow(nextStart: number, nextEnd: number, withHaptic = false) {
@@ -110,6 +122,17 @@ let blockLeft = $derived(
 );
 let blockWidth = $derived(
 	`calc((100% - ${TRACK_INSET * 2}px) * ${shownDuration / MAX_HOUR})`,
+);
+/**
+ * The rail follows the pill's full overshoot so the pill keeps its resting
+ * inset on every side. The extension uses the same rubber-band preview as the
+ * pill, so it also eases to a stop instead of hitting a wall.
+ */
+let railLeft = $derived(
+	`calc(0px - (100% - ${TRACK_INSET * 2}px) * ${Math.max(0, -shownStart) / MAX_HOUR})`,
+);
+let railRight = $derived(
+	`calc(0px - (100% - ${TRACK_INSET * 2}px) * ${Math.max(0, shownEnd - MAX_HOUR) / MAX_HOUR})`,
 );
 
 type Mode = "move" | "start" | "end";
@@ -132,6 +155,43 @@ let squeezeOrigin = $state("50% 50%");
 let pinchLeft = $state("50%");
 let pinchWidth = $state(MOVE_PINCH_WIDTH);
 let pinchDepth = $state(MOVE_PINCH_DEPTH);
+
+/**
+ * 0 while the drag is free, approaching 1 as the rubber band saturates.
+ * The pressed scale eases back to its resting size with it, so the pill looks
+ * like it does at rest once it can no longer move.
+ */
+let dragResistance = $derived.by(() => {
+	const current = drag;
+	if (!current || !preview) return 0;
+
+	let overshoot = 0;
+	let limit = 1;
+
+	if (current.mode === "move") {
+		const maxStart = MAX_HOUR - (current.endHour - current.startHour);
+		overshoot = Math.max(0, -shownStart, shownStart - maxStart);
+		limit = MOVE_RUBBER_BAND;
+	} else if (current.mode === "start") {
+		const outer = Math.max(0, -shownStart);
+		const inner = Math.max(0, shownStart - (current.endHour - 1));
+		overshoot = Math.max(outer, inner);
+		limit = outer > 0 ? RESIZE_RUBBER_BAND : INNER_RUBBER_BAND;
+	} else {
+		const outer = Math.max(0, shownEnd - MAX_HOUR);
+		const inner = Math.max(0, current.startHour + 1 - shownEnd);
+		overshoot = Math.max(outer, inner);
+		limit = outer > 0 ? RESIZE_RUBBER_BAND : INNER_RUBBER_BAND;
+	}
+
+	return clamp(overshoot / limit, 0, 1);
+});
+
+let dragScale = $derived(
+	drag
+		? `${0.985 + 0.015 * dragResistance} ${0.92 + 0.08 * dragResistance}`
+		: undefined,
+);
 
 function usableWidth() {
 	const track = trackEl;
@@ -239,8 +299,12 @@ function moveBlockDrag(event: PointerEvent) {
 		if (width >= MAX_HOUR) return;
 
 		const rawStart = current.startHour + deltaHours;
-		const overshoot = Math.min(MOVE_OVERSHOOT, width * 0.35);
-		const shown = resist(rawStart, 0, MAX_HOUR - width, overshoot);
+		const shown = rubberBandClamp(
+			rawStart,
+			0,
+			MAX_HOUR - width,
+			MOVE_RUBBER_BAND,
+		);
 
 		preview = { start: shown, end: shown + width };
 
@@ -251,25 +315,32 @@ function moveBlockDrag(event: PointerEvent) {
 	} else if (current.mode === "start") {
 		const rawStart = current.startHour + deltaHours;
 		const maxStart = current.endHour - 1;
-		const shown = clamp(
-			resist(rawStart, 0, maxStart, RESIZE_OVERSHOOT),
-			-RESIZE_OVERSHOOT,
-			current.endHour - MIN_PREVIEW_DURATION,
-		);
+		let shown = rawStart;
+
+		if (rawStart < 0) {
+			shown = -rubberBand(-rawStart, RESIZE_RUBBER_BAND);
+		} else if (rawStart > maxStart) {
+			shown = maxStart + rubberBand(rawStart - maxStart, INNER_RUBBER_BAND);
+		}
 
 		preview = { start: shown, end: current.endHour };
-		setWindow(rawStart, current.endHour, true);
+		// Keep the opposite edge fixed: an overdragged start must not push the
+		// committed end forward and turn the gesture into a range shift.
+		setWindow(Math.min(rawStart, current.endHour - 1), current.endHour, true);
 	} else {
 		const rawEnd = current.endHour + deltaHours;
 		const minEnd = current.startHour + 1;
-		const shown = clamp(
-			resist(rawEnd, minEnd, MAX_HOUR, RESIZE_OVERSHOOT),
-			current.startHour + MIN_PREVIEW_DURATION,
-			MAX_HOUR + RESIZE_OVERSHOOT,
-		);
+		let shown = rawEnd;
+
+		if (rawEnd > MAX_HOUR) {
+			shown = MAX_HOUR + rubberBand(rawEnd - MAX_HOUR, RESIZE_RUBBER_BAND);
+		} else if (rawEnd < minEnd) {
+			shown = minEnd - rubberBand(minEnd - rawEnd, INNER_RUBBER_BAND);
+		}
 
 		preview = { start: current.startHour, end: shown };
-		setWindow(current.startHour, rawEnd, true);
+		// Same for the end edge: clamp against the start instead of moving it.
+		setWindow(current.startHour, Math.max(rawEnd, current.startHour + 1), true);
 	}
 }
 
@@ -348,7 +419,7 @@ function reset() {
 }
 </script>
 
-<div class={cn("space-y-2.5", className)}>
+<div class={cn("space-y-3", className)}>
 	{#if showHeader}
 		<div class="flex min-h-6 items-center justify-between gap-3">
 			<p class="text-sm font-medium">Daily hours</p>
@@ -362,7 +433,7 @@ function reset() {
 						variant="ghost"
 						size="xs"
 						onclick={reset}
-						class="text-muted-foreground"
+						class="h-8 text-muted-foreground sm:h-6"
 					>
 						Reset
 					</Button>
@@ -373,11 +444,20 @@ function reset() {
 
 	<div
 		{@attach trackAttachment}
-		class="relative h-12 w-full cursor-pointer select-none overflow-hidden rounded-[21px] bg-muted ring-1 ring-foreground/5 [corner-shape:squircle]"
+		class="relative h-12 w-full cursor-pointer select-none"
 		role="group"
 		aria-label="Daily hours"
 		onpointerdown={handleTrackPointerDown}
 	>
+		<div
+			class={[
+				"rail pointer-events-none absolute inset-y-0 rounded-[21px] bg-muted ring-1 ring-foreground/5 [corner-shape:squircle]",
+				{ "is-dragging": drag !== null },
+			]}
+			style:left={railLeft}
+			style:right={railRight}
+			aria-hidden="true"
+		></div>
 		<div
 			{@attach blockAttachment}
 			class={[
@@ -386,6 +466,7 @@ function reset() {
 			]}
 			style:left={blockLeft}
 			style:width={blockWidth}
+			style:scale={dragScale}
 			style:transform-origin={squeezeOrigin}
 			data-mode={drag?.mode}
 			role="presentation"
@@ -495,7 +576,7 @@ function reset() {
 	</div>
 
 	<div
-		class="flex justify-between px-1 text-[10px] tabular-nums text-muted-foreground/70"
+		class="flex justify-between px-1.5 text-[10px] tabular-nums text-muted-foreground/70"
 		aria-hidden="true"
 	>
 		{#each AXIS_LABELS as hour (hour)}
@@ -518,6 +599,16 @@ function reset() {
 </div>
 
 <style>
+	.rail {
+		transition:
+			left 200ms var(--ease-out),
+			right 200ms var(--ease-out);
+	}
+
+	.rail.is-dragging {
+		transition: none;
+	}
+
 	.clamped-block {
 		container-type: inline-size;
 		touch-action: pan-y;
@@ -555,7 +646,6 @@ function reset() {
 	}
 
 	.clamped-block.is-dragging {
-		scale: 0.985 0.92;
 		will-change: left, width, scale;
 		transition: scale 150ms var(--ease-out);
 	}
@@ -614,6 +704,7 @@ function reset() {
 	}
 
 	@media (prefers-reduced-motion: reduce) {
+		.rail,
 		.clamped-block,
 		.clamped-block.is-dragging,
 		.pinch {
