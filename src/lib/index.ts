@@ -1,6 +1,5 @@
 export { default as AvailabilityResponses } from "./components/AvailabilityResponses.svelte";
 export { default as ClampedHoursPicker } from "./components/ClampedHoursPicker.svelte";
-export { default as DailyHoursPicker } from "./components/DailyHoursPicker.svelte";
 export { default as TimeGrid } from "./components/TimeGrid.svelte";
 export * from "./components/time-grid/availability";
 export * from "./components/time-grid/date-utils";

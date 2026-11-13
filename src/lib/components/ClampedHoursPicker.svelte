@@ -335,20 +335,11 @@ function reset() {
 	{#if showHeader}
 		<div class="flex min-h-5 items-center justify-between gap-3">
 			<p class="text-sm font-medium">Daily hours</p>
-			<div class="flex items-center gap-2.5">
-				<span
-					class={cn(
-						"tabular-nums transition-colors duration-150",
-						isWholeDay
-							? "text-sm text-muted-foreground"
-							: "text-sm font-medium text-foreground",
-					)}
-				>
-					{isWholeDay
-						? "Any time"
-						: `${formatHour(start)} – ${formatHour(end)}`}
-				</span>
-				{#if !isWholeDay}
+			{#if !isWholeDay}
+				<div class="flex items-center gap-2.5">
+					<span class="tabular-nums text-sm font-medium text-foreground">
+						{formatHour(start)} – {formatHour(end)}
+					</span>
 					<button
 						type="button"
 						onclick={reset}
@@ -356,8 +347,8 @@ function reset() {
 					>
 						Reset
 					</button>
-				{/if}
-			</div>
+				</div>
+			{/if}
 		</div>
 	{/if}
 

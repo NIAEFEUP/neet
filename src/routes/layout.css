@@ -3,9 +3,10 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * bits-ui exposes a slider's orientation as `data-orientation`, while the
- * shadcn slider utilities are written for `data-horizontal` / `data-vertical`.
- * Map the two so the stock component lays out correctly.
+ * bits-ui exposes orientation as `data-orientation`, while the shadcn
+ * utilities for separators and button groups are written for
+ * `data-horizontal` / `data-vertical`. Map the two so those components lay
+ * out correctly.
  */
 @custom-variant data-horizontal (&[data-orientation="horizontal"]);
 @custom-variant data-vertical (&[data-orientation="vertical"]);

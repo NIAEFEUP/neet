@@ -13,12 +13,7 @@ import PlusIcon from "@lucide/svelte/icons/plus";
 import type { SubmitFunction } from "@sveltejs/kit";
 import { onMount, untrack } from "svelte";
 import { enhance } from "$app/forms";
-import {
-	ClampedHoursPicker,
-	DailyHoursPicker,
-	formatHour,
-	parseHour,
-} from "$lib";
+import { ClampedHoursPicker, formatHour, parseHour } from "$lib";
 import { Button } from "$lib/components/ui/button";
 import { Input } from "$lib/components/ui/input";
 import { Label } from "$lib/components/ui/label";
@@ -322,22 +317,7 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 				{/if}
 			</div>
 
-			<DailyHoursPicker bind:value={timeWindow} />
-
-			<div class="space-y-2 pt-1">
-				<div
-					class="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70"
-				>
-					<span class="h-px flex-1 bg-border"></span>
-					Clamped squircle
-					<span class="h-px flex-1 bg-border"></span>
-				</div>
-				<ClampedHoursPicker
-					bind:value={timeWindow}
-					showHeader={false}
-					submit={false}
-				/>
-			</div>
+			<ClampedHoursPicker bind:value={timeWindow} />
 
 			<div class="space-y-2">
 				<Label for="timezone">Timezone</Label>
