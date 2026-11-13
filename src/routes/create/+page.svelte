@@ -13,6 +13,7 @@ import PlusIcon from "@lucide/svelte/icons/plus";
 import type { SubmitFunction } from "@sveltejs/kit";
 import { onMount, untrack } from "svelte";
 import { enhance } from "$app/forms";
+import { DailyHoursPicker, formatHour, parseHour } from "$lib";
 import { Button } from "$lib/components/ui/button";
 import { Input } from "$lib/components/ui/input";
 import { Label } from "$lib/components/ui/label";
@@ -49,20 +50,15 @@ function initialRange(): DateRange {
 	};
 }
 
-function initialStartHour() {
-	return form?.startHour ?? "";
-}
+function initialTimeWindow(): number[] {
+	const start = parseHour(form?.startTime);
+	const end = parseHour(form?.endTime);
 
-function initialStartPeriod() {
-	return form?.startPeriod ?? "AM";
-}
+	if (start !== null && end !== null && end - start >= 1) {
+		return [start, end];
+	}
 
-function initialEndHour() {
-	return form?.endHour ?? "";
-}
-
-function initialEndPeriod() {
-	return form?.endPeriod ?? "AM";
+	return [0, 24];
 }
 
 function initialEventColor() {
@@ -82,13 +78,6 @@ function isLightColor(hex: string): boolean {
 	return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.62;
 }
 
-function to24Hour(hour: string, period: string): string {
-	let h = Number.parseInt(hour, 10);
-	if (period === "PM" && h < 12) h += 12;
-	if (period === "AM" && h === 12) h = 0;
-	return `${h.toString().padStart(2, "0")}:00`;
-}
-
 function handleColorInput(event: Event) {
 	const input = event.currentTarget as HTMLInputElement | null;
 	if (input) setEventColor(input.value);
@@ -96,10 +85,7 @@ function handleColorInput(event: Event) {
 
 let timezones = $state(Intl.supportedValuesOf("timeZone"));
 let selectedTimezone = $state(initialTimezone());
-let startHour = $state(initialStartHour());
-let startPeriod = $state(initialStartPeriod());
-let endHour = $state(initialEndHour());
-let endPeriod = $state(initialEndPeriod());
+let timeWindow = $state<number[]>(untrack(initialTimeWindow));
 let eventColor = $state(initialEventColor());
 
 let lastEventColor = $state(initialEventColor());
@@ -124,7 +110,6 @@ let dateError = $state("");
 let range = $state<DateRange>(initialRange());
 
 const minDate = today(getLocalTimeZone());
-const hours = Array.from({ length: 12 }, (_, i) => i + 1);
 
 const hasColor = $derived(eventColor !== "");
 const previewIsLight = $derived(!hasColor || isLightColor(eventColor));
@@ -153,9 +138,11 @@ const previewDateLabel = $derived.by(() => {
 });
 
 const previewTimeLabel = $derived.by(() => {
-	if (!startHour || !endHour) return `Any time · ${selectedTimezone}`;
+	const [start, end] = timeWindow;
 
-	return `${to24Hour(startHour, startPeriod)} – ${to24Hour(endHour, endPeriod)} · ${selectedTimezone}`;
+	if (start <= 0 && end >= 24) return `Any time · ${selectedTimezone}`;
+
+	return `${formatHour(start)} – ${formatHour(end)} · ${selectedTimezone}`;
 });
 
 onMount(() => {
@@ -330,71 +317,7 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 				{/if}
 			</div>
 
-			<div class="grid gap-4 sm:grid-cols-2">
-				<div class="space-y-2">
-					<div class="flex items-center justify-between gap-2">
-						<Label for="startHour">Daily start</Label>
-						<span class="text-sm text-muted-foreground">Optional</span>
-					</div>
-					<div class="flex gap-2">
-						<Select.Root type="single" name="startHour" bind:value={startHour}>
-							<Select.Trigger id="startHour" class="w-full" aria-label="Daily start hour">
-								<Select.Value placeholder="Any time" />
-							</Select.Trigger>
-							<Select.Content>
-								<Select.Item value="" label="Any time">Any time</Select.Item>
-								{#each hours as hour (hour)}
-									<Select.Item value={hour.toString()} label={`${hour}:00`}>
-										{hour}:00
-									</Select.Item>
-								{/each}
-							</Select.Content>
-						</Select.Root>
-
-						<Select.Root type="single" name="startPeriod" bind:value={startPeriod}>
-							<Select.Trigger class="w-20" aria-label="Daily start period">
-								<Select.Value />
-							</Select.Trigger>
-							<Select.Content>
-								<Select.Item value="AM" label="AM">AM</Select.Item>
-								<Select.Item value="PM" label="PM">PM</Select.Item>
-							</Select.Content>
-						</Select.Root>
-					</div>
-				</div>
-
-				<div class="space-y-2">
-					<div class="flex items-center justify-between gap-2">
-						<Label for="endHour">Daily end</Label>
-						<span class="text-sm text-muted-foreground">Optional</span>
-					</div>
-					<div class="flex gap-2">
-						<Select.Root type="single" name="endHour" bind:value={endHour}>
-							<Select.Trigger id="endHour" class="w-full" aria-label="Daily end hour">
-								<Select.Value placeholder="Any time" />
-							</Select.Trigger>
-							<Select.Content>
-								<Select.Item value="" label="Any time">Any time</Select.Item>
-								{#each hours as hour (hour)}
-									<Select.Item value={hour.toString()} label={`${hour}:00`}>
-										{hour}:00
-									</Select.Item>
-								{/each}
-							</Select.Content>
-						</Select.Root>
-
-						<Select.Root type="single" name="endPeriod" bind:value={endPeriod}>
-							<Select.Trigger class="w-20" aria-label="Daily end period">
-								<Select.Value />
-							</Select.Trigger>
-							<Select.Content>
-								<Select.Item value="AM" label="AM">AM</Select.Item>
-								<Select.Item value="PM" label="PM">PM</Select.Item>
-							</Select.Content>
-						</Select.Root>
-					</div>
-				</div>
-			</div>
+			<DailyHoursPicker bind:value={timeWindow} />
 
 			<div class="space-y-2">
 				<Label for="timezone">Timezone</Label>
