@@ -461,7 +461,7 @@ function reset() {
 		<div
 			{@attach blockAttachment}
 			class={[
-				"clamped-block absolute top-[5px] bottom-[5px] flex items-center rounded-[16px] bg-foreground text-background shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] [corner-shape:squircle]",
+				"clamped-block absolute top-[5px] bottom-[5px] flex items-center rounded-[16px] bg-primary text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] [corner-shape:squircle]",
 				{ "is-dragging": drag !== null },
 			]}
 			style:left={blockLeft}
@@ -547,7 +547,7 @@ function reset() {
 			<!-- The grips are the keyboard surface for the two ends. They sit inside
 			     the block so the visible handle and the accessible handle are one. -->
 			<span
-				class="grip-bar-start absolute top-1/2 left-[min(3px,20%)] z-10 h-4 w-[3px] -translate-y-1/2 cursor-ew-resize touch-pan-y rounded-full bg-background/35 transition-[left,right,translate,width,height,background-color] duration-150 hover:w-[4px] hover:bg-background/60 focus-visible:w-[4px] focus-visible:bg-background/80 focus-visible:ring-2 focus-visible:ring-background/40 focus-visible:outline-none"
+				class="grip-bar-start absolute top-1/2 left-[min(3px,20%)] z-10 h-4 w-[3px] -translate-y-1/2 cursor-ew-resize touch-pan-y rounded-full bg-primary-foreground/35 transition-[left,right,translate,width,height,background-color] duration-150 hover:w-[4px] hover:bg-primary-foreground/60 focus-visible:w-[4px] focus-visible:bg-primary-foreground/80 focus-visible:ring-2 focus-visible:ring-primary-foreground/40 focus-visible:outline-none"
 				data-tight={isTightWindow ? "true" : undefined}
 				role="slider"
 				tabindex="0"
@@ -560,7 +560,7 @@ function reset() {
 				onkeydown={(event) => handleGripKeyDown(event, "start")}
 			></span>
 			<span
-				class="grip-bar-end absolute top-1/2 right-[min(3px,20%)] z-10 h-4 w-[3px] -translate-y-1/2 cursor-ew-resize touch-pan-y rounded-full bg-background/35 transition-[left,right,translate,width,height,background-color] duration-150 hover:w-[4px] hover:bg-background/60 focus-visible:w-[4px] focus-visible:bg-background/80 focus-visible:ring-2 focus-visible:ring-background/40 focus-visible:outline-none"
+				class="grip-bar-end absolute top-1/2 right-[min(3px,20%)] z-10 h-4 w-[3px] -translate-y-1/2 cursor-ew-resize touch-pan-y rounded-full bg-primary-foreground/35 transition-[left,right,translate,width,height,background-color] duration-150 hover:w-[4px] hover:bg-primary-foreground/60 focus-visible:w-[4px] focus-visible:bg-primary-foreground/80 focus-visible:ring-2 focus-visible:ring-primary-foreground/40 focus-visible:outline-none"
 				data-tight={isTightWindow ? "true" : undefined}
 				role="slider"
 				tabindex="0"
@@ -657,7 +657,7 @@ function reset() {
 		left: 0;
 		width: 5px;
 		translate: -50% -50%;
-		background-color: var(--background);
+		background-color: var(--primary-foreground);
 		outline: 1px solid color-mix(in oklab, var(--foreground) 20%, transparent);
 	}
 
@@ -665,7 +665,7 @@ function reset() {
 		right: 0;
 		width: 5px;
 		translate: 50% -50%;
-		background-color: var(--background);
+		background-color: var(--primary-foreground);
 		outline: 1px solid color-mix(in oklab, var(--foreground) 20%, transparent);
 	}
 
@@ -673,7 +673,7 @@ function reset() {
 	.clamped-block[data-mode="end"] .grip-bar-end {
 		width: 4px;
 		height: 11px;
-		background-color: color-mix(in oklab, var(--background) 80%, transparent);
+		background-color: color-mix(in oklab, var(--primary-foreground) 80%, transparent);
 	}
 
 	.pinch {

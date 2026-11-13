@@ -15,6 +15,7 @@ import { onMount, untrack } from "svelte";
 import { enhance } from "$app/forms";
 import { ClampedHoursPicker, formatHour, parseHour } from "$lib";
 import { Button } from "$lib/components/ui/button";
+import { ColorPicker } from "$lib/components/ui/color-picker";
 import { Input } from "$lib/components/ui/input";
 import { Label } from "$lib/components/ui/label";
 import { RangeCalendar } from "$lib/components/ui/range-calendar";
@@ -64,7 +65,8 @@ function initialTimeWindow(): number[] {
 }
 
 function initialEventColor() {
-	return form?.eventColor ?? "";
+	const color = form?.eventColor ?? "";
+	return /^#[0-9a-f]{6}$/i.test(color) ? color : "";
 }
 
 /** Matches the form's primary button color (--primary). */
@@ -91,10 +93,12 @@ let timeWindow = $state<number[]>(untrack(initialTimeWindow));
 let eventColor = $state(initialEventColor());
 
 let lastEventColor = $state(initialEventColor());
+let colorPickerOpen = $state(false);
 
 function setEventColor(next: string) {
 	eventColor = next;
 	if (next) lastEventColor = next;
+	else colorPickerOpen = false;
 }
 
 let suppressHoverShadow = $state(false);
@@ -198,7 +202,18 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 		<p class="mb-6 text-sm text-destructive" role="alert">{form.message}</p>
 	{/if}
 
-	<form method="POST" use:enhance={handleEnhance} class="space-y-8">
+	<form
+		method="POST"
+		use:enhance={handleEnhance}
+		class="space-y-8"
+		style:--primary={hasColor ? eventColor : undefined}
+		style:--primary-foreground={hasColor
+			? previewIsLight
+				? "var(--foreground)"
+				: "var(--background)"
+			: undefined}
+		style:--accent="color-mix(in oklab, var(--primary) 18%, var(--background))"
+	>
 		<input type="hidden" name="eventColor" value={eventColor} />
 		<input type="hidden" name="startDate" value={range.start?.toString() ?? ""} />
 		<input type="hidden" name="endDate" value={range.end?.toString() ?? ""} />
@@ -254,23 +269,21 @@ const handleEnhance: SubmitFunction = ({ formData, cancel }) => {
 					data-hidden={!hasColor}
 					inert={!hasColor}
 				>
-					<label
-						class="grid size-9 cursor-pointer place-items-center rounded-full border-2 border-background shadow-md ring-1 ring-foreground/10 focus-within:ring-2 focus-within:ring-ring/50"
-						style:background-color={swatchColor}
-						title="Change block color"
+					<ColorPicker
+						value={eventColor || DEFAULT_EVENT_COLOR}
+						onValueChange={setEventColor}
+						bind:open={colorPickerOpen}
+						triggerClass="grid size-9 place-items-center rounded-full border-2 border-background shadow-md ring-1 ring-foreground/10"
+						triggerStyle={`background-color: ${swatchColor}`}
+						triggerLabel="Change block color"
 					>
-						<span class="sr-only">Change block color</span>
-						<PenIcon
-							class={`size-4 ${swatchIsLight ? "text-foreground" : "text-background"}`}
-							aria-hidden="true"
-						/>
-						<input
-							type="color"
-							value={eventColor || DEFAULT_EVENT_COLOR}
-							onchange={handleColorInput}
-							class="sr-only"
-						/>
-					</label>
+						{#snippet trigger()}
+							<PenIcon
+								class={`size-4 ${swatchIsLight ? "text-foreground" : "text-background"}`}
+								aria-hidden="true"
+							/>
+						{/snippet}
+					</ColorPicker>
 				</div>
 
 				<button
