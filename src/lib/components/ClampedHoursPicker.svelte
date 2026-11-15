@@ -156,6 +156,9 @@ let pinchLeft = $state("50%");
 let pinchWidth = $state(MOVE_PINCH_WIDTH);
 let pinchDepth = $state(MOVE_PINCH_DEPTH);
 
+/** A full-day window cannot move, but it can still stretch elastically. */
+let isWholeDayStretch = $derived(isWholeDay && drag?.mode === "move");
+
 /**
  * 0 while the drag is free, approaching 1 as the rubber band saturates.
  * The pressed scale eases back to its resting size with it, so the pill looks
@@ -170,7 +173,12 @@ let dragResistance = $derived.by(() => {
 
 	if (current.mode === "move") {
 		const maxStart = MAX_HOUR - (current.endHour - current.startHour);
-		overshoot = Math.max(0, -shownStart, shownStart - maxStart);
+		overshoot = Math.max(
+			0,
+			-shownStart,
+			shownStart - maxStart,
+			shownEnd - MAX_HOUR,
+		);
 		limit = MOVE_RUBBER_BAND;
 	} else if (current.mode === "start") {
 		const outer = Math.max(0, -shownStart);
@@ -296,7 +304,18 @@ function moveBlockDrag(event: PointerEvent) {
 
 	if (current.mode === "move") {
 		const width = current.endHour - current.startHour;
-		if (width >= MAX_HOUR) return;
+
+		// A full-day window cannot move, but dragging it should still stretch
+		// against the day boundary instead of doing nothing.
+		if (width >= MAX_HOUR) {
+			const stretch = rubberBand(Math.abs(deltaHours), MOVE_RUBBER_BAND);
+
+			preview =
+				deltaHours < 0
+					? { start: -stretch, end: MAX_HOUR }
+					: { start: 0, end: MAX_HOUR + stretch };
+			return;
+		}
 
 		const rawStart = current.startHour + deltaHours;
 		const shown = rubberBandClamp(
@@ -523,7 +542,7 @@ function reset() {
 				</svg>
 			</span>
 
-			{#if shownIsWholeDay}
+			{#if shownIsWholeDay || isWholeDayStretch}
 				<span
 					class="pointer-events-none absolute inset-0 grid place-items-center text-xs font-medium"
 				>
