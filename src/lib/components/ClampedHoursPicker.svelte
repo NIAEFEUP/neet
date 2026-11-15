@@ -2,6 +2,7 @@
 import { Button } from "$lib/components/ui/button";
 import { hapticTap, hapticTick } from "$lib/haptics";
 import { cn } from "$lib/utils.js";
+import { DEFAULT_TIME_WINDOW } from "../time-window";
 import { formatHour } from "./time-grid/date-utils";
 
 interface Props {
@@ -14,7 +15,7 @@ interface Props {
 }
 
 let {
-	value = $bindable([9, 17]),
+	value = $bindable([...DEFAULT_TIME_WINDOW]),
 	showHeader = true,
 	submit = true,
 	class: className,
@@ -44,6 +45,9 @@ const RUBBER_BAND_FACTOR = 0.55;
 let start = $derived(value[0] ?? 0);
 let end = $derived(value[1] ?? MAX_HOUR);
 let isWholeDay = $derived(start <= 0 && end >= MAX_HOUR);
+let isDefaultWindow = $derived(
+	start === DEFAULT_TIME_WINDOW[0] && end === DEFAULT_TIME_WINDOW[1],
+);
 
 /**
  * The block follows the pointer at a fractional hour while a drag is in
@@ -156,6 +160,9 @@ let pinchLeft = $state("50%");
 let pinchWidth = $state(MOVE_PINCH_WIDTH);
 let pinchDepth = $state(MOVE_PINCH_DEPTH);
 
+/** A full-day window cannot move, but it can still stretch elastically. */
+let isWholeDayStretch = $derived(isWholeDay && drag?.mode === "move");
+
 /**
  * 0 while the drag is free, approaching 1 as the rubber band saturates.
  * The pressed scale eases back to its resting size with it, so the pill looks
@@ -170,7 +177,12 @@ let dragResistance = $derived.by(() => {
 
 	if (current.mode === "move") {
 		const maxStart = MAX_HOUR - (current.endHour - current.startHour);
-		overshoot = Math.max(0, -shownStart, shownStart - maxStart);
+		overshoot = Math.max(
+			0,
+			-shownStart,
+			shownStart - maxStart,
+			shownEnd - MAX_HOUR,
+		);
 		limit = MOVE_RUBBER_BAND;
 	} else if (current.mode === "start") {
 		const outer = Math.max(0, -shownStart);
@@ -296,7 +308,18 @@ function moveBlockDrag(event: PointerEvent) {
 
 	if (current.mode === "move") {
 		const width = current.endHour - current.startHour;
-		if (width >= MAX_HOUR) return;
+
+		// A full-day window cannot move, but dragging it should still stretch
+		// against the day boundary instead of doing nothing.
+		if (width >= MAX_HOUR) {
+			const stretch = rubberBand(Math.abs(deltaHours), MOVE_RUBBER_BAND);
+
+			preview =
+				deltaHours < 0
+					? { start: -stretch, end: MAX_HOUR }
+					: { start: 0, end: MAX_HOUR + stretch };
+			return;
+		}
 
 		const rawStart = current.startHour + deltaHours;
 		const shown = rubberBandClamp(
@@ -415,7 +438,7 @@ function handleGripKeyDown(event: KeyboardEvent, edge: "start" | "end") {
 function reset() {
 	hapticTap();
 	preview = null;
-	value = [0, MAX_HOUR];
+	value = [...DEFAULT_TIME_WINDOW];
 }
 </script>
 
@@ -423,22 +446,21 @@ function reset() {
 	{#if showHeader}
 		<div class="flex min-h-6 items-center justify-between gap-3">
 			<p class="text-sm font-medium">Daily hours</p>
-			{#if !isWholeDay}
-				<div class="flex items-center gap-2.5">
-					<span class="tabular-nums text-sm font-medium text-foreground">
-						{formatHour(start)} – {formatHour(end)}
-					</span>
-					<Button
-						type="button"
-						variant="ghost"
-						size="xs"
-						onclick={reset}
-						class="h-8 text-muted-foreground sm:h-6"
-					>
-						Reset
-					</Button>
-				</div>
-			{/if}
+			<div class="flex items-center gap-2.5">
+				<span class="tabular-nums text-sm font-medium text-foreground">
+					{formatHour(start)} – {formatHour(end)}
+				</span>
+				<Button
+					type="button"
+					variant="ghost"
+					size="xs"
+					onclick={reset}
+					disabled={isDefaultWindow}
+					class="h-8 text-muted-foreground sm:h-6"
+				>
+					Reset
+				</Button>
+			</div>
 		</div>
 	{/if}
 
@@ -523,7 +545,7 @@ function reset() {
 				</svg>
 			</span>
 
-			{#if shownIsWholeDay}
+			{#if shownIsWholeDay || isWholeDayStretch}
 				<span
 					class="pointer-events-none absolute inset-0 grid place-items-center text-xs font-medium"
 				>

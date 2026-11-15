@@ -13,7 +13,12 @@ import PlusIcon from "@lucide/svelte/icons/plus";
 import type { SubmitFunction } from "@sveltejs/kit";
 import { onMount, untrack } from "svelte";
 import { enhance } from "$app/forms";
-import { ClampedHoursPicker, formatHour, parseHour } from "$lib";
+import {
+	ClampedHoursPicker,
+	DEFAULT_TIME_WINDOW,
+	formatHour,
+	parseHour,
+} from "$lib";
 import { Button } from "$lib/components/ui/button";
 import { ColorPicker } from "$lib/components/ui/color-picker";
 import { Input } from "$lib/components/ui/input";
@@ -61,7 +66,7 @@ function initialTimeWindow(): number[] {
 
 	// A fresh form starts at the working-day default. A failed submission
 	// with empty times was deliberately "Any time", so preserve that.
-	return form ? [0, 24] : [9, 17];
+	return form ? [0, 24] : [...DEFAULT_TIME_WINDOW];
 }
 
 function initialEventColor() {
