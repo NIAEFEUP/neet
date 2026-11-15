@@ -2,6 +2,7 @@
 import { Button } from "$lib/components/ui/button";
 import { hapticTap, hapticTick } from "$lib/haptics";
 import { cn } from "$lib/utils.js";
+import { DEFAULT_TIME_WINDOW } from "../time-window";
 import { formatHour } from "./time-grid/date-utils";
 
 interface Props {
@@ -14,7 +15,7 @@ interface Props {
 }
 
 let {
-	value = $bindable([9, 17]),
+	value = $bindable([...DEFAULT_TIME_WINDOW]),
 	showHeader = true,
 	submit = true,
 	class: className,
@@ -44,6 +45,9 @@ const RUBBER_BAND_FACTOR = 0.55;
 let start = $derived(value[0] ?? 0);
 let end = $derived(value[1] ?? MAX_HOUR);
 let isWholeDay = $derived(start <= 0 && end >= MAX_HOUR);
+let isDefaultWindow = $derived(
+	start === DEFAULT_TIME_WINDOW[0] && end === DEFAULT_TIME_WINDOW[1],
+);
 
 /**
  * The block follows the pointer at a fractional hour while a drag is in
@@ -434,7 +438,7 @@ function handleGripKeyDown(event: KeyboardEvent, edge: "start" | "end") {
 function reset() {
 	hapticTap();
 	preview = null;
-	value = [0, MAX_HOUR];
+	value = [...DEFAULT_TIME_WINDOW];
 }
 </script>
 
@@ -442,22 +446,21 @@ function reset() {
 	{#if showHeader}
 		<div class="flex min-h-6 items-center justify-between gap-3">
 			<p class="text-sm font-medium">Daily hours</p>
-			{#if !isWholeDay}
-				<div class="flex items-center gap-2.5">
-					<span class="tabular-nums text-sm font-medium text-foreground">
-						{formatHour(start)} – {formatHour(end)}
-					</span>
-					<Button
-						type="button"
-						variant="ghost"
-						size="xs"
-						onclick={reset}
-						class="h-8 text-muted-foreground sm:h-6"
-					>
-						Reset
-					</Button>
-				</div>
-			{/if}
+			<div class="flex items-center gap-2.5">
+				<span class="tabular-nums text-sm font-medium text-foreground">
+					{formatHour(start)} – {formatHour(end)}
+				</span>
+				<Button
+					type="button"
+					variant="ghost"
+					size="xs"
+					onclick={reset}
+					disabled={isDefaultWindow}
+					class="h-8 text-muted-foreground sm:h-6"
+				>
+					Reset
+				</Button>
+			</div>
 		</div>
 	{/if}
 
