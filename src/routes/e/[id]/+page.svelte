@@ -6,12 +6,14 @@ import ClockIcon from "@lucide/svelte/icons/clock";
 import LinkIcon from "@lucide/svelte/icons/link";
 import LoaderCircle from "@lucide/svelte/icons/loader-circle";
 import type { SubmitFunction } from "@sveltejs/kit";
-import { onDestroy, untrack } from "svelte";
+import { onDestroy, onMount, untrack } from "svelte";
 import { enhance } from "$app/forms";
 import { page } from "$app/state";
-import type { CellMode, PublicResponse, SelectedCells } from "$lib";
+import type { CellMode, PublicResponse, SelectedCells, SlotBlock } from "$lib";
 import {
 	AvailabilityResponses,
+	formatDayLong,
+	formatHour,
 	normalizeDays,
 	parseHour,
 	TimeGrid,
@@ -39,6 +41,10 @@ let copyStatusResetTimer: ReturnType<typeof setTimeout> | undefined;
 let hoveredResponseId = $state<string | null>(null);
 let selectedResponseIds = $state<string[]>([]);
 
+let hoveredSlotBlock = $state<SlotBlock | null>(null);
+let selectedSlotBlock = $state<SlotBlock | null>(null);
+const activeSlotBlock = $derived(selectedSlotBlock ?? hoveredSlotBlock);
+
 const dates = $derived(data.event.proposedDates);
 const eventColor = $derived(data.event.color);
 const headerHasColor = $derived(eventColor !== "");
@@ -58,6 +64,47 @@ const isolatedResponse = $derived(
 			) ?? null)
 		: null,
 );
+
+const yesGroup = $derived.by((): PublicResponse[] => {
+	if (!activeSlotBlock) return [];
+	const ids = new Set(activeSlotBlock.yesIds);
+	return data.responses
+		.filter((response: PublicResponse) => ids.has(response.id))
+		.sort((a: PublicResponse, b: PublicResponse) =>
+			a.name.localeCompare(b.name),
+		);
+});
+
+const maybeGroup = $derived.by((): PublicResponse[] => {
+	if (!activeSlotBlock) return [];
+	const ids = new Set(activeSlotBlock.maybeIds);
+	return data.responses
+		.filter((response: PublicResponse) => ids.has(response.id))
+		.sort((a: PublicResponse, b: PublicResponse) =>
+			a.name.localeCompare(b.name),
+		);
+});
+
+const unavailableGroup = $derived.by((): PublicResponse[] => {
+	if (!activeSlotBlock) return [];
+	const available = new Set([
+		...activeSlotBlock.yesIds,
+		...activeSlotBlock.maybeIds,
+	]);
+	return data.responses
+		.filter((response: PublicResponse) => !available.has(response.id))
+		.sort((a: PublicResponse, b: PublicResponse) =>
+			a.name.localeCompare(b.name),
+		);
+});
+
+const activeSlotLabel = $derived.by(() => {
+	if (!activeSlotBlock) return "";
+	const day = formatDayLong(activeSlotBlock.day);
+	const start = formatHour(activeSlotBlock.startHour);
+	const end = formatHour(activeSlotBlock.endHour);
+	return `${day} · ${start} – ${end}`;
+});
 const selectedResponses = $derived(
 	selectedResponseIds.length > 0
 		? data.responses.filter((response: PublicResponse) =>
@@ -72,28 +119,33 @@ const everyoneActive = $derived(
 const answerHeading = $derived(
 	data.participant ? "Update your availability" : "Add your availability",
 );
-const responsesHeading = $derived(
-	isolatedResponse
-		? `${isolatedResponse.name}'s availability`
-		: selectedResponseCount === 0
-			? "Everyone's availability"
-			: selectedResponseCount === 1
-				? `${selectedResponses[0].name}'s availability`
-				: "Selected availability",
-);
-const responsesSubtitle = $derived(
-	isolatedResponse
-		? "Showing only this participant's selected times."
-		: selectedResponseCount > 0
-			? `Showing ${selectedResponseCount} selected ${selectedResponseCount === 1 ? "person" : "people"}.`
-			: "Hover a name to preview their schedule. Check people to compare only them.",
-);
 const availabilityLabel = $derived(
 	isolatedResponse
 		? `${isolatedResponse.name}'s availability`
 		: selectedResponseCount > 0
 			? "Selected availability"
 			: "Everyone's availability",
+);
+
+const responsesHeading = $derived(
+	activeSlotBlock
+		? activeSlotLabel
+		: isolatedResponse
+			? `${isolatedResponse.name}'s availability`
+			: selectedResponseCount === 0
+				? "Everyone's availability"
+				: selectedResponseCount === 1
+					? `${selectedResponses[0].name}'s availability`
+					: "Selected availability",
+);
+const responsesSubtitle = $derived(
+	activeSlotBlock
+		? `${yesGroup.length} yes · ${maybeGroup.length} if need be · ${unavailableGroup.length} unavailable`
+		: isolatedResponse
+			? "Showing only this participant's selected times."
+			: selectedResponseCount > 0
+				? `Showing ${selectedResponseCount} selected ${selectedResponseCount === 1 ? "person" : "people"}.`
+				: "Hover a name to preview their schedule. Check people to compare only them.",
 );
 
 const timeLabel = $derived(
@@ -139,11 +191,13 @@ function markDirty() {
 function openAnswer() {
 	saved = false;
 	hoveredResponseId = null;
+	clearSlotSelection();
 	view = "answer";
 }
 
 function closeAnswer() {
 	hoveredResponseId = null;
+	clearSlotSelection();
 	view = "responses";
 }
 
@@ -187,6 +241,34 @@ const handleEnhance: SubmitFunction = () => {
 		}
 	};
 };
+
+function clearSlotSelection() {
+	selectedSlotBlock = null;
+	hoveredSlotBlock = null;
+}
+
+function handleDocumentClick(event: MouseEvent) {
+	const root = document.querySelector("[data-slot-selection-root]");
+	if (root && !root.contains(event.target as Node)) {
+		clearSlotSelection();
+	}
+}
+
+function handleKeydown(event: KeyboardEvent) {
+	if (event.key === "Escape") {
+		clearSlotSelection();
+	}
+}
+
+onMount(() => {
+	document.addEventListener("click", handleDocumentClick);
+	document.addEventListener("keydown", handleKeydown);
+
+	return () => {
+		document.removeEventListener("click", handleDocumentClick);
+		document.removeEventListener("keydown", handleKeydown);
+	};
+});
 </script>
 
 <svelte:head>
@@ -267,16 +349,60 @@ const handleEnhance: SubmitFunction = () => {
 		</div>
 	</header>
 
+	{#snippet participantRow(response: PublicResponse, unavailable: boolean)}
+		{@const checked = selectedResponseIds.includes(response.id)}
+		<label
+			class={[
+				"participant-row group relative flex w-full cursor-pointer items-center overflow-hidden rounded-md py-1.5 pr-2 font-medium text-sm transition-colors duration-150",
+				checked ? "bg-muted/60" : "hover:bg-muted/60",
+			]}
+			onmouseenter={() => (hoveredResponseId = response.id)}
+		>
+			<input
+				type="checkbox"
+				class="sr-only"
+				checked={checked}
+				onchange={() => toggleResponse(response.id)}
+				onfocus={() => (hoveredResponseId = response.id)}
+				onblur={() => (hoveredResponseId = null)}
+			/>
+			<span
+				class={[
+					"participant-checkbox pointer-events-none absolute top-1/2 left-2 flex size-4 -translate-y-1/2 items-center justify-center rounded-[5px] border shadow-xs transition-[opacity,scale] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] group-focus-within:ring-2 group-focus-within:ring-ring/50",
+					checked
+						? "scale-100 border-primary bg-primary text-primary-foreground opacity-100"
+						: "scale-90 border-input bg-background opacity-0 group-focus-within:scale-100 group-focus-within:opacity-100",
+				]}
+				aria-hidden="true"
+			>
+				<CheckIcon
+					class={`size-3 transition-opacity duration-100 ${checked ? "opacity-100" : "opacity-0"}`}
+				/>
+			</span>
+			<span
+				class={[
+					"participant-name min-w-0 flex-1 truncate pr-6 pl-2 transition-[translate] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]",
+					checked ? "translate-x-6" : "group-focus-within:translate-x-6",
+					unavailable && "text-muted-foreground line-through",
+				]}
+			>
+				{response.name}
+			</span>
+		</label>
+	{/snippet}
+
 	{#snippet responsesSidebar()}
 		<aside
 			aria-labelledby="participants-heading"
 			class="border-border border-t pt-5 xl:border-t-0 xl:border-l xl:pt-0 xl:pl-6"
 		>
 			<h2 id="participants-heading" class="font-semibold text-base">
-				Responses
+				{activeSlotBlock ? activeSlotLabel : "Responses"}
 			</h2>
 			<p class="mt-0.5 text-muted-foreground text-xs">
-				{data.responses.length} participant{data.responses.length === 1 ? "" : "s"}
+				{activeSlotBlock
+					? `${yesGroup.length} yes · ${maybeGroup.length} if need be · ${unavailableGroup.length} unavailable`
+					: `${data.responses.length} participant${data.responses.length === 1 ? "" : "s"}`}
 			</p>
 
 			{#if data.responses.length === 0}
@@ -284,18 +410,18 @@ const handleEnhance: SubmitFunction = () => {
 			{:else}
 				<div
 					role="group"
-					aria-label="Participant filters"
+					aria-label={activeSlotBlock ? "Availability for selected slot" : "Participant filters"}
 					class="mt-2.5 flex flex-col gap-0.5"
 					onmouseleave={() => (hoveredResponseId = null)}
 				>
 					<button
 						type="button"
-						aria-pressed={everyoneActive}
+						aria-pressed={everyoneActive && !activeSlotBlock}
 						onmouseenter={() => (hoveredResponseId = null)}
 						onclick={showEveryone}
 						class={[
 							"w-full cursor-pointer rounded-md px-2 py-1.5 text-left font-medium text-sm transition-colors duration-150",
-							everyoneActive
+							everyoneActive && !activeSlotBlock
 								? "bg-muted text-foreground"
 								: "text-foreground hover:bg-muted/60",
 						]}
@@ -303,45 +429,41 @@ const handleEnhance: SubmitFunction = () => {
 						Everyone
 					</button>
 
-					{#each data.responses as response (response.id)}
-						{@const checked = selectedResponseIds.includes(response.id)}
-						<label
-							class={[
-								"participant-row group relative flex w-full cursor-pointer items-center overflow-hidden rounded-md py-1.5 pr-2 font-medium text-sm transition-colors duration-150",
-								checked ? "bg-muted/60" : "hover:bg-muted/60",
-							]}
-							onmouseenter={() => (hoveredResponseId = response.id)}
-						>
-							<input
-								type="checkbox"
-								class="sr-only"
-								checked={checked}
-								onchange={() => toggleResponse(response.id)}
-								onfocus={() => (hoveredResponseId = response.id)}
-								onblur={() => (hoveredResponseId = null)}
-							/>
-							<span
-								class={[
-									"participant-checkbox pointer-events-none absolute top-1/2 left-2 flex size-4 -translate-y-1/2 items-center justify-center rounded-[5px] border shadow-xs transition-[opacity,scale] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] group-focus-within:ring-2 group-focus-within:ring-ring/50",
-									checked
-										? "scale-100 border-primary bg-primary text-primary-foreground opacity-100"
-										: "scale-90 border-input bg-background opacity-0 group-focus-within:scale-100 group-focus-within:opacity-100",
-								]}
-								aria-hidden="true"
-							>
-								<CheckIcon
-									class={`size-3 transition-opacity duration-100 ${checked ? "opacity-100" : "opacity-0"}`}
-								/>
-							</span>
-							<span
-								class={`participant-name min-w-0 flex-1 truncate pr-6 pl-2 transition-[translate] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] ${
-									checked ? "translate-x-6" : "group-focus-within:translate-x-6"
-								}`}
-							>
-								{response.name}
-							</span>
-						</label>
-					{/each}
+					{#if activeSlotBlock}
+						{#if yesGroup.length > 0}
+							<p class="mt-2 text-muted-foreground text-[11px] font-medium uppercase tracking-wide">
+								Yes
+								<span class="font-normal">({yesGroup.length})</span>
+							</p>
+							{#each yesGroup as response (response.id)}
+								{@render participantRow(response, false)}
+							{/each}
+						{/if}
+
+						{#if maybeGroup.length > 0}
+							<p class="mt-2 text-muted-foreground text-[11px] font-medium uppercase tracking-wide">
+								If need be
+								<span class="font-normal">({maybeGroup.length})</span>
+							</p>
+							{#each maybeGroup as response (response.id)}
+								{@render participantRow(response, false)}
+							{/each}
+						{/if}
+
+						{#if unavailableGroup.length > 0}
+							<p class="mt-2 text-muted-foreground text-[11px] font-medium uppercase tracking-wide">
+								Unavailable
+								<span class="font-normal">({unavailableGroup.length})</span>
+							</p>
+							{#each unavailableGroup as response (response.id)}
+								{@render participantRow(response, true)}
+							{/each}
+						{/if}
+					{:else}
+						{#each data.responses as response (response.id)}
+							{@render participantRow(response, false)}
+						{/each}
+					{/if}
 				</div>
 			{/if}
 
@@ -361,7 +483,10 @@ const handleEnhance: SubmitFunction = () => {
 
 	<div class="mt-8 px-5 sm:px-7">
 		{#if view === "responses"}
-			<div class="grid gap-8 xl:grid-cols-[minmax(0,1fr)_12rem] xl:gap-8">
+			<div
+				class="grid gap-8 xl:grid-cols-[minmax(0,1fr)_12rem] xl:gap-8"
+				data-slot-selection-root
+			>
 			<section aria-labelledby="responses-heading" class="min-w-0">
 				<div
 					class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
@@ -404,6 +529,10 @@ const handleEnhance: SubmitFunction = () => {
 						activeId={hoveredResponseId}
 						selectedIds={selectedResponseIds}
 						label={availabilityLabel}
+						hoveredBlockKey={hoveredSlotBlock?.key ?? null}
+						selectedBlockKey={selectedSlotBlock?.key ?? null}
+						onBlockHover={(block) => (hoveredSlotBlock = block)}
+						onBlockSelect={(block) => (selectedSlotBlock = block)}
 					/>
 				</div>
 			</section>

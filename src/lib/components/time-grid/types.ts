@@ -46,3 +46,18 @@ export interface HeatCell {
 }
 
 export type HeatmapCounts = Record<CellKey, HeatCell>;
+
+/**
+ * A contiguous vertical run of hours on a single day that share the exact same
+ * set of available people. Used to draw merged slot borders and to drive the
+ * "who is free" sidebar.
+ */
+export interface SlotBlock {
+	dayIndex: number;
+	day: Date;
+	startHour: number;
+	endHour: number;
+	key: string;
+	yesIds: string[];
+	maybeIds: string[];
+}

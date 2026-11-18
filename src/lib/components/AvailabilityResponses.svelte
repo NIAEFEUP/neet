@@ -9,11 +9,13 @@ import {
 	normalizeDays,
 } from "./time-grid/date-utils";
 import { cellKey, rowId } from "./time-grid/grid-utils";
+import { computeSlotBlocks, findSlotBlock } from "./time-grid/slot-blocks";
 import TimeGridDaysHeader from "./time-grid/TimeGridDaysHeader.svelte";
 import type {
 	DayInput,
 	HeatmapCounts,
 	PublicResponse,
+	SlotBlock,
 } from "./time-grid/types";
 
 const DAYS_PER_PAGE = 7;
@@ -36,6 +38,18 @@ interface Props {
 	activeId?: string | null;
 	/** When non-empty, aggregate the heatmap from only these responses. */
 	selectedIds?: string[];
+	/**
+	 * When provided, the block with this key is outlined as the hovered block.
+	 */
+	hoveredBlockKey?: string | null;
+	/**
+	 * When provided, the block with this key is outlined as the selected block.
+	 */
+	selectedBlockKey?: string | null;
+	/** Called when the user hovers over a slot block. */
+	onBlockHover?: (block: SlotBlock | null) => void;
+	/** Called when the user clicks a slot block. */
+	onBlockSelect?: (block: SlotBlock | null) => void;
 }
 
 let {
@@ -47,12 +61,31 @@ let {
 	label = "Everyone's availability",
 	activeId,
 	selectedIds,
+	hoveredBlockKey,
+	selectedBlockKey,
+	onBlockHover,
+	onBlockSelect,
 }: Props = $props();
 
 const idPrefix = $props.id();
 
 let days = $derived(normalizeDays(dates));
 let hours = $derived(hoursBetween(startHour, endHour));
+
+let slotBlocks = $derived(computeSlotBlocks(responses, days, hours));
+let activeBlockKey = $derived(selectedBlockKey ?? hoveredBlockKey ?? null);
+let activeBlock = $derived.by(() => {
+	if (!activeBlockKey) return null;
+	const block = slotBlocks.find((b) => b.key === activeBlockKey);
+	if (!block) return null;
+	if (
+		block.dayIndex < pageStart ||
+		block.dayIndex >= pageStart + DAYS_PER_PAGE
+	) {
+		return null;
+	}
+	return block;
+});
 
 let page = $state(0);
 let pageCount = $derived(Math.max(1, Math.ceil(days.length / DAYS_PER_PAGE)));
@@ -203,6 +236,27 @@ function goToPage(next: number) {
 	page = Math.min(Math.max(next, 0), pageCount - 1);
 }
 
+function blockForCell(dayIndex: number, hour: number): SlotBlock | null {
+	return findSlotBlock(slotBlocks, dayIndex, hour);
+}
+
+function isInActiveBlock(dayIndex: number, hour: number): boolean {
+	return (
+		!!activeBlock &&
+		activeBlock.dayIndex === dayIndex &&
+		activeBlock.startHour <= hour &&
+		activeBlock.endHour > hour
+	);
+}
+
+function handleCellHover(dayIndex: number, hour: number) {
+	onBlockHover?.(blockForCell(dayIndex, hour));
+}
+
+function handleCellClick(dayIndex: number, hour: number) {
+	onBlockSelect?.(blockForCell(dayIndex, hour));
+}
+
 function participantClass(active: boolean): string {
 	return [
 		"w-full cursor-pointer rounded-md px-3 py-1.5 text-left font-medium text-[12px] transition-[background-color,color] duration-150 ease-[var(--ease-out)]",
@@ -291,10 +345,12 @@ function participantClass(active: boolean): string {
 			<div
 				class="grid select-none"
 				role="grid"
+				tabindex="-1"
 				aria-label={label}
 				aria-rowcount={hours.length + 1}
 				aria-colcount={visibleDays.length + 1}
 				style="grid-template-columns: 44px repeat({visibleDays.length}, minmax(0, 104px)); grid-auto-rows: 36px; column-gap: 2px;"
+				onmouseleave={() => onBlockHover?.(null)}
 			>
 				<TimeGridDaysHeader
 					days={visibleDays}
@@ -316,19 +372,33 @@ function participantClass(active: boolean): string {
 							{@const key = cellKey(day, currentHour)}
 							{@const filled = isFilled(day, currentHour)}
 							{@const radius = cellRadius(day, currentHour)}
+							{@const inActiveBlock = isInActiveBlock(pageStart + index, currentHour)}
 							<div
 								role="gridcell"
+								tabindex="-1"
 								aria-label={cellLabel(day, currentHour, key)}
 								title={cellLabel(day, currentHour, key)}
 								class={[
 									"[corner-shape:squircle]",
 									filled ? "" : "border-b border-black/[0.04]",
+									activeBlock &&
+										!inActiveBlock &&
+										"opacity-40 transition-opacity duration-150",
 								]}
 								style={cellStyle(key, radius)}
+								onmouseenter={() => handleCellHover(pageStart + index, currentHour)}
+								onclick={() => handleCellClick(pageStart + index, currentHour)}
+								onkeydown={(event) => {
+									if (event.key === "Enter" || event.key === " ") {
+										event.preventDefault();
+										handleCellClick(pageStart + index, currentHour);
+									}
+								}}
 							></div>
 						{/each}
 					</div>
 				{/each}
+
 				</div>
 			</div>
 		</div>
