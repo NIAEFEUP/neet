@@ -462,7 +462,7 @@ function participantClass(active: boolean): string {
 				aria-label={label}
 				aria-rowcount={hours.length + 1}
 				aria-colcount={visibleDays.length + 1}
-				style="grid-template-columns: 44px repeat({visibleDays.length}, minmax(0, 104px)); grid-auto-rows: 36px; column-gap: 2px;"
+				style="grid-template-columns: 44px repeat({visibleDays.length}, minmax(88px, 104px)); grid-auto-rows: 36px; column-gap: 2px;"
 				onpointermove={handleGridPointerMove}
 				onpointerleave={handleGridLeave}
 			>
