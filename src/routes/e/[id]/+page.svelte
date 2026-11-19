@@ -690,7 +690,7 @@ onMount(() => {
 		transition:
 			translate 100ms cubic-bezier(0.23, 1, 0.32, 1),
 			scale 100ms cubic-bezier(0.23, 1, 0.32, 1),
-			opacity 50ms ease-in 20ms,
+			opacity 50ms linear 20ms,
 			background-color 100ms ease-out;
 	}
 
