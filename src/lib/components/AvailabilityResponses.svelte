@@ -493,7 +493,7 @@ function participantClass(active: boolean): string {
 								tabindex="-1"
 								aria-label={cellLabel(day, currentHour, key)}
 								class={[
-									"relative overflow-hidden [corner-shape:squircle] transition-opacity duration-150",
+									"touch-manipulation relative overflow-hidden [corner-shape:squircle] transition-opacity duration-150",
 									filled ? "cursor-pointer" : "border-b border-black/[0.04]",
 									activeBlock && !inActiveBlock && "opacity-35",
 								]}
