@@ -512,7 +512,27 @@ function participantClass(active: boolean): string {
 										handleCellClick(dayIndex, currentHour);
 									}
 								}}
-							></div>
+							>
+								{#if pinnedBlock && pinnedBlock.dayIndex === dayIndex && pinnedBlock.startHour === currentHour}
+									<button
+										type="button"
+										class="absolute top-0 left-0 z-10 inline-flex cursor-pointer items-center gap-1 rounded-br-[5px] bg-[#0a0a0a] py-0.5 pr-1.5 pl-1.5 font-semibold text-[9px] text-white leading-none transition-[background-color] duration-150 hover:bg-[#2a2a2a] focus-visible:outline-2 -outline-offset-2 focus-visible:outline-white sm:pr-2 sm:pl-2 sm:text-[10px]"
+										aria-label={`Clear selected time, ${formatDayLong(pinnedBlock.day)} from ${formatHour(pinnedBlock.startHour)} to ${formatHour(pinnedBlock.endHour)}`}
+										onclick={(event) => {
+											event.stopPropagation();
+											pointer = null;
+											onBlockSelect?.(null);
+											onBlockHover?.(null);
+										}}
+									>
+										{formatHour(pinnedBlock.startHour)}
+										<span
+											class="ml-0.5 hidden text-white/50 sm:inline"
+											aria-hidden="true">×</span
+										>
+									</button>
+								{/if}
+							</div>
 						{/each}
 					</div>
 				{/each}
