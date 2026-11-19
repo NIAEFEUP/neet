@@ -48,9 +48,9 @@ export interface HeatCell {
 export type HeatmapCounts = Record<CellKey, HeatCell>;
 
 /**
- * A contiguous vertical run of hours on a single day that share the exact same
- * set of available people. Used to draw merged slot borders and to drive the
- * "who is free" sidebar.
+ * One selectable hour on a single day. Hover and click are hour-granular, so
+ * each hour keeps its own answer set instead of merging with identical
+ * neighbours. Used to draw the selected outline and drive the status sidebar.
  */
 export interface SlotBlock {
 	dayIndex: number;
