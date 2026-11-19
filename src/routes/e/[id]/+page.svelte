@@ -393,17 +393,19 @@ onMount(() => {
 					</span>
 				{/if}
 			</span>
-			{#if status}
-				<span
-					class={[
-						"pointer-events-none absolute top-1/2 right-2 size-1.5 -translate-y-1/2 rounded-full",
-						status === "yes" && "bg-green-700",
-						status === "maybe" && "bg-amber-500",
-						status === "no" && "bg-neutral-300",
-					]}
-					aria-hidden="true"
-				></span>
-			{/if}
+			<span
+				class={[
+					"participant-status-dot pointer-events-none absolute top-1/2 right-2 size-1.5 -translate-y-1/2 rounded-full transition-[opacity,translate,scale,background-color] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]",
+					status
+						? "translate-x-0 scale-100 opacity-100"
+						: "translate-x-3 scale-50 opacity-0",
+					status === "yes" && "bg-green-700",
+					status === "maybe" && "bg-amber-500",
+					status === "no" && "bg-neutral-300",
+					{ "is-hiding": !status },
+				]}
+				aria-hidden="true"
+			></span>
 		</label>
 	{/snippet}
 
@@ -682,8 +684,25 @@ onMount(() => {
 		}
 	}
 
+	/* Exits are quicker than entrances, but the dot still holds its opacity
+	   briefly so the slide out reads as motion instead of a blink. */
+	.participant-status-dot.is-hiding {
+		transition:
+			translate 100ms cubic-bezier(0.23, 1, 0.32, 1),
+			scale 100ms cubic-bezier(0.23, 1, 0.32, 1),
+			opacity 50ms ease-in 20ms,
+			background-color 100ms ease-out;
+	}
+
 	@media (prefers-reduced-motion: reduce) {
 		.participant-checkbox {
+			scale: 1;
+			transition-property: opacity;
+		}
+
+		.participant-status-dot,
+		.participant-status-dot.is-hiding {
+			translate: 0 -50%;
 			scale: 1;
 			transition-property: opacity;
 		}
