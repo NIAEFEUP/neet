@@ -12,8 +12,6 @@ import { page } from "$app/state";
 import type { CellMode, PublicResponse, SelectedCells, SlotBlock } from "$lib";
 import {
 	AvailabilityResponses,
-	formatDayLong,
-	formatHour,
 	normalizeDays,
 	parseHour,
 	TimeGrid,
@@ -41,6 +39,8 @@ let copyStatusResetTimer: ReturnType<typeof setTimeout> | undefined;
 let hoveredResponseId = $state<string | null>(null);
 let selectedResponseIds = $state<string[]>([]);
 
+// Hover previews one hour; clicking pins it so the participant states stay
+// readable after the pointer leaves the grid.
 let hoveredSlotBlock = $state<SlotBlock | null>(null);
 let selectedSlotBlock = $state<SlotBlock | null>(null);
 const activeSlotBlock = $derived(selectedSlotBlock ?? hoveredSlotBlock);
@@ -58,53 +58,27 @@ const headerMutedClass = $derived(
 const startHour = $derived(parseHour(data.event.startTime) ?? 0);
 const endHour = $derived(parseHour(data.event.endTime) ?? 24);
 const isolatedResponse = $derived(
-	hoveredResponseId
-		? (data.responses.find(
-				(response: PublicResponse) => response.id === hoveredResponseId,
-			) ?? null)
-		: null,
+	activeSlotBlock
+		? null
+		: hoveredResponseId
+			? (data.responses.find(
+					(response: PublicResponse) => response.id === hoveredResponseId,
+				) ?? null)
+			: null,
 );
 
-const yesGroup = $derived.by((): PublicResponse[] => {
-	if (!activeSlotBlock) return [];
-	const ids = new Set(activeSlotBlock.yesIds);
-	return data.responses
-		.filter((response: PublicResponse) => ids.has(response.id))
-		.sort((a: PublicResponse, b: PublicResponse) =>
-			a.name.localeCompare(b.name),
-		);
-});
+const slotYesIds = $derived.by(() => new Set(activeSlotBlock?.yesIds ?? []));
+const slotMaybeIds = $derived.by(
+	() => new Set(activeSlotBlock?.maybeIds ?? []),
+);
 
-const maybeGroup = $derived.by((): PublicResponse[] => {
-	if (!activeSlotBlock) return [];
-	const ids = new Set(activeSlotBlock.maybeIds);
-	return data.responses
-		.filter((response: PublicResponse) => ids.has(response.id))
-		.sort((a: PublicResponse, b: PublicResponse) =>
-			a.name.localeCompare(b.name),
-		);
-});
+function slotStatusFor(id: string): "yes" | "maybe" | "no" | null {
+	if (!activeSlotBlock) return null;
+	if (slotYesIds.has(id)) return "yes";
+	if (slotMaybeIds.has(id)) return "maybe";
+	return "no";
+}
 
-const unavailableGroup = $derived.by((): PublicResponse[] => {
-	if (!activeSlotBlock) return [];
-	const available = new Set([
-		...activeSlotBlock.yesIds,
-		...activeSlotBlock.maybeIds,
-	]);
-	return data.responses
-		.filter((response: PublicResponse) => !available.has(response.id))
-		.sort((a: PublicResponse, b: PublicResponse) =>
-			a.name.localeCompare(b.name),
-		);
-});
-
-const activeSlotLabel = $derived.by(() => {
-	if (!activeSlotBlock) return "";
-	const day = formatDayLong(activeSlotBlock.day);
-	const start = formatHour(activeSlotBlock.startHour);
-	const end = formatHour(activeSlotBlock.endHour);
-	return `${day} · ${start} – ${end}`;
-});
 const selectedResponses = $derived(
 	selectedResponseIds.length > 0
 		? data.responses.filter((response: PublicResponse) =>
@@ -128,24 +102,20 @@ const availabilityLabel = $derived(
 );
 
 const responsesHeading = $derived(
-	activeSlotBlock
-		? activeSlotLabel
-		: isolatedResponse
-			? `${isolatedResponse.name}'s availability`
-			: selectedResponseCount === 0
-				? "Everyone's availability"
-				: selectedResponseCount === 1
-					? `${selectedResponses[0].name}'s availability`
-					: "Selected availability",
+	isolatedResponse
+		? `${isolatedResponse.name}'s availability`
+		: selectedResponseCount === 0
+			? "Everyone's availability"
+			: selectedResponseCount === 1
+				? `${selectedResponses[0].name}'s availability`
+				: "Selected availability",
 );
 const responsesSubtitle = $derived(
-	activeSlotBlock
-		? `${yesGroup.length} yes · ${maybeGroup.length} if need be · ${unavailableGroup.length} unavailable`
-		: isolatedResponse
-			? "Showing only this participant's selected times."
-			: selectedResponseCount > 0
-				? `Showing ${selectedResponseCount} selected ${selectedResponseCount === 1 ? "person" : "people"}.`
-				: "Hover a name to preview their schedule. Check people to compare only them.",
+	isolatedResponse
+		? "Showing only this participant's selected times."
+		: selectedResponseCount > 0
+			? `Showing ${selectedResponseCount} selected ${selectedResponseCount === 1 ? "person" : "people"}.`
+			: "Hover a name to preview their schedule. Check people to compare, or select a time to see who's free.",
 );
 
 const timeLabel = $derived(
@@ -236,6 +206,7 @@ const handleEnhance: SubmitFunction = () => {
 		isSubmitting = false;
 		if (result.type === "success") {
 			showEveryone();
+			clearSlotSelection();
 			saved = true;
 			view = "responses";
 		}
@@ -245,6 +216,24 @@ const handleEnhance: SubmitFunction = () => {
 function clearSlotSelection() {
 	selectedSlotBlock = null;
 	hoveredSlotBlock = null;
+}
+
+function handleBlockHover(block: SlotBlock | null) {
+	if (selectedSlotBlock) return;
+	hoveredSlotBlock = block;
+}
+
+function handleBlockSelect(block: SlotBlock | null) {
+	if (!block) {
+		clearSlotSelection();
+		return;
+	}
+
+	const unpinning = selectedSlotBlock?.key === block.key;
+	selectedSlotBlock = unpinning ? null : block;
+	// Unpinning leaves the pointer on the slot, so fall back to the lighter
+	// hover preview instead of dropping every state at once.
+	hoveredSlotBlock = unpinning ? block : null;
 }
 
 function handleDocumentClick(event: MouseEvent) {
@@ -349,21 +338,26 @@ onMount(() => {
 		</div>
 	</header>
 
-	{#snippet participantRow(response: PublicResponse, unavailable: boolean)}
+	{#snippet participantRow(response: PublicResponse)}
 		{@const checked = selectedResponseIds.includes(response.id)}
+		{@const status = slotStatusFor(response.id)}
 		<label
 			class={[
 				"participant-row group relative flex w-full cursor-pointer items-center overflow-hidden rounded-md py-1.5 pr-2 font-medium text-sm transition-colors duration-150",
 				checked ? "bg-muted/60" : "hover:bg-muted/60",
 			]}
-			onmouseenter={() => (hoveredResponseId = response.id)}
+			onmouseenter={() => {
+				if (!activeSlotBlock) hoveredResponseId = response.id;
+			}}
 		>
 			<input
 				type="checkbox"
 				class="sr-only"
 				checked={checked}
 				onchange={() => toggleResponse(response.id)}
-				onfocus={() => (hoveredResponseId = response.id)}
+				onfocus={() => {
+					if (!activeSlotBlock) hoveredResponseId = response.id;
+				}}
 				onblur={() => (hoveredResponseId = null)}
 			/>
 			<span
@@ -383,11 +377,33 @@ onMount(() => {
 				class={[
 					"participant-name min-w-0 flex-1 truncate pr-6 pl-2 transition-[translate] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]",
 					checked ? "translate-x-6" : "group-focus-within:translate-x-6",
-					unavailable && "text-muted-foreground line-through",
+					status === "yes" && "text-green-700",
+					status === "maybe" && "text-amber-700",
+					status === "no" && "text-muted-foreground line-through decoration-1",
 				]}
 			>
 				{response.name}
+				{#if status}
+					<span class="sr-only">
+						— {status === "yes"
+							? "available"
+							: status === "maybe"
+								? "if need be"
+								: "not available"}
+					</span>
+				{/if}
 			</span>
+			{#if status}
+				<span
+					class={[
+						"pointer-events-none absolute top-1/2 right-2 size-1.5 -translate-y-1/2 rounded-full",
+						status === "yes" && "bg-green-700",
+						status === "maybe" && "bg-amber-500",
+						status === "no" && "bg-neutral-300",
+					]}
+					aria-hidden="true"
+				></span>
+			{/if}
 		</label>
 	{/snippet}
 
@@ -397,12 +413,10 @@ onMount(() => {
 			class="border-border border-t pt-5 xl:border-t-0 xl:border-l xl:pt-0 xl:pl-6"
 		>
 			<h2 id="participants-heading" class="font-semibold text-base">
-				{activeSlotBlock ? activeSlotLabel : "Responses"}
+				Responses
 			</h2>
 			<p class="mt-0.5 text-muted-foreground text-xs">
-				{activeSlotBlock
-					? `${yesGroup.length} yes · ${maybeGroup.length} if need be · ${unavailableGroup.length} unavailable`
-					: `${data.responses.length} participant${data.responses.length === 1 ? "" : "s"}`}
+				{data.responses.length} participant{data.responses.length === 1 ? "" : "s"}
 			</p>
 
 			{#if data.responses.length === 0}
@@ -410,18 +424,18 @@ onMount(() => {
 			{:else}
 				<div
 					role="group"
-					aria-label={activeSlotBlock ? "Availability for selected slot" : "Participant filters"}
+					aria-label="Participant filters"
 					class="mt-2.5 flex flex-col gap-0.5"
 					onmouseleave={() => (hoveredResponseId = null)}
 				>
 					<button
 						type="button"
-						aria-pressed={everyoneActive && !activeSlotBlock}
+						aria-pressed={everyoneActive}
 						onmouseenter={() => (hoveredResponseId = null)}
 						onclick={showEveryone}
 						class={[
 							"w-full cursor-pointer rounded-md px-2 py-1.5 text-left font-medium text-sm transition-colors duration-150",
-							everyoneActive && !activeSlotBlock
+							everyoneActive
 								? "bg-muted text-foreground"
 								: "text-foreground hover:bg-muted/60",
 						]}
@@ -429,41 +443,9 @@ onMount(() => {
 						Everyone
 					</button>
 
-					{#if activeSlotBlock}
-						{#if yesGroup.length > 0}
-							<p class="mt-2 text-muted-foreground text-[11px] font-medium uppercase tracking-wide">
-								Yes
-								<span class="font-normal">({yesGroup.length})</span>
-							</p>
-							{#each yesGroup as response (response.id)}
-								{@render participantRow(response, false)}
-							{/each}
-						{/if}
-
-						{#if maybeGroup.length > 0}
-							<p class="mt-2 text-muted-foreground text-[11px] font-medium uppercase tracking-wide">
-								If need be
-								<span class="font-normal">({maybeGroup.length})</span>
-							</p>
-							{#each maybeGroup as response (response.id)}
-								{@render participantRow(response, false)}
-							{/each}
-						{/if}
-
-						{#if unavailableGroup.length > 0}
-							<p class="mt-2 text-muted-foreground text-[11px] font-medium uppercase tracking-wide">
-								Unavailable
-								<span class="font-normal">({unavailableGroup.length})</span>
-							</p>
-							{#each unavailableGroup as response (response.id)}
-								{@render participantRow(response, true)}
-							{/each}
-						{/if}
-					{:else}
-						{#each data.responses as response (response.id)}
-							{@render participantRow(response, false)}
-						{/each}
-					{/if}
+					{#each data.responses as response (response.id)}
+						{@render participantRow(response)}
+					{/each}
 				</div>
 			{/if}
 
@@ -526,13 +508,13 @@ onMount(() => {
 						{endHour}
 						responses={data.responses}
 						counts={data.heat}
-						activeId={hoveredResponseId}
+						activeId={activeSlotBlock ? null : hoveredResponseId}
 						selectedIds={selectedResponseIds}
 						label={availabilityLabel}
 						hoveredBlockKey={hoveredSlotBlock?.key ?? null}
 						selectedBlockKey={selectedSlotBlock?.key ?? null}
-						onBlockHover={(block) => (hoveredSlotBlock = block)}
-						onBlockSelect={(block) => (selectedSlotBlock = block)}
+						onBlockHover={handleBlockHover}
+						onBlockSelect={handleBlockSelect}
 					/>
 				</div>
 			</section>
