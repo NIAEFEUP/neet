@@ -147,6 +147,17 @@ export function formatDayLong(date: Date): string {
 }
 
 /**
+ * Formats a Date as a compact weekday and date, e.g. 'Wed, Nov 18'.
+ */
+export function formatDayCompact(date: Date): string {
+	return date.toLocaleDateString("en-US", {
+		weekday: "short",
+		month: "short",
+		day: "numeric",
+	});
+}
+
+/**
  * Formats an hour number to 24h display (e.g., '09:00').
  */
 export function formatHour(hour: number): string {

@@ -2,6 +2,7 @@
 import { Blobatar } from "@blobatar/svelte";
 import "blobatar/motion.css";
 import {
+	formatDayCompact,
 	formatDayLong,
 	formatDayRange,
 	formatHour,
@@ -39,16 +40,18 @@ interface Props {
 	/** When non-empty, aggregate the heatmap from only these responses. */
 	selectedIds?: string[];
 	/**
-	 * When provided, the block with this key is outlined as the hovered block.
+	 * When provided, the hour with this key is ringed as the hovered hour.
+	 * Moving away from the grid clears it; it is not kept over the sidebar.
 	 */
 	hoveredBlockKey?: string | null;
 	/**
-	 * When provided, the block with this key is outlined as the selected block.
+	 * When provided, the hour with this key is pinned: a solid ring and a
+	 * compact time pill. Hover previews are ignored while an hour is pinned.
 	 */
 	selectedBlockKey?: string | null;
-	/** Called when the user hovers over a slot block. */
+	/** Called when the user hovers over an hour. */
 	onBlockHover?: (block: SlotBlock | null) => void;
-	/** Called when the user clicks a slot block. */
+	/** Called when the user clicks an hour. */
 	onBlockSelect?: (block: SlotBlock | null) => void;
 }
 
@@ -73,10 +76,17 @@ let days = $derived(normalizeDays(dates));
 let hours = $derived(hoursBetween(startHour, endHour));
 
 let slotBlocks = $derived(computeSlotBlocks(responses, days, hours));
-let activeBlockKey = $derived(selectedBlockKey ?? hoveredBlockKey ?? null);
-let activeBlock = $derived.by(() => {
-	if (!activeBlockKey) return null;
-	const block = slotBlocks.find((b) => b.key === activeBlockKey);
+
+let page = $state(0);
+let pageCount = $derived(Math.max(1, Math.ceil(days.length / DAYS_PER_PAGE)));
+let currentPage = $derived(Math.min(page, pageCount - 1));
+let pageStart = $derived(currentPage * DAYS_PER_PAGE);
+let visibleDays = $derived(days.slice(pageStart, pageStart + DAYS_PER_PAGE));
+let rangeLabel = $derived(formatDayRange(visibleDays));
+
+function visibleBlock(key: string | null | undefined): SlotBlock | null {
+	if (!key) return null;
+	const block = slotBlocks.find((candidate) => candidate.key === key) ?? null;
 	if (!block) return null;
 	if (
 		block.dayIndex < pageStart ||
@@ -85,14 +95,43 @@ let activeBlock = $derived.by(() => {
 		return null;
 	}
 	return block;
-});
+}
 
-let page = $state(0);
-let pageCount = $derived(Math.max(1, Math.ceil(days.length / DAYS_PER_PAGE)));
-let currentPage = $derived(Math.min(page, pageCount - 1));
-let pageStart = $derived(currentPage * DAYS_PER_PAGE);
-let visibleDays = $derived(days.slice(pageStart, pageStart + DAYS_PER_PAGE));
-let rangeLabel = $derived(formatDayRange(visibleDays));
+let hoveredBlock = $derived(visibleBlock(hoveredBlockKey));
+let pinnedBlock = $derived(visibleBlock(selectedBlockKey));
+let activeBlock = $derived(pinnedBlock ?? hoveredBlock);
+let tooltipBlock = $derived(pinnedBlock ? null : hoveredBlock);
+
+// The tooltip follows the mouse, so its position is tracked separately from
+// the hovered block. It never enters the layout: it is fixed and translated.
+let pointer = $state<{ x: number; y: number } | null>(null);
+let tooltipWidth = $state(0);
+let tooltipHeight = $state(0);
+const TOOLTIP_OFFSET = 14;
+const TOOLTIP_MARGIN = 12;
+
+let tooltipPosition = $derived.by(() => {
+	if (!pointer) return null;
+
+	const width = tooltipWidth || 220;
+	const height = tooltipHeight || 48;
+	let x = pointer.x + TOOLTIP_OFFSET;
+	let y = pointer.y + TOOLTIP_OFFSET;
+
+	if (typeof window !== "undefined") {
+		if (x + width > window.innerWidth - TOOLTIP_MARGIN) {
+			x = pointer.x - width - TOOLTIP_OFFSET;
+		}
+		if (y + height > window.innerHeight - TOOLTIP_MARGIN) {
+			y = pointer.y - height - TOOLTIP_OFFSET;
+		}
+	}
+
+	return {
+		x: Math.max(TOOLTIP_MARGIN, x),
+		y: Math.max(TOOLTIP_MARGIN, y),
+	};
+});
 
 // Hovering a name previews that person; clicking pins them so touch users can
 // keep the filter without staying on the button.
@@ -233,7 +272,13 @@ function cellLabel(day: Date, hour: number, key: string): string {
 }
 
 function goToPage(next: number) {
-	page = Math.min(Math.max(next, 0), pageCount - 1);
+	const target = Math.min(Math.max(next, 0), pageCount - 1);
+	if (target === currentPage) return;
+
+	page = target;
+	pointer = null;
+	onBlockHover?.(null);
+	onBlockSelect?.(null);
 }
 
 function blockForCell(dayIndex: number, hour: number): SlotBlock | null {
@@ -249,12 +294,77 @@ function isInActiveBlock(dayIndex: number, hour: number): boolean {
 	);
 }
 
-function handleCellHover(dayIndex: number, hour: number) {
-	onBlockHover?.(blockForCell(dayIndex, hour));
+function handleCellEnter(event: PointerEvent, dayIndex: number, hour: number) {
+	// Touch has no hover: a tap pins the slot instead, so nothing should dim
+	// while a finger is only passing over the grid.
+	if (event.pointerType !== "mouse") return;
+
+	if (selectedBlockKey) {
+		onBlockHover?.(null);
+		return;
+	}
+
+	const block = blockForCell(dayIndex, hour);
+	onBlockHover?.(block);
+
+	if (block) {
+		pointer = { x: event.clientX, y: event.clientY };
+	}
 }
 
 function handleCellClick(dayIndex: number, hour: number) {
+	pointer = null;
 	onBlockSelect?.(blockForCell(dayIndex, hour));
+}
+
+function handleGridPointerMove(event: PointerEvent) {
+	if (event.pointerType !== "mouse" || pinnedBlock || !hoveredBlock) {
+		return;
+	}
+
+	pointer = { x: event.clientX, y: event.clientY };
+}
+
+function clearHover() {
+	pointer = null;
+	onBlockHover?.(null);
+}
+
+function handleGridLeave() {
+	clearHover();
+}
+
+/**
+ * Draws only the perimeter of the active block. Each edge is an inset shadow,
+ * so the stroke lives inside the cell and can never change its size or the
+ * grid's layout.
+ */
+function blockEdgeStyle(dayIndex: number, hour: number): string | undefined {
+	const block = activeBlock;
+	if (
+		!block ||
+		block.dayIndex !== dayIndex ||
+		hour < block.startHour ||
+		hour >= block.endHour
+	) {
+		return undefined;
+	}
+
+	const color = pinnedBlock ? "#0a0a0a" : "rgba(10, 10, 10, 0.6)";
+	const width = "1.5px";
+	const shadows = [
+		`inset ${width} 0 0 0 ${color}`,
+		`inset -${width} 0 0 0 ${color}`,
+	];
+
+	if (hour === block.startHour) {
+		shadows.push(`inset 0 ${width} 0 0 ${color}`);
+	}
+	if (hour === block.endHour - 1) {
+		shadows.push(`inset 0 -${width} 0 0 ${color}`);
+	}
+
+	return `box-shadow: ${shadows.join(", ")};`;
 }
 
 function participantClass(active: boolean): string {
@@ -341,7 +451,10 @@ function participantClass(active: boolean): string {
 				inert={responses.length === 0}
 			>
 			<div class="w-full min-w-0 lg:w-fit">
-				<div class="max-h-[70dvh] overflow-auto overscroll-none">
+				<div
+					class="max-h-[70dvh] overflow-auto overscroll-none"
+					onscroll={clearHover}
+				>
 			<div
 				class="grid select-none"
 				role="grid"
@@ -350,7 +463,8 @@ function participantClass(active: boolean): string {
 				aria-rowcount={hours.length + 1}
 				aria-colcount={visibleDays.length + 1}
 				style="grid-template-columns: 44px repeat({visibleDays.length}, minmax(0, 104px)); grid-auto-rows: 36px; column-gap: 2px;"
-				onmouseleave={() => onBlockHover?.(null)}
+				onpointermove={handleGridPointerMove}
+				onpointerleave={handleGridLeave}
 			>
 				<TimeGridDaysHeader
 					days={visibleDays}
@@ -369,29 +483,33 @@ function participantClass(active: boolean): string {
 						</div>
 
 						{#each visibleDays as day, index (day.getTime())}
+							{@const dayIndex = pageStart + index}
 							{@const key = cellKey(day, currentHour)}
 							{@const filled = isFilled(day, currentHour)}
 							{@const radius = cellRadius(day, currentHour)}
-							{@const inActiveBlock = isInActiveBlock(pageStart + index, currentHour)}
+							{@const inActiveBlock = isInActiveBlock(dayIndex, currentHour)}
 							<div
 								role="gridcell"
 								tabindex="-1"
 								aria-label={cellLabel(day, currentHour, key)}
-								title={cellLabel(day, currentHour, key)}
 								class={[
-									"[corner-shape:squircle]",
-									filled ? "" : "border-b border-black/[0.04]",
-									activeBlock &&
-										!inActiveBlock &&
-										"opacity-40 transition-opacity duration-150",
+									"relative overflow-hidden [corner-shape:squircle] transition-opacity duration-150",
+									filled ? "cursor-pointer" : "border-b border-black/[0.04]",
+									activeBlock && !inActiveBlock && "opacity-35",
 								]}
-								style={cellStyle(key, radius)}
-								onmouseenter={() => handleCellHover(pageStart + index, currentHour)}
-								onclick={() => handleCellClick(pageStart + index, currentHour)}
+								style={[
+									cellStyle(key, radius),
+									blockEdgeStyle(dayIndex, currentHour),
+								]
+									.filter(Boolean)
+									.join(" ")}
+								onpointerenter={(event) =>
+									handleCellEnter(event, dayIndex, currentHour)}
+								onclick={() => handleCellClick(dayIndex, currentHour)}
 								onkeydown={(event) => {
 									if (event.key === "Enter" || event.key === " ") {
 										event.preventDefault();
-										handleCellClick(pageStart + index, currentHour);
+										handleCellClick(dayIndex, currentHour);
 									}
 								}}
 							></div>
@@ -480,6 +598,42 @@ function participantClass(active: boolean): string {
 					</div>
 				</div>
 			{/if}
+		</div>
+	{/if}
+
+	{#if tooltipBlock && pointer && tooltipPosition}
+		<div
+			bind:clientWidth={tooltipWidth}
+			bind:clientHeight={tooltipHeight}
+			class="pointer-events-none fixed top-0 left-0 z-50 flex flex-col gap-0.5 rounded-lg bg-[#0a0a0a] px-2.5 py-1.5 text-white shadow-lg"
+			style:transform={`translate3d(${tooltipPosition.x}px, ${tooltipPosition.y}px, 0)`}
+			aria-hidden="true"
+		>
+			<span
+				class="whitespace-nowrap font-medium text-[11px] leading-4 tabular-nums"
+			>
+				{formatDayCompact(tooltipBlock.day)} · {formatHour(
+					tooltipBlock.startHour,
+				)} – {formatHour(tooltipBlock.endHour)}
+			</span>
+			<span class="flex items-center gap-2.5 text-[10px] leading-3 text-white/70">
+				{#if tooltipBlock.yesIds.length > 0}
+					<span class="inline-flex items-center gap-1">
+						<span
+							class="size-1.5 rounded-full bg-emerald-400"
+							aria-hidden="true"></span>
+						{tooltipBlock.yesIds.length} yes
+					</span>
+				{/if}
+				{#if tooltipBlock.maybeIds.length > 0}
+					<span class="inline-flex items-center gap-1">
+						<span
+							class="size-1.5 rounded-full bg-amber-400"
+							aria-hidden="true"></span>
+						{tooltipBlock.maybeIds.length} if need be
+					</span>
+				{/if}
+			</span>
 		</div>
 	{/if}
 </div>
