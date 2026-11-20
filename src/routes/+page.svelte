@@ -3,6 +3,7 @@ import StarIcon from "@lucide/svelte/icons/star";
 import { resolve } from "$app/paths";
 import logo from "$lib/assets/favicon.svg";
 import nifeupLogo from "$lib/assets/nifeup.svg";
+import GoogleSignInButton from "$lib/components/auth/GoogleSignInButton.svelte";
 import AsciiAvailability from "$lib/components/home/AsciiAvailability.svelte";
 import { Button } from "$lib/components/ui/button";
 import { ButtonGroup } from "$lib/components/ui/button-group";
@@ -32,7 +33,13 @@ const repositoryUrl = "https://github.com/NIAEFEUP/neet";
 		<div class="hero-copy">
 			<h1 id="home-title">Many schedules,<br />one time.</h1>
 			<p class="hero-lead">Find a time that works for everyone.</p>
-			<a class="create-key" href={resolve("/create")}>Create an Event</a>
+			{#if data.user}
+				<a class="create-key" href={resolve("/create")}>Create an Event</a>
+			{:else}
+				<div class="mt-10">
+					<GoogleSignInButton label="Log in with Google" callbackURL="/" />
+				</div>
+			{/if}
 		</div>
 		<AsciiAvailability />
 	</section>

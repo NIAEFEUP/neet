@@ -68,14 +68,17 @@ async function main() {
 		endTime: "18:00",
 	});
 
-	// Guests answer per event, without accounts.
+	// Members answer as themselves: the row carries the account id, and the
+	// name is a snapshot so the responses list needs no join.
 	const aliceParticipant = await db.orm.public.Participant.create({
 		eventId: event.id,
+		userId: alice.id,
 		name: alice.name,
 	});
 
 	const bobParticipant = await db.orm.public.Participant.create({
 		eventId: event.id,
+		userId: bob.id,
 		name: bob.name,
 	});
 
