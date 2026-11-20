@@ -43,9 +43,12 @@
 	},
 	"dependencies": {
 		"@ark-ui/svelte": "^5.25.1",
+		"@better-auth/prisma-adapter": "^1.7.26",
 		"@blobatar/svelte": "^2.7.0",
 		"@prisma/cli-engine": "0.6.1",
 		"@prisma/orm-postgres": "8.0.0-rc.12",
+		"better-auth": "^1.7.26",
+		"better-auth-adapter-prisma8": "^0.6.1",
 		"blobatar": "^2.7.0",
 		"dotenv": "^18.0.4",
 		"prisma": "8.0.0-rc.17",
