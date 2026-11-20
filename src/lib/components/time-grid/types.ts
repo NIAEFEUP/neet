@@ -46,3 +46,18 @@ export interface HeatCell {
 }
 
 export type HeatmapCounts = Record<CellKey, HeatCell>;
+
+/**
+ * One selectable hour on a single day. Hover and click are hour-granular, so
+ * each hour keeps its own answer set instead of merging with identical
+ * neighbours. Used to draw the selected outline and drive the status sidebar.
+ */
+export interface SlotBlock {
+	dayIndex: number;
+	day: Date;
+	startHour: number;
+	endHour: number;
+	key: string;
+	yesIds: string[];
+	maybeIds: string[];
+}

@@ -6,10 +6,10 @@ import ClockIcon from "@lucide/svelte/icons/clock";
 import LinkIcon from "@lucide/svelte/icons/link";
 import LoaderCircle from "@lucide/svelte/icons/loader-circle";
 import type { SubmitFunction } from "@sveltejs/kit";
-import { onDestroy, untrack } from "svelte";
+import { onDestroy, onMount, untrack } from "svelte";
 import { enhance } from "$app/forms";
 import { page } from "$app/state";
-import type { CellMode, PublicResponse, SelectedCells } from "$lib";
+import type { CellMode, PublicResponse, SelectedCells, SlotBlock } from "$lib";
 import {
 	AvailabilityResponses,
 	normalizeDays,
@@ -39,6 +39,12 @@ let copyStatusResetTimer: ReturnType<typeof setTimeout> | undefined;
 let hoveredResponseId = $state<string | null>(null);
 let selectedResponseIds = $state<string[]>([]);
 
+// Hover previews one hour; clicking pins it so the participant states stay
+// readable after the pointer leaves the grid.
+let hoveredSlotBlock = $state<SlotBlock | null>(null);
+let selectedSlotBlock = $state<SlotBlock | null>(null);
+const activeSlotBlock = $derived(selectedSlotBlock ?? hoveredSlotBlock);
+
 const dates = $derived(data.event.proposedDates);
 const eventColor = $derived(data.event.color);
 const headerHasColor = $derived(eventColor !== "");
@@ -52,12 +58,27 @@ const headerMutedClass = $derived(
 const startHour = $derived(parseHour(data.event.startTime) ?? 0);
 const endHour = $derived(parseHour(data.event.endTime) ?? 24);
 const isolatedResponse = $derived(
-	hoveredResponseId
-		? (data.responses.find(
-				(response: PublicResponse) => response.id === hoveredResponseId,
-			) ?? null)
-		: null,
+	activeSlotBlock
+		? null
+		: hoveredResponseId
+			? (data.responses.find(
+					(response: PublicResponse) => response.id === hoveredResponseId,
+				) ?? null)
+			: null,
 );
+
+const slotYesIds = $derived.by(() => new Set(activeSlotBlock?.yesIds ?? []));
+const slotMaybeIds = $derived.by(
+	() => new Set(activeSlotBlock?.maybeIds ?? []),
+);
+
+function slotStatusFor(id: string): "yes" | "maybe" | "no" | null {
+	if (!activeSlotBlock) return null;
+	if (slotYesIds.has(id)) return "yes";
+	if (slotMaybeIds.has(id)) return "maybe";
+	return "no";
+}
+
 const selectedResponses = $derived(
 	selectedResponseIds.length > 0
 		? data.responses.filter((response: PublicResponse) =>
@@ -72,6 +93,14 @@ const everyoneActive = $derived(
 const answerHeading = $derived(
 	data.participant ? "Update your availability" : "Add your availability",
 );
+const availabilityLabel = $derived(
+	isolatedResponse
+		? `${isolatedResponse.name}'s availability`
+		: selectedResponseCount > 0
+			? "Selected availability"
+			: "Everyone's availability",
+);
+
 const responsesHeading = $derived(
 	isolatedResponse
 		? `${isolatedResponse.name}'s availability`
@@ -86,14 +115,7 @@ const responsesSubtitle = $derived(
 		? "Showing only this participant's selected times."
 		: selectedResponseCount > 0
 			? `Showing ${selectedResponseCount} selected ${selectedResponseCount === 1 ? "person" : "people"}.`
-			: "Hover a name to preview their schedule. Check people to compare only them.",
-);
-const availabilityLabel = $derived(
-	isolatedResponse
-		? `${isolatedResponse.name}'s availability`
-		: selectedResponseCount > 0
-			? "Selected availability"
-			: "Everyone's availability",
+			: "Hover a name to preview their schedule. Check people to compare, or select a time to see who's free.",
 );
 
 const timeLabel = $derived(
@@ -139,11 +161,13 @@ function markDirty() {
 function openAnswer() {
 	saved = false;
 	hoveredResponseId = null;
+	clearSlotSelection();
 	view = "answer";
 }
 
 function closeAnswer() {
 	hoveredResponseId = null;
+	clearSlotSelection();
 	view = "responses";
 }
 
@@ -182,11 +206,58 @@ const handleEnhance: SubmitFunction = () => {
 		isSubmitting = false;
 		if (result.type === "success") {
 			showEveryone();
+			clearSlotSelection();
 			saved = true;
 			view = "responses";
 		}
 	};
 };
+
+function clearSlotSelection() {
+	selectedSlotBlock = null;
+	hoveredSlotBlock = null;
+}
+
+function handleBlockHover(block: SlotBlock | null) {
+	if (selectedSlotBlock) return;
+	hoveredSlotBlock = block;
+}
+
+function handleBlockSelect(block: SlotBlock | null) {
+	if (!block) {
+		clearSlotSelection();
+		return;
+	}
+
+	const unpinning = selectedSlotBlock?.key === block.key;
+	selectedSlotBlock = unpinning ? null : block;
+	// Unpinning leaves the pointer on the slot, so fall back to the lighter
+	// hover preview instead of dropping every state at once.
+	hoveredSlotBlock = unpinning ? block : null;
+}
+
+function handleDocumentClick(event: MouseEvent) {
+	const root = document.querySelector("[data-slot-selection-root]");
+	if (root && !root.contains(event.target as Node)) {
+		clearSlotSelection();
+	}
+}
+
+function handleKeydown(event: KeyboardEvent) {
+	if (event.key === "Escape") {
+		clearSlotSelection();
+	}
+}
+
+onMount(() => {
+	document.addEventListener("click", handleDocumentClick);
+	document.addEventListener("keydown", handleKeydown);
+
+	return () => {
+		document.removeEventListener("click", handleDocumentClick);
+		document.removeEventListener("keydown", handleKeydown);
+	};
+});
 </script>
 
 <svelte:head>
@@ -267,6 +338,77 @@ const handleEnhance: SubmitFunction = () => {
 		</div>
 	</header>
 
+	{#snippet participantRow(response: PublicResponse)}
+		{@const checked = selectedResponseIds.includes(response.id)}
+		{@const status = slotStatusFor(response.id)}
+		<label
+			class={[
+				"participant-row group relative flex w-full cursor-pointer items-center overflow-hidden rounded-md py-1.5 pr-2 font-medium text-sm transition-colors duration-150",
+				checked ? "bg-muted/60" : "hover:bg-muted/60",
+			]}
+			onmouseenter={() => {
+				if (!activeSlotBlock) hoveredResponseId = response.id;
+			}}
+		>
+			<input
+				type="checkbox"
+				class="sr-only"
+				checked={checked}
+				onchange={() => toggleResponse(response.id)}
+				onfocus={() => {
+					if (!activeSlotBlock) hoveredResponseId = response.id;
+				}}
+				onblur={() => (hoveredResponseId = null)}
+			/>
+			<span
+				class={[
+					"participant-checkbox pointer-events-none absolute top-1/2 left-2 flex size-4 -translate-y-1/2 items-center justify-center rounded-[5px] border shadow-xs transition-[opacity,scale] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] group-focus-within:ring-2 group-focus-within:ring-ring/50",
+					checked
+						? "scale-100 border-primary bg-primary text-primary-foreground opacity-100"
+						: "scale-90 border-input bg-background opacity-0 group-focus-within:scale-100 group-focus-within:opacity-100",
+				]}
+				aria-hidden="true"
+			>
+				<CheckIcon
+					class={`size-3 transition-opacity duration-100 ${checked ? "opacity-100" : "opacity-0"}`}
+				/>
+			</span>
+			<span
+				class={[
+					"participant-name min-w-0 flex-1 truncate pr-6 pl-2 transition-[translate] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]",
+					checked ? "translate-x-6" : "group-focus-within:translate-x-6",
+					status === "yes" && "text-green-700",
+					status === "maybe" && "text-amber-700",
+					status === "no" && "text-muted-foreground line-through decoration-1",
+				]}
+			>
+				{response.name}
+				{#if status}
+					<span class="sr-only">
+						— {status === "yes"
+							? "available"
+							: status === "maybe"
+								? "if need be"
+								: "not available"}
+					</span>
+				{/if}
+			</span>
+			<span
+				class={[
+					"participant-status-dot pointer-events-none absolute top-1/2 right-2 size-1.5 -translate-y-1/2 rounded-full transition-[opacity,translate,scale,background-color] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]",
+					status
+						? "translate-x-0 scale-100 opacity-100"
+						: "translate-x-3 scale-50 opacity-0",
+					status === "yes" && "bg-green-700",
+					status === "maybe" && "bg-amber-500",
+					status === "no" && "bg-neutral-300",
+					{ "is-hiding": !status },
+				]}
+				aria-hidden="true"
+			></span>
+		</label>
+	{/snippet}
+
 	{#snippet responsesSidebar()}
 		<aside
 			aria-labelledby="participants-heading"
@@ -304,43 +446,7 @@ const handleEnhance: SubmitFunction = () => {
 					</button>
 
 					{#each data.responses as response (response.id)}
-						{@const checked = selectedResponseIds.includes(response.id)}
-						<label
-							class={[
-								"participant-row group relative flex w-full cursor-pointer items-center overflow-hidden rounded-md py-1.5 pr-2 font-medium text-sm transition-colors duration-150",
-								checked ? "bg-muted/60" : "hover:bg-muted/60",
-							]}
-							onmouseenter={() => (hoveredResponseId = response.id)}
-						>
-							<input
-								type="checkbox"
-								class="sr-only"
-								checked={checked}
-								onchange={() => toggleResponse(response.id)}
-								onfocus={() => (hoveredResponseId = response.id)}
-								onblur={() => (hoveredResponseId = null)}
-							/>
-							<span
-								class={[
-									"participant-checkbox pointer-events-none absolute top-1/2 left-2 flex size-4 -translate-y-1/2 items-center justify-center rounded-[5px] border shadow-xs transition-[opacity,scale] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] group-focus-within:ring-2 group-focus-within:ring-ring/50",
-									checked
-										? "scale-100 border-primary bg-primary text-primary-foreground opacity-100"
-										: "scale-90 border-input bg-background opacity-0 group-focus-within:scale-100 group-focus-within:opacity-100",
-								]}
-								aria-hidden="true"
-							>
-								<CheckIcon
-									class={`size-3 transition-opacity duration-100 ${checked ? "opacity-100" : "opacity-0"}`}
-								/>
-							</span>
-							<span
-								class={`participant-name min-w-0 flex-1 truncate pr-6 pl-2 transition-[translate] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] ${
-									checked ? "translate-x-6" : "group-focus-within:translate-x-6"
-								}`}
-							>
-								{response.name}
-							</span>
-						</label>
+						{@render participantRow(response)}
 					{/each}
 				</div>
 			{/if}
@@ -361,7 +467,10 @@ const handleEnhance: SubmitFunction = () => {
 
 	<div class="mt-8 px-5 sm:px-7">
 		{#if view === "responses"}
-			<div class="grid gap-8 xl:grid-cols-[minmax(0,1fr)_12rem] xl:gap-8">
+			<div
+				class="grid gap-8 xl:grid-cols-[minmax(0,1fr)_12rem] xl:gap-8"
+				data-slot-selection-root
+			>
 			<section aria-labelledby="responses-heading" class="min-w-0">
 				<div
 					class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
@@ -401,9 +510,13 @@ const handleEnhance: SubmitFunction = () => {
 						{endHour}
 						responses={data.responses}
 						counts={data.heat}
-						activeId={hoveredResponseId}
+						activeId={activeSlotBlock ? null : hoveredResponseId}
 						selectedIds={selectedResponseIds}
 						label={availabilityLabel}
+						hoveredBlockKey={hoveredSlotBlock?.key ?? null}
+						selectedBlockKey={selectedSlotBlock?.key ?? null}
+						onBlockHover={handleBlockHover}
+						onBlockSelect={handleBlockSelect}
 					/>
 				</div>
 			</section>
@@ -571,8 +684,25 @@ const handleEnhance: SubmitFunction = () => {
 		}
 	}
 
+	/* Exits are quicker than entrances, but the dot still holds its opacity
+	   briefly so the slide out reads as motion instead of a blink. */
+	.participant-status-dot.is-hiding {
+		transition:
+			translate 100ms cubic-bezier(0.23, 1, 0.32, 1),
+			scale 100ms cubic-bezier(0.23, 1, 0.32, 1),
+			opacity 50ms linear 20ms,
+			background-color 100ms ease-out;
+	}
+
 	@media (prefers-reduced-motion: reduce) {
 		.participant-checkbox {
+			scale: 1;
+			transition-property: opacity;
+		}
+
+		.participant-status-dot,
+		.participant-status-dot.is-hiding {
+			translate: 0 -50%;
 			scale: 1;
 			transition-property: opacity;
 		}
