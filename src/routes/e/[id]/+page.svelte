@@ -17,7 +17,6 @@ import {
 	TimeGrid,
 } from "$lib";
 import { Button } from "$lib/components/ui/button";
-import { Input } from "$lib/components/ui/input";
 import { Label } from "$lib/components/ui/label";
 import * as Select from "$lib/components/ui/select";
 import { Separator } from "$lib/components/ui/separator";
@@ -28,7 +27,6 @@ let { data, form } = $props<{ data: PageData; form: ActionData }>();
 let selected = $state<SelectedCells>(
 	untrack(() => data.participant?.selected ?? {}),
 );
-let name = $state(untrack(() => data.participant?.name ?? ""));
 let brush = $state<CellMode>("yes");
 let isSubmitting = $state(false);
 let saved = $state(false);
@@ -575,24 +573,23 @@ onMount(() => {
 
 					<div class="mt-5 flex flex-wrap items-end gap-x-5 gap-y-4">
 						<div class="w-full space-y-1.5 sm:w-52">
-							<Label
-								for="guest-name"
+							<span
 								class="font-medium text-[11px] text-muted-foreground uppercase tracking-wide"
 							>
-								Your name
-							</Label>
-							<Input
-								id="guest-name"
-								name="name"
-								type="text"
-								required
-								maxlength={80}
-								autocomplete="name"
-								placeholder="e.g. Ana Sousa"
-								data-protonpass-ignore="true"
-								bind:value={name}
-								oninput={markDirty}
-							/>
+								Answering as
+							</span>
+							<p class="flex h-9 items-center gap-2 text-sm">
+								{#if data.user?.image}
+									<img
+										src={data.user.image}
+										alt=""
+										width="20"
+										height="20"
+										class="size-5 shrink-0 rounded-full"
+									/>
+								{/if}
+								<span class="truncate">{data.user?.name ?? "Your account"}</span>
+							</p>
 						</div>
 
 						<div class="w-full space-y-1.5 sm:w-52">

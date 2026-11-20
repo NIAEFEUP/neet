@@ -518,6 +518,13 @@
                   "codecId": "pg/text@1",
                   "kind": "scalar"
                 }
+              },
+              "userId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
               }
             },
             "relations": {
@@ -551,6 +558,22 @@
                   "model": "Event",
                   "namespace": "public"
                 }
+              },
+              "user": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "userId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "User",
+                  "namespace": "public"
+                }
               }
             },
             "storage": {
@@ -566,6 +589,9 @@
                 },
                 "name": {
                   "column": "name"
+                },
+                "userId": {
+                  "column": "userId"
                 }
               },
               "namespaceId": "public",
@@ -760,6 +786,21 @@
                 },
                 "to": {
                   "model": "Event",
+                  "namespace": "public"
+                }
+              },
+              "participants": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "userId"
+                  ]
+                },
+                "to": {
+                  "model": "Participant",
                   "namespace": "public"
                 }
               },
@@ -1136,9 +1177,31 @@
                   "codecId": "pg/text@1",
                   "nativeType": "text",
                   "nullable": false
+                },
+                "userId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
                 }
               },
               "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "userId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Participant"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "User"
+                  }
+                },
                 {
                   "onDelete": "cascade",
                   "source": {
@@ -1165,6 +1228,14 @@
                   "name": "Participant_eventId_idx_6a266d47",
                   "prefix": "Participant_eventId_idx",
                   "unique": false
+                },
+                {
+                  "columns": [
+                    "userId"
+                  ],
+                  "name": "Participant_userId_idx_a489d58a",
+                  "prefix": "Participant_userId_idx",
+                  "unique": false
                 }
               ],
               "primaryKey": {
@@ -1172,7 +1243,14 @@
                   "id"
                 ]
               },
-              "uniques": []
+              "uniques": [
+                {
+                  "columns": [
+                    "eventId",
+                    "userId"
+                  ]
+                }
+              ]
             },
             "User": {
               "columns": {
@@ -1490,7 +1568,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "a7e082ada7e174d22523d2f5e724ff04371da98d6acbfb99258bd59559bce0b5"
+    "storageHash": "1a45590f99accd759cfaf1cdaf03bbfd5bbecdef9822e1bf5c00801577fe9ad2"
   },
   "execution": {
     "executionHash": "bf8627aaf1b9ecd79b3739367be8bd0f22b00dd40e5032556858db3c2fa5d321",

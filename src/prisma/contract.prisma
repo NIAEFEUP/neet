@@ -19,6 +19,7 @@ model User {
   sessions       Session[]
   accounts       Account[]
   createdEvents  Event[]
+  participants   Participant[]
 }
 
 model Event {
@@ -47,11 +48,15 @@ model Event {
   createdAt      DateTime       @default(now())
 }
 
-/// A guest's response to one event. There are no accounts in the MVP, so this is
-/// event-scoped: the same person can answer different events with different names.
+/// A member's response to one event. Identity is the signed-in account: one
+/// response per member per event, and `name` is a snapshot of their account
+/// name so the responses list needs no join.
 model Participant {
   id             Uuid       @id @default(uuid(7))
   name           String
+
+  userId         String
+  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   eventId        Uuid
   event          Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
@@ -60,6 +65,7 @@ model Participant {
 
   createdAt      DateTime   @default(now())
 
+  @@unique([eventId, userId])
   @@index([eventId])
 }
 

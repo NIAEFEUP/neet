@@ -34,7 +34,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'a7e082ada7e174d22523d2f5e724ff04371da98d6acbfb99258bd59559bce0b5'>;
+  StorageHashBase<'1a45590f99accd759cfaf1cdaf03bbfd5bbecdef9822e1bf5c00801577fe9ad2'>;
 export type ExecutionHash =
   ExecutionHashBase<'bf8627aaf1b9ecd79b3739367be8bd0f22b00dd40e5032556858db3c2fa5d321'>;
 export type ProfileHash =
@@ -291,6 +291,7 @@ export type FieldOutputTypes = {
       readonly eventId: CodecTypes['pg/uuid@1']['output'];
       readonly id: CodecTypes['pg/uuid@1']['output'];
       readonly name: CodecTypes['pg/text@1']['output'];
+      readonly userId: CodecTypes['pg/text@1']['output'];
     };
     readonly Session: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
@@ -364,6 +365,7 @@ export type FieldInputTypes = {
       readonly eventId: CodecTypes['pg/uuid@1']['input'];
       readonly id: CodecTypes['pg/uuid@1']['input'];
       readonly name: CodecTypes['pg/text@1']['input'];
+      readonly userId: CodecTypes['pg/text@1']['input'];
     };
     readonly Session: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
@@ -437,6 +439,7 @@ export type StorageColumnTypes = {
       readonly eventId: CodecTypes['pg/uuid@1']['output'];
       readonly id: CodecTypes['pg/uuid@1']['output'];
       readonly name: CodecTypes['pg/text@1']['output'];
+      readonly userId: CodecTypes['pg/text@1']['output'];
     };
     readonly session: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
@@ -510,6 +513,7 @@ export type StorageColumnInputTypes = {
       readonly eventId: CodecTypes['pg/uuid@1']['input'];
       readonly id: CodecTypes['pg/uuid@1']['input'];
       readonly name: CodecTypes['pg/text@1']['input'];
+      readonly userId: CodecTypes['pg/text@1']['input'];
     };
     readonly session: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
@@ -592,9 +596,11 @@ export namespace Models {
     eventId: CodecTypes['pg/uuid@1']['output'];
     id: CodecTypes['pg/uuid@1']['output'];
     name: CodecTypes['pg/text@1']['output'];
+    userId: CodecTypes['pg/text@1']['output'];
     availabilities: public_Availability[];
     event: public_Event;
-    readonly [RelationKeys]?: 'availabilities' | 'event';
+    user: public_User;
+    readonly [RelationKeys]?: 'availabilities' | 'event' | 'user';
   };
   export type public_Session = {
     createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
@@ -618,8 +624,9 @@ export namespace Models {
     updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     accounts: public_Account[];
     createdEvents: public_Event[];
+    participants: public_Participant[];
     sessions: public_Session[];
-    readonly [RelationKeys]?: 'accounts' | 'createdEvents' | 'sessions';
+    readonly [RelationKeys]?: 'accounts' | 'createdEvents' | 'participants' | 'sessions';
   };
   export type public_Verification = {
     createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
@@ -950,9 +957,14 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/text@1';
                   readonly nullable: false;
                 };
+                readonly userId: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
               };
               primaryKey: { readonly columns: readonly ['id'] };
-              uniques: readonly [];
+              uniques: readonly [{ readonly columns: readonly ['eventId', 'userId'] }];
               indexes: readonly [
                 {
                   readonly name: 'Participant_eventId_idx_6a266d47';
@@ -960,8 +972,26 @@ type ContractBase = Omit<
                   readonly columns: readonly ['eventId'];
                   readonly unique: false;
                 },
+                {
+                  readonly name: 'Participant_userId_idx_a489d58a';
+                  readonly prefix: 'Participant_userId_idx';
+                  readonly columns: readonly ['userId'];
+                  readonly unique: false;
+                },
               ];
               foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'Participant';
+                    readonly columns: readonly ['userId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'User';
+                    readonly columns: readonly ['id'];
+                  };
+                },
                 {
                   readonly source: {
                     readonly namespaceId: 'public' & NamespaceId;
@@ -1474,6 +1504,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
+              readonly userId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
             };
             readonly relations: {
               readonly availabilities: {
@@ -1499,6 +1533,15 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['id'];
                 };
               };
+              readonly user: {
+                readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['userId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
             };
             readonly storage: {
               readonly table: 'Participant';
@@ -1508,6 +1551,7 @@ type ContractBase = Omit<
                 readonly eventId: { readonly column: 'eventId' };
                 readonly id: { readonly column: 'id' };
                 readonly name: { readonly column: 'name' };
+                readonly userId: { readonly column: 'userId' };
               };
             };
           };
@@ -1639,6 +1683,17 @@ type ContractBase = Omit<
                 readonly on: {
                   readonly localFields: readonly ['id'];
                   readonly targetFields: readonly ['creatorId'];
+                };
+              };
+              readonly participants: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Participant';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['userId'];
                 };
               };
               readonly sessions: {
