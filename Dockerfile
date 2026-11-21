@@ -41,6 +41,13 @@ COPY --from=builder /app/migrations ./migrations
 COPY --from=builder /app/src/prisma/contract.prisma ./src/prisma/contract.prisma
 COPY --from=builder /app/src/prisma/contract.json ./src/prisma/contract.json
 
+# Runtime env, injected from the NEET_VARS_CONTENT GitHub Actions secret
+ARG NEET_VARS_CONTENT
+RUN if [ -n "$NEET_VARS_CONTENT" ]; then \
+		echo "$NEET_VARS_CONTENT" | base64 -d > .env \
+		&& chown 1000:1000 .env; \
+	fi
+
 USER 1000:1000
 
 EXPOSE 3000
