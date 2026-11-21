@@ -97,7 +97,15 @@ static/           # Static assets
 
 ## Deployment
 
-This project uses `@sveltejs/adapter-node`, which produces a standalone Node server in `build/` when running `pnpm build`. The `Dockerfile` packages that server for the NIployments registry, and `.github/workflows/niployments.yaml` deploys it on pushes to `main`, `develop` and `beta`. See the [SvelteKit adapters docs](https://svelte.dev/docs/kit/adapters) for more info.
+This project uses `@sveltejs/adapter-node`, which produces a standalone Node server in `build/` when running `pnpm build`. The `Dockerfile` packages that server for the NIployments registry, and `.github/workflows/niployments.yaml` deploys it on pushes to `main`; it can also be triggered manually from the Actions tab. See the [SvelteKit adapters docs](https://svelte.dev/docs/kit/adapters) for more info.
+
+### Environment variables
+
+The production `.env` is stored base64-encoded in the `NEET_VARS_CONTENT` repository secret and baked into the image at build time. To rotate it, update that secret and run the Deploy workflow manually:
+
+```sh
+gh secret set NEET_VARS_CONTENT -R NIAEFEUP/neet --body "$(base64 -w0 .env)"
+```
 
 ## License
 
