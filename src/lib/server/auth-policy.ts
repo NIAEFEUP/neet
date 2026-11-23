@@ -1,5 +1,3 @@
-import { env } from "$env/dynamic/private";
-
 /**
  * The org's Workspace domain(s).
  *
@@ -7,7 +5,10 @@ import { env } from "$env/dynamic/private";
  * `ALLOWED_EMAIL_DOMAINS` covers extra domains as a comma-separated list.
  */
 export function allowedDomains(): string[] {
-	const raw = [env.GOOGLE_HOSTED_DOMAIN ?? "", env.ALLOWED_EMAIL_DOMAINS ?? ""]
+	const raw = [
+		process.env.GOOGLE_HOSTED_DOMAIN ?? "",
+		process.env.ALLOWED_EMAIL_DOMAINS ?? "",
+	]
 		.join(",")
 		.split(",")
 		.map((domain) => domain.trim().replace(/^@/, "").toLowerCase())
